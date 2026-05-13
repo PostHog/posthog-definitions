@@ -1,6 +1,10 @@
 # Copy to .envrc and fill in real values, then run `direnv allow`.
 # .envrc is gitignored — never commit real credentials.
 
+# Pin the Node version via direnv's nvm integration (reads .nvmrc).
+# Requires `direnv` + nvm wrappers; harmless if `use_nvm` isn't defined.
+type use_nvm >/dev/null 2>&1 && use_nvm
+
 # Personal API key with dashboard:write and insight:write scopes.
 # Create one at <host>/settings/user-api-keys.
 export POSTHOG_PERSONAL_API_KEY=phx_replace_me
