@@ -161,9 +161,37 @@ In `src/cli/apply.ts`:
 3. Include the count in the "Loaded N foo(s)" log line.
 4. Add `summary.foosCreated/Updated/Unchanged` to the "Applied:" summary.
 
-## Verification (manual, ship-fast)
+## Unit tests (required for new resources)
 
-Per project convention, do not write a test suite for the new resource. Verify against the dev project:
+The pipeline's pure functions are testable with no mocking; the test budget per new resource is small but non-negotiable. Use Node's built-in test runner — no test framework dependency. Run with `pnpm test`.
+
+Two reference test files already exist:
+
+- `src/apply/hash.test.ts` — `specHash` determinism, key-order invariance, leaf sensitivity.
+- `src/apply/diff.test.ts` — op selection (create / update / unchanged / orphan) for insights and dashboards, plus the **safety invariant** test that confirms server rows without an `iac:*` tag are ignored entirely.
+
+For a new resource `Foo`, add a `diff.test.ts` block that exercises:
+
+1. `create` when desired exists and server is empty.
+2. `unchanged` when desired hash matches the server's `iac:hash:` tag.
+3. `update` when the server hash differs.
+4. `orphan` when a server row has `iac:foos:<key>` but no matching spec.
+5. **Safety invariant:** a server row without any `iac:*` tag produces zero ops *and* zero orphans. This is the test that protects hand-built resources in a shared project.
+
+The reference factory pattern (`serverInsight` / `serverDashboard` in `src/apply/diff.test.ts`) builds a server row with the right `iac:foos:<key>` and `iac:hash:<hex>` tags — copy it. The hash for "unchanged" cases must come from the public `insightPayloadHash` / `dashboardPayloadHash` helpers in `src/apply/diff.ts`; export an equivalent `fooPayloadHash` from `diff.ts` for the new resource and call it from the test.
+
+If the resource uses Zod, also add a `client/foos.test.ts` with two cases:
+
+1. Real-shaped fixture parses cleanly.
+2. Fixture with a missing required field throws.
+
+Fixtures should be hand-authored from an actual `curl` against the PostHog API, not invented — the whole point of the Zod schema is to catch drift from the real wire format.
+
+**Do not** write tests for `execute.ts` (HTTP I/O), `format-plan.ts` (rendering), or `load.ts` (filesystem). The manual dev-project flow covers those at the right level.
+
+## Verification (manual, end-to-end)
+
+Unit tests catch the easy failures; the manual flow catches everything else. Run against the dev project:
 
 1. `pnpm typecheck` — must pass.
 2. Add an example file under `examples/` exercising the new resource.
