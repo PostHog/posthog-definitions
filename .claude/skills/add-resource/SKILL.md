@@ -256,11 +256,22 @@ The last step is the safety invariant smoke test. Do not skip it.
 
 After the resource ships, flip its row from ❌ to ✅ in `docs/resources.md`.
 
+## Deletes
+
+`apply` is non-destructive by default: orphans (server rows tagged `iac:foos:<key>` with no matching spec in code) are listed in the plan but left alone. With the `--prune` flag, `apply` deletes them.
+
+Pruning must follow the same safety invariant as updates:
+
+1. **Refetch + assert tag.** Before issuing `DELETE`, refetch the row and confirm `iac:foos:<key>` is still on it. If the tag has been removed in the UI between fetch and write, abort with `SafetyViolationError`. The legacy reference is `pruneDashboard` and `pruneInsight` at `src/apply/execute.ts:141, 157` — both call `assertManagedDashboard` / `assertManagedInsight` first.
+2. **Tolerate `404`.** If the row was deleted out-of-band between list and delete, treat it as a successful no-op and continue. The legacy helpers use `isNotFound(err)` to handle this.
+3. **Use the API's "delete" verb faithfully.** PostHog's dashboard/insight delete is a `PATCH {deleted: true}` (soft delete), not a `DELETE`. Many other resources use real `DELETE`. Check what the API does and mirror it.
+
+In `pipeline.ts`, export `runFooPrune(config, orphan, options): Promise<boolean>` returning `true` if a row was deleted, `false` if it was already gone. The generic driver iterates orphans when `--prune` is set.
+
 ## Out-of-scope (do not bundle in)
 
-- **Deletes.** MVP intentionally does not delete server resources. Orphans are listed in the plan but never removed.
 - **Multi-environment.** One project per `apply` run.
 - **State files.** Identity lives in tags on the server, not on disk.
-- **`dev` / `pull` commands.** Out of MVP scope.
+- **`dev` command.** Out of MVP scope.
 
 If the resource needs any of these, raise it with the user before writing code — they are roadmap items, not free additions.
