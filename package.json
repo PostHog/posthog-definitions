@@ -24,7 +24,7 @@
     "apply": "tsx src/cli/index.ts apply",
     "pull": "tsx src/cli/index.ts pull",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test \"src/**/*.test.ts\""
+    "test": "node --import tsx --test --test-timeout=500 \"src/**/*.test.ts\""
   },
   "dependencies": {
     "enquirer": "^2.4.1",
