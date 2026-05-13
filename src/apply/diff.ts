@@ -41,7 +41,7 @@ export function diff(
   }
 
   for (const spec of desired.insights) {
-    const hash = specHash(insightPayload(spec, ""));
+    const hash = specHash(insightSpecForHash(spec));
     const server = currentInsightByKey.get(spec.key);
     if (!server) {
       insightOps.push({ kind: "create", key: spec.key, spec, hash });
@@ -85,6 +85,16 @@ export function diff(
   return { insightOps, dashboardOps, orphanInsights, orphanDashboards };
 }
 
+function insightSpecForHash(spec: Insight): unknown {
+  return {
+    key: spec.key,
+    name: spec.name,
+    description: spec.description ?? null,
+    query: spec.query,
+    tags: spec.tags ?? [],
+  };
+}
+
 function dashboardSpecForHash(spec: Dashboard): unknown {
   return {
     key: spec.key,
@@ -113,7 +123,7 @@ export function dashboardPayloadHash(spec: Dashboard): string {
 }
 
 export function insightPayloadHash(spec: Insight): string {
-  return specHash(insightPayload(spec, ""));
+  return specHash(insightSpecForHash(spec));
 }
 
 export function buildDashboardCreatePayload(
