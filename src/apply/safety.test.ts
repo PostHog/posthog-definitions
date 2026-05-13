@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SafetyViolationError } from "./safety.js";
+import { SafetyViolationError } from "./execute.js";
 
 describe("SafetyViolationError", () => {
   it("is an Error subclass with the expected name", () => {
