@@ -9,16 +9,22 @@ import { err, ok, type Result } from "../result.js";
  */
 export type ValidationOk = { resourceCount: number };
 
+export type ValidationIssue = { resource: string; message: string };
+
+export type ValidationFailure = { issues: ValidationIssue[] };
+
 export function validate(
   state: DesiredState,
   resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
-): Result<ValidationOk, string[]> {
-  const issues: string[] = [];
+): Result<ValidationOk, ValidationFailure> {
+  const issues: ValidationIssue[] = [];
   for (const resource of resources) {
     const loaded = state.get(resource.name) ?? [];
     const specs = loaded.map((l) => l.spec);
-    issues.push(...resource.validate(specs, state));
+    for (const message of resource.validate(specs, state)) {
+      issues.push({ resource: resource.name, message });
+    }
   }
-  if (issues.length > 0) return err(issues);
+  if (issues.length > 0) return err({ issues });
   return ok({ resourceCount: resources.length });
 }

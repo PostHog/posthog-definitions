@@ -46,7 +46,8 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("validating definitions");
   const validation = validate(desired);
   if (!validation.ok) {
-    console.error(`error: Validation failed:\n - ${validation.error.join("\n - ")}`);
+    const lines = validation.error.issues.map((i) => `${i.resource}: ${i.message}`);
+    console.error(`error: Validation failed:\n - ${lines.join("\n - ")}`);
     return 1;
   }
   debug("validation passed");

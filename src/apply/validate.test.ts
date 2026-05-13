@@ -25,7 +25,7 @@ describe("validate", () => {
     if (result.ok) expect(result.value.resourceCount).toBe(2);
   });
 
-  it("aggregates issues across all resources before returning err", () => {
+  it("tags each issue with the resource that produced it", () => {
     const resources = [
       makeFakeResource({ name: "alpha", validate: () => ["alpha-issue-1", "alpha-issue-2"] }),
       makeFakeResource({ name: "beta", validate: () => ["beta-issue"] }),
@@ -33,7 +33,26 @@ describe("validate", () => {
     const result = validate(stateFromSpecs({}), resources);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toEqual(["alpha-issue-1", "alpha-issue-2", "beta-issue"]);
+      expect(result.error.issues).toEqual([
+        { resource: "alpha", message: "alpha-issue-1" },
+        { resource: "alpha", message: "alpha-issue-2" },
+        { resource: "beta", message: "beta-issue" },
+      ]);
+    }
+  });
+
+  it("does not cross-attribute issues across resources", () => {
+    const resources = [
+      makeFakeResource({ name: "alpha", validate: () => [] }),
+      makeFakeResource({ name: "beta", validate: () => ["only-beta"] }),
+      makeFakeResource({ name: "gamma", validate: () => [] }),
+    ];
+    const result = validate(stateFromSpecs({}), resources);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.issues).toEqual([{ resource: "beta", message: "only-beta" }]);
+      const offenders = new Set(result.error.issues.map((i) => i.resource));
+      expect(offenders).toEqual(new Set(["beta"]));
     }
   });
 
@@ -79,14 +98,23 @@ describe("validate", () => {
     expect(calls).toEqual([[]]);
   });
 
-  it("walks resources in order so issues are reported in a stable sequence", () => {
+  it("preserves the order of resources and of issues within a resource", () => {
     const resources = [
-      makeFakeResource({ name: "first", validate: () => ["1"] }),
+      makeFakeResource({ name: "first", validate: () => ["1a", "1b"] }),
       makeFakeResource({ name: "second", validate: () => ["2"] }),
-      makeFakeResource({ name: "third", validate: () => ["3"] }),
+      makeFakeResource({ name: "third", validate: () => ["3a", "3b"] }),
     ];
     const result = validate(stateFromSpecs({}), resources);
-    if (!result.ok) expect(result.error).toEqual(["1", "2", "3"]);
-    else throw new Error("expected err");
+    if (!result.ok) {
+      expect(result.error.issues).toEqual([
+        { resource: "first", message: "1a" },
+        { resource: "first", message: "1b" },
+        { resource: "second", message: "2" },
+        { resource: "third", message: "3a" },
+        { resource: "third", message: "3b" },
+      ]);
+    } else {
+      throw new Error("expected err");
+    }
   });
 });
