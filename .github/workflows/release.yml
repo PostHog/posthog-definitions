@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dist-tag:
+        description: "npm dist-tag (e.g. alpha, beta, latest)"
+        required: true
+        default: "alpha"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - name: Resolve dist-tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.dist-tag }}" ]; then
+            echo "tag=${{ inputs.dist-tag }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF_NAME}" == *-alpha* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF_NAME}" == *-beta* ]]; then
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF_NAME}" == *-rc* ]]; then
+            echo "tag=rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: npm publish --provenance --access public --tag ${{ steps.tag.outputs.tag }}
