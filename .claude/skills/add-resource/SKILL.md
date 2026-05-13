@@ -42,7 +42,7 @@ Two mechanisms enforce this — both must be replicated for the new resource:
 1. **List filter.** `list<Resource>` only returns rows whose tags contain `iac:<resource>:<...>`. See `listManagedDashboards` in `src/client/dashboards.ts:37`.
 2. **Pre-write assertion.** Before any `PATCH`, refetch the row and confirm its `iac:<resource>:<key>` tag is still there. If it's been removed (e.g. an operator stripped it in the UI), abort with `SafetyViolationError`. See `assertManagedDashboard` in `src/apply/execute.ts:129`.
 
-If the resource's API has no `tags` field, this skill does not apply — bring it up with the user before proceeding. The whole identity model depends on writable tags.
+If the resource's API has no `tags` field, this skill does not apply — bring it up with the user before proceeding. The whole identity model depends on writable tags. The most common reason for "no tags" is that the resource is a **singleton** (one row per project, e.g. project settings): in that case use the sibling skill `add-singleton-resource`, which covers the field-level diff and PATCH-only model.
 
 ## Directory layout for a new resource
 
