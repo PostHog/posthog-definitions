@@ -23,5 +23,6 @@ dist/
 .vscode/
 .idea/
 
-# Claude Code per-project state
-.claude/
+# Claude Code per-project state — track shared skills, ignore local settings
+.claude/*
+!.claude/skills/
