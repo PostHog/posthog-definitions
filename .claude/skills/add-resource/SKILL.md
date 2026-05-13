@@ -17,6 +17,39 @@ The user wants to manage a new PostHog resource as code, e.g.:
 
 If the user only wants a one-off API call or a script, this is the wrong tool — this skill is for resources that should join the `load → validate → diff → execute` pipeline.
 
+## Start with the scaffolder
+
+Don't hand-write the 5 files. Run:
+
+```
+pnpm scaffold-resource \
+  --name <singular>           # e.g. cohort, action, survey
+  --path <list-endpoint>      # e.g. /api/projects/{project_id}/cohorts/
+  --key-field <field>         # field that identifies the resource (default: name)
+```
+
+The script reads `../posthog/frontend/tmp/openapi.json` and generates `src/resources/<name>/{client,sdk,pipeline,pipeline.test,index}.ts`, then wires the resource into `src/resources/index.ts`, `src/index.ts`, `scripts/lib/registry.ts`, and flips the row in `docs/resources.md`. The scaffold is implemented at `scripts/scaffold-resource.ts`.
+
+What you get out of the box:
+
+- **`client.ts`** — ~95% complete. Zod `ServerXSchema` generated from the OpenAPI response component, `ListPaginated<X>Schema`, CRUD wrappers, and a `listManagedX` that filters by `iac:<plural>:` tags (or marks a TODO if the resource has no `tags` field).
+- **`sdk.ts`** — a starter `X` type from the create-request schema plus the factory with `markResourceKind(spec, "x")`. **Almost always needs narrowing** — the OpenAPI request body usually exposes more than the IaC layer should.
+- **`pipeline.ts`** — full structural skeleton (`xTag`, `xKeyFromTags`, `xHash`, `xPayload`, `validateXs`, `runXOp`, `pruneX`, display helpers) with `TODO(human)` markers over the per-resource judgment calls.
+- **`pipeline.test.ts`** — 3-test skeleton (validate / hash / `looksLikeX`) plus a TODO list for the 5 op-selection + safety-invariant tests that this skill requires below.
+- **`index.ts`** — the `ResourceModule` registration, fully wired.
+
+What you must still do (these are the `TODO(human)` markers — *the rest of this skill explains why*):
+
+1. **Narrow the SDK type** in `sdk.ts` — strip server-set fields, deprecated aliases, write-only options the IaC layer should not expose.
+2. **Pick an identity mechanism** if the resource has no `tags` field — see the description-marker section below and `src/resources/endpoint/`.
+3. **Write the hash projection** `xSpecForHash` in `pipeline.ts` — every user-intent field, no server-set fields. *This is the dangerous one* — get it wrong and every apply either rewrites unchanged rows or skips real changes.
+4. **Write the create/update payload** `xPayload` — usually `spec` plus merged identity tags, but resource-specific.
+5. **Tune validation** `validateXs` — at minimum key required + unique, plus resource-specific invariants.
+6. **Polish display rendering** — `displayJson` is the fallback; field-by-field `scalar`/`obj`/`arr` calls give readable diffs.
+7. **Add the safety-invariant tests** to `pipeline.test.ts` — the 5 cases listed in "Unit tests" below.
+
+Then read the rest of this skill — it is the *why* behind each TODO marker and the verification flow you still owe.
+
 ## Before you touch anything
 
 Re-read these three files. The whole architecture is in them:
@@ -312,7 +345,19 @@ The last step is the safety invariant smoke test. Do not skip it.
 
 ## Update the support matrix
 
-After the resource ships, flip its row from ❌ to ✅ in `docs/resources.md`.
+The scaffolder flips the matching row in `docs/resources.md` from ❌ to ✅ automatically. If it couldn't find a matching row (the heuristic uses the plural URL segment), flip it by hand.
+
+## Checking for API drift
+
+Run `pnpm check-resources` (implemented at `scripts/check-resources.ts`) to compare every shipped resource's `ServerXSchema` against the current OpenAPI spec. It reports three things:
+
+- **Added fields** — present in the OpenAPI response but not in our schema. Most of these are not worth tracking (server-set metadata is excluded by default; pass `--all` to include `readOnly` fields). The ones to act on are the user-intent fields that have appeared since this resource was scaffolded.
+- **Removed fields** — present in our schema but no longer in the OpenAPI response. The most important signal: we may be reading something that no longer exists.
+- **Type mismatches** — coarse `string` vs `number` vs `array` differences between our schema and the API.
+
+The script exits non-zero if any drift is found, so it fits straight into CI as a gate. Refresh `posthog/frontend/tmp/openapi.json` first (the PostHog repo's frontend codegen step produces it) before running.
+
+The registry that drives the comparison lives in `scripts/lib/registry.ts`. The scaffolder appends new entries automatically; if you add a resource by hand, add a row there too.
 
 ## Deletes
 
