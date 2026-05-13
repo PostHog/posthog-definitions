@@ -31,6 +31,8 @@ export type GeneratedFile = {
   filename: string;
   contents: string;
   warnings: string[];
+  dashboardKey: string;
+  insightKeysByServerId: Map<number, string>;
 };
 
 type Imports = {
@@ -67,6 +69,7 @@ export function generateDashboardFile(
   const tileLiterals: string[] = [];
   const usedInsightSlugs = new Set<string>();
   const insightVarByInsightId = new Map<number, string>();
+  const insightKeysByServerId = new Map<number, string>();
 
   for (const tile of server.tiles ?? []) {
     if (tile.insight) {
@@ -74,6 +77,7 @@ export function generateDashboardFile(
         tile,
         insightVars,
         insightVarByInsightId,
+        insightKeysByServerId,
         usedInsightSlugs,
         imports,
         warnings,
@@ -120,13 +124,20 @@ export function generateDashboardFile(
   parts.push(`export default dashboard(${dashboardBody});`);
   parts.push("");
 
-  return { filename, contents: parts.join("\n"), warnings };
+  return {
+    filename,
+    contents: parts.join("\n"),
+    warnings,
+    dashboardKey,
+    insightKeysByServerId,
+  };
 }
 
 function renderInsightTile(
   tile: ServerTile,
   insightVars: string[],
   insightVarByInsightId: Map<number, string>,
+  insightKeysByServerId: Map<number, string>,
   usedInsightSlugs: Set<string>,
   imports: Imports,
   warnings: string[],
@@ -160,6 +171,7 @@ function renderInsightTile(
     insightVars.push(`const ${varName} = insight(${renderObject(insightSpec, 2)});`);
     insightVars.push("");
     insightVarByInsightId.set(srv.id, varName);
+    insightKeysByServerId.set(srv.id, slug);
   }
 
   const layout = pickLayout(tile.layouts);

@@ -16,6 +16,8 @@ export type ServerDashboard = {
   pinned?: boolean;
   tags: string[];
   restriction_level?: number;
+  creation_mode?: string;
+  deleted?: boolean;
   tiles?: ServerTile[];
 };
 

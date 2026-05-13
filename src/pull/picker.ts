@@ -8,7 +8,13 @@ export class PickAbortedError extends Error {
   }
 }
 
-type Choice = { name: string; message: string; value: number; hint?: string };
+type Choice = {
+  name: string;
+  message: string;
+  value: number;
+  hint?: string;
+  enabled: boolean;
+};
 
 export async function pickDashboardIds(dashboards: ServerDashboard[]): Promise<Set<number>> {
   if (dashboards.length === 0) return new Set();
@@ -18,6 +24,7 @@ export async function pickDashboardIds(dashboards: ServerDashboard[]): Promise<S
       name: String(d.id),
       message: d.name || `(untitled #${d.id})`,
       value: d.id,
+      enabled: true,
     };
     if (d.tags && d.tags.length > 0) {
       choice.hint = `[${d.tags.filter((t) => !t.startsWith("iac:")).join(", ")}]`;
@@ -34,7 +41,8 @@ export async function pickDashboardIds(dashboards: ServerDashboard[]): Promise<S
       multiple: true,
       limit: 15,
       choices,
-      footer: "type to search · space to toggle · enter to confirm",
+      initial: choices.map((c) => c.name),
+      footer: "type to search · space to toggle · a to toggle all · enter to confirm",
     } as Parameters<typeof enquirer.prompt>[0]);
   } catch {
     throw new PickAbortedError();

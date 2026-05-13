@@ -3,6 +3,7 @@ import { listDashboards } from "../client/dashboards.js";
 import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/http.js";
 import { pullDashboards } from "../pull/dashboards.js";
+import { partitionDashboards } from "../pull/filter.js";
 import { PickAbortedError, pickDashboardIds } from "../pull/picker.js";
 import type { PullArgs } from "./args.js";
 
@@ -26,8 +27,14 @@ export async function runPull(args: PullArgs): Promise<number> {
     if (kind === "dashboards") {
       try {
         const list = await listDashboards(config, { verbose: args.verbose });
-        if (list.length === 0) {
-          console.log("No dashboards found in this project.");
+        const { kept, excluded } = partitionDashboards(list);
+        if (excluded.length > 0) {
+          console.error(
+            `Ignoring ${excluded.length} auto-generated dashboard(s) (feature flags, deleted, templates).`,
+          );
+        }
+        if (kept.length === 0) {
+          console.log("No importable dashboards found in this project.");
           continue;
         }
 
@@ -40,7 +47,7 @@ export async function runPull(args: PullArgs): Promise<number> {
             return 3;
           }
           try {
-            ids = await pickDashboardIds(list);
+            ids = await pickDashboardIds(kept);
           } catch (err) {
             if (err instanceof PickAbortedError) {
               console.error("Aborted.");
@@ -76,7 +83,13 @@ export async function runPull(args: PullArgs): Promise<number> {
 }
 
 function reportDashboards(
-  result: { written: string[]; skipped: string[]; warnings: string[] },
+  result: {
+    written: string[];
+    skipped: string[];
+    warnings: string[];
+    excluded: Array<{ id: number; name: string; reason: string }>;
+    tagged: { dashboards: number; insights: number };
+  },
   dir: string,
   dryRun: boolean,
 ): void {
@@ -84,9 +97,13 @@ function reportDashboards(
   if (dryRun) {
     console.log(`Dry run — ${result.skipped.length} dashboard file(s) would be written to ${target}/`);
     for (const f of result.skipped) console.log(`  would write ${path.relative(process.cwd(), f)}`);
+    console.log("Server tags would not change (dry run).");
   } else {
     console.log(`Wrote ${result.written.length} dashboard file(s) to ${target}/`);
     for (const f of result.written) console.log(`  ${path.relative(process.cwd(), f)}`);
+    console.log(
+      `Tagged ${result.tagged.dashboards} dashboard(s) and ${result.tagged.insights} insight(s) on the server as iac-managed.`,
+    );
   }
   if (result.warnings.length > 0) {
     console.error(`\n${result.warnings.length} warning(s):`);
