@@ -95,21 +95,28 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     orphanDashboards: diffResult.orphanDashboards.length,
   });
 
-  console.log(formatPlan(diffResult, { serverInsights: current.insights }));
+  console.log(
+    formatPlan(diffResult, { serverInsights: current.insights, prune: args.prune }),
+  );
 
   if (args.dryRun) {
     console.log("\nDry run — no changes applied.");
     return 0;
   }
 
-  debug("executing apply");
+  debug("executing apply", { prune: args.prune });
   try {
-    const summary = await execute(config, diffResult, { verbose: args.verbose });
+    const summary = await execute(config, diffResult, {
+      verbose: args.verbose,
+      prune: args.prune,
+    });
     debug("apply complete", { ...summary });
+    const pruned = summary.insightsPruned + summary.dashboardsPruned;
+    const prunedSegment = args.prune ? `, ${pruned} deleted` : "";
     console.log(
       `\nApplied: ${summary.insightsCreated + summary.dashboardsCreated} created, ` +
         `${summary.insightsUpdated + summary.dashboardsUpdated} updated, ` +
-        `${summary.insightsUnchanged + summary.dashboardsUnchanged} unchanged.`,
+        `${summary.insightsUnchanged + summary.dashboardsUnchanged} unchanged${prunedSegment}.`,
     );
     return 0;
   } catch (err) {

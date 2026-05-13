@@ -38,6 +38,7 @@ export function shouldUseColor(): boolean {
 export type FormatOptions = {
   color?: boolean;
   serverInsights?: ServerInsight[];
+  prune?: boolean;
 };
 
 export function formatPlan(result: DiffResult, options: FormatOptions = {}): string {
@@ -63,8 +64,9 @@ export function formatPlan(result: DiffResult, options: FormatOptions = {}): str
     `  dashboards:  ${p.green(`${dashboardCounts.create} to create`)}  ·  ${p.yellow(`${dashboardCounts.update} to update`)}  ·  ${p.dim(`${dashboardCounts.unchanged} unchanged`)}`,
   );
   if (result.orphanInsights.length > 0 || result.orphanDashboards.length > 0) {
+    const action = options.prune ? p.red("to delete") : p.dim("(left alone)");
     out.push(
-      `  orphans:     ${p.blue(`${result.orphanInsights.length} insight(s)`)}  ·  ${p.blue(`${result.orphanDashboards.length} dashboard(s)`)}  ${p.dim("(left alone)")}`,
+      `  orphans:     ${p.blue(`${result.orphanInsights.length} insight(s)`)}  ·  ${p.blue(`${result.orphanDashboards.length} dashboard(s)`)}  ${action}`,
     );
   }
 
@@ -76,13 +78,17 @@ export function formatPlan(result: DiffResult, options: FormatOptions = {}): str
     const block = renderDashboardOp(op, p, serverIdToKey);
     if (block) out.push("", block);
   }
+  const orphanMarker = options.prune ? p.red("-") : p.blue("·");
+  const orphanLabel = options.prune
+    ? { insight: p.red("delete insight  "), dashboard: p.red("delete dashboard") }
+    : { insight: p.dim("orphan insight  "), dashboard: p.dim("orphan dashboard") };
   for (const orphan of result.orphanInsights) {
     const key = readManagedKey(orphan.tags, "iac:insights:") ?? `id:${orphan.id}`;
-    out.push("", `${p.blue("·")} ${p.dim("orphan insight  ")}${key}`);
+    out.push("", `${orphanMarker} ${orphanLabel.insight}${key}`);
   }
   for (const orphan of result.orphanDashboards) {
     const key = readManagedKey(orphan.tags, "iac:dashboards:") ?? `id:${orphan.id}`;
-    out.push("", `${p.blue("·")} ${p.dim("orphan dashboard")}${" "}${key}`);
+    out.push("", `${orphanMarker} ${orphanLabel.dashboard}${" "}${key}`);
   }
 
   return out.join("\n");

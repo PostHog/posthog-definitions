@@ -2,6 +2,7 @@ export type ApplyArgs = {
   command: "apply";
   dryRun: boolean;
   verbose: boolean;
+  prune: boolean;
   dir: string;
   host?: string;
   project?: string;
@@ -32,6 +33,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     command: "apply",
     dryRun: false,
     verbose: false,
+    prune: false,
     dir: "posthog",
   };
 
@@ -40,6 +42,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
     switch (flag) {
       case "--dry-run":
         args.dryRun = true;
+        break;
+      case "--prune":
+        args.prune = true;
         break;
       case "--verbose":
       case "-v":
@@ -80,6 +85,11 @@ Usage:
 
 Flags:
   --dry-run            Compute the diff but make no API calls.
+  --prune              Delete IaC-tagged resources that no longer have a
+                       matching source file. Opt-in, off by default. Only
+                       touches resources tagged iac:dashboards:* /
+                       iac:insights:* — hand-built resources are never
+                       considered.
   --verbose, -v        Log each HTTP call.
   --dir <path>         Directory to scan for definition files (default: posthog).
   --project <id>       Override POSTHOG_PROJECT_ID.

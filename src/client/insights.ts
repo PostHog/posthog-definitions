@@ -68,3 +68,14 @@ export async function updateInsight(
     verbose: options.verbose,
   });
 }
+
+export async function deleteInsight(
+  config: ClientConfig,
+  id: number,
+  options: { verbose?: boolean } = {},
+): Promise<void> {
+  await request<void>(config, insightsPath(config.projectId, `${id}/`), {
+    method: "DELETE",
+    verbose: options.verbose,
+  });
+}

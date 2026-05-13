@@ -1,20 +1,25 @@
 import type { ClientConfig } from "../client/config.js";
 import {
   createDashboard,
+  deleteDashboard,
   getDashboard,
   type ServerDashboard,
   updateDashboard,
 } from "../client/dashboards.js";
+import { ApiError } from "../client/http.js";
 import {
   createInsight,
+  deleteInsight,
   getInsight,
   type ServerInsight,
   updateInsight,
 } from "../client/insights.js";
 import type { DashboardOp, DiffResult, InsightOp } from "./diff.js";
 import {
+  dashboardKeyFromTags,
   dashboardPayload,
   dashboardTag,
+  insightKeyFromTags,
   insightPayload,
   insightTag,
 } from "./serialize.js";
@@ -30,15 +35,18 @@ export class SafetyViolationError extends Error {
 
 export type ExecuteOptions = {
   verbose?: boolean;
+  prune?: boolean;
 };
 
 export type ExecuteSummary = {
   insightsCreated: number;
   insightsUpdated: number;
   insightsUnchanged: number;
+  insightsPruned: number;
   dashboardsCreated: number;
   dashboardsUpdated: number;
   dashboardsUnchanged: number;
+  dashboardsPruned: number;
 };
 
 export async function execute(
@@ -50,9 +58,11 @@ export async function execute(
     insightsCreated: 0,
     insightsUpdated: 0,
     insightsUnchanged: 0,
+    insightsPruned: 0,
     dashboardsCreated: 0,
     dashboardsUpdated: 0,
     dashboardsUnchanged: 0,
+    dashboardsPruned: 0,
   };
 
   const insightIdByKey = new Map<string, number>();
@@ -70,6 +80,21 @@ export async function execute(
     if (op.kind === "create") summary.dashboardsCreated++;
     else if (op.kind === "update") summary.dashboardsUpdated++;
     else summary.dashboardsUnchanged++;
+  }
+
+  if (options.prune) {
+    for (const orphan of diffResult.orphanDashboards) {
+      const key = dashboardKeyFromTags(orphan.tags) ?? `id:${orphan.id}`;
+      if (await pruneDashboard(config, orphan.id, key, options)) {
+        summary.dashboardsPruned++;
+      }
+    }
+    for (const orphan of diffResult.orphanInsights) {
+      const key = insightKeyFromTags(orphan.tags) ?? `id:${orphan.id}`;
+      if (await pruneInsight(config, orphan.id, key, options)) {
+        summary.insightsPruned++;
+      }
+    }
   }
 
   return summary;
@@ -113,6 +138,38 @@ async function runDashboardOp(
   await updateDashboard(config, op.serverId, payload, options);
 }
 
+async function pruneDashboard(
+  config: ClientConfig,
+  id: number,
+  key: string,
+  options: ExecuteOptions,
+): Promise<boolean> {
+  try {
+    await assertManagedDashboard(config, id, key, options);
+  } catch (err) {
+    if (isNotFound(err)) return false;
+    throw err;
+  }
+  await deleteDashboard(config, id, options);
+  return true;
+}
+
+async function pruneInsight(
+  config: ClientConfig,
+  id: number,
+  key: string,
+  options: ExecuteOptions,
+): Promise<boolean> {
+  try {
+    await assertManagedInsight(config, id, key, options);
+  } catch (err) {
+    if (isNotFound(err)) return false;
+    throw err;
+  }
+  await deleteInsight(config, id, options);
+  return true;
+}
+
 async function assertManagedInsight(
   config: ClientConfig,
   id: number,
@@ -137,4 +194,8 @@ async function assertManagedDashboard(
   if (!current.tags?.includes(expected)) {
     throw new SafetyViolationError("dashboard", id, key);
   }
+}
+
+function isNotFound(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 404;
 }

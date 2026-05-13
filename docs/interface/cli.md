@@ -13,6 +13,7 @@ $ npx posthog-definitions apply [--dry-run] [--project <id>] [--dir <path>]
 | Flag | Default | Description |
 |---|---|---|
 | `--dry-run` | off | Print the diff without making API calls. |
+| `--prune` | off | Delete IaC-tagged resources that no longer have a matching source file. Opt-in. Only touches resources tagged `iac:dashboards:*` / `iac:insights:*` — hand-built resources are never considered. |
 | `--project <id>` | `$POSTHOG_PROJECT_ID` | Target project. |
 | `--dir <path>` | `posthog/` | Directory to scan for definition files. |
 | `--verbose` | off | Print each API call. |
@@ -41,9 +42,14 @@ $ npx posthog-definitions apply [--dry-run] [--project <id>] [--dir <path>]
 
 Re-running `apply` with no source changes is a no-op — every resource is "unchanged."
 
+### Delete behavior
+
+By default `apply` never deletes anything — removing a definition file leaves the previously-managed resource on the server, where it surfaces as an "orphan" in the plan output.
+
+Pass `--prune` to delete the orphans (only ones tagged `iac:dashboards:*` / `iac:insights:*`; hand-built resources stay untouched). Order: orphan dashboards are deleted first (to drop tile references), then orphan insights. The same `iac:*` tag re-check that gates `PATCH` also gates each `DELETE`.
+
 ### What `apply` does **not** do (MVP scope)
 
-- **No delete.** Removing a definition file does not delete the dashboard. Use the UI or API to delete. (Tracked: post-MVP `apply --prune`.)
 - **No watch mode.** `apply` is one-shot. (Tracked: post-MVP `posthog-definitions dev`.)
 - **No pull.** Existing UI-created dashboards are not imported. (Tracked: post-MVP `posthog-definitions pull`.)
 - **No environments.** Single project per run. Multi-env via separate `--project` calls.

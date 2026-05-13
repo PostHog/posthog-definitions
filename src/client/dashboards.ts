@@ -79,3 +79,14 @@ export async function updateDashboard(
     verbose: options.verbose,
   });
 }
+
+export async function deleteDashboard(
+  config: ClientConfig,
+  id: number,
+  options: { verbose?: boolean } = {},
+): Promise<void> {
+  await request<void>(config, dashboardsPath(config.projectId, `${id}/`), {
+    method: "DELETE",
+    verbose: options.verbose,
+  });
+}
