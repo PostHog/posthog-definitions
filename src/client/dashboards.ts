@@ -93,7 +93,8 @@ export async function deleteDashboard(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   await request<void>(config, dashboardsPath(config.projectId, `${id}/`), {
-    method: "DELETE",
+    method: "PATCH",
+    body: { deleted: true },
     verbose: options.verbose,
   });
 }

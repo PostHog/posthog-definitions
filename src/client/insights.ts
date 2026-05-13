@@ -75,7 +75,8 @@ export async function deleteInsight(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   await request<void>(config, insightsPath(config.projectId, `${id}/`), {
-    method: "DELETE",
+    method: "PATCH",
+    body: { deleted: true },
     verbose: options.verbose,
   });
 }
