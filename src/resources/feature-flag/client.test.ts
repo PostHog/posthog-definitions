@@ -69,8 +69,6 @@ describe("ServerFeatureFlagSchema", () => {
   });
 
   it("throws when `id` has the wrong type", () => {
-    expect(() =>
-      ServerFeatureFlagSchema.parse({ ...realFixture, id: "not-a-number" }),
-    ).toThrow();
+    expect(() => ServerFeatureFlagSchema.parse({ ...realFixture, id: "not-a-number" })).toThrow();
   });
 });

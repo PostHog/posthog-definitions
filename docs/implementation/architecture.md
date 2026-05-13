@@ -35,14 +35,14 @@
 
 ## Boundaries
 
-| Component | Responsibility | Talks to |
-|---|---|---|
-| **SDK** (`@posthog/definitions`) | Define types and constructors. Returns plain objects. No I/O. | Nothing. Pure. |
-| **Loader** | Discover and import user files. Collect default exports. | Filesystem + TS runtime. |
-| **Validator** | Run structural checks before any API call. | Nothing. Pure on the loaded spec graph. |
-| **API client** | Typed wrapper over PostHog's REST API. Generated from OpenAPI. | PostHog API. |
-| **Differ** | Compare desired (from user files) vs current (from API). Produce an operation list. | Reads from API client. |
-| **Executor** | Apply the operation list. Order ops correctly. Stop on first error. | API client. |
+| Component                        | Responsibility                                                                      | Talks to                                |
+| -------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------- |
+| **SDK** (`@posthog/definitions`) | Define types and constructors. Returns plain objects. No I/O.                       | Nothing. Pure.                          |
+| **Loader**                       | Discover and import user files. Collect default exports.                            | Filesystem + TS runtime.                |
+| **Validator**                    | Run structural checks before any API call.                                          | Nothing. Pure on the loaded spec graph. |
+| **API client**                   | Typed wrapper over PostHog's REST API. Generated from OpenAPI.                      | PostHog API.                            |
+| **Differ**                       | Compare desired (from user files) vs current (from API). Produce an operation list. | Reads from API client.                  |
+| **Executor**                     | Apply the operation list. Order ops correctly. Stop on first error.                 | API client.                             |
 
 The loader, validator, differ, and executor are independent and tested in isolation. The differ never makes mutations; the executor never reads beyond what the differ told it to do.
 
@@ -71,12 +71,12 @@ PostHog already publishes an OpenAPI spec via drf-spectacular. The CLI uses that
 
 ## Why a custom CLI and not Terraform
 
-| Concern | Terraform | This CLI |
-|---|---|---|
-| Identity | `.tfstate` file (lockable, lossy) | Tag on the resource (`iac:key=...`) |
-| Authoring language | HCL | TypeScript |
-| Audience | Infra teams | App developers |
-| Dev loop | `plan` / `apply` | `apply` (one-shot, idempotent) |
-| Codegen for callers | None | Possible (typed flag keys, etc.) post-MVP |
+| Concern             | Terraform                         | This CLI                                  |
+| ------------------- | --------------------------------- | ----------------------------------------- |
+| Identity            | `.tfstate` file (lockable, lossy) | Tag on the resource (`iac:key=...`)       |
+| Authoring language  | HCL                               | TypeScript                                |
+| Audience            | Infra teams                       | App developers                            |
+| Dev loop            | `plan` / `apply`                  | `apply` (one-shot, idempotent)            |
+| Codegen for callers | None                              | Possible (typed flag keys, etc.) post-MVP |
 
 The state file is the single biggest reason to avoid Terraform here. Tagging the resource works because PostHog already supports tags on dashboards and insights.

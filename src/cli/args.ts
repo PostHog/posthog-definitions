@@ -121,7 +121,10 @@ function parsePull(argv: string[]): PullArgs {
         break;
       case "--kind": {
         const value = expectValue(argv, ++i, flag);
-        const kinds = value.split(",").map((s) => s.trim()).filter(Boolean);
+        const kinds = value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
         for (const k of kinds) {
           if (!SUPPORTED_PULL_KINDS.includes(k as PullKind)) {
             throw new ArgError(

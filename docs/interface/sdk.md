@@ -19,12 +19,12 @@ The CLI discovers files via glob (`posthog/**/*.ts`). Each file must `export def
 
 ```ts
 type Dashboard = {
-  key: string;                              // stable identity (required)
+  key: string; // stable identity (required)
   name: string;
   description?: string;
   pinned?: boolean;
   tags?: string[];
-  filters?: Filters;                        // dashboard-level filter scope
+  filters?: Filters; // dashboard-level filter scope
   variables?: Record<string, unknown>;
   restriction?: "everyone" | "collaborators";
   breakdownColors?: Array<{ value: string; color: string }>;
@@ -42,7 +42,7 @@ type Insight = {
   key: string;
   name: string;
   description?: string;
-  query: Node;                              // typed against posthog.schema
+  query: Node; // typed against posthog.schema
 };
 ```
 
@@ -52,15 +52,15 @@ Insights can be defined inline inside a dashboard's `tiles`, or in their own fil
 
 Thin typed wrappers over the generated `posthog.schema` types. They add `kind` so users don't have to.
 
-| Constructor | Returns | Notes |
-|---|---|---|
-| `trends(spec)` | `TrendsQuery` | series + interval + dateRange + breakdown |
-| `funnel(spec)` | `FunnelsQuery` | step series + conversion window |
-| `retention(spec)` | `RetentionQuery` | post-MVP |
-| `paths(spec)` | `PathsQuery` | post-MVP |
-| `stickiness(spec)` | `StickinessQuery` | post-MVP |
-| `lifecycle(spec)` | `LifecycleQuery` | post-MVP |
-| `hogql(query)` | `HogQLQuery` | raw HogQL escape hatch |
+| Constructor        | Returns           | Notes                                     |
+| ------------------ | ----------------- | ----------------------------------------- |
+| `trends(spec)`     | `TrendsQuery`     | series + interval + dateRange + breakdown |
+| `funnel(spec)`     | `FunnelsQuery`    | step series + conversion window           |
+| `retention(spec)`  | `RetentionQuery`  | post-MVP                                  |
+| `paths(spec)`      | `PathsQuery`      | post-MVP                                  |
+| `stickiness(spec)` | `StickinessQuery` | post-MVP                                  |
+| `lifecycle(spec)`  | `LifecycleQuery`  | post-MVP                                  |
+| `hogql(query)`     | `HogQLQuery`      | raw HogQL escape hatch                    |
 
 MVP ships `trends` and `hogql`. The rest land as soon as the schema is exposed; they require no new SDK plumbing — just typed wrappers.
 
@@ -68,14 +68,23 @@ MVP ships `trends` and `hogql`. The rest land as soon as the schema is exposed; 
 
 ```ts
 type Tile =
-  | { insight: Insight; layout: Layout;
-      color?: string; filtersOverride?: Filters;
-      showDescription?: boolean; transparent?: boolean }
-  | { kind: "text";   body: string; layout: Layout }
-  | { kind: "button"; url: string; text: string;
+  | {
+      insight: Insight;
+      layout: Layout;
+      color?: string;
+      filtersOverride?: Filters;
+      showDescription?: boolean;
+      transparent?: boolean;
+    }
+  | { kind: "text"; body: string; layout: Layout }
+  | {
+      kind: "button";
+      url: string;
+      text: string;
       placement?: "left" | "right";
       style?: "primary" | "secondary";
-      layout: Layout };
+      layout: Layout;
+    };
 
 type Layout = { x: number; y: number; w: number; h: number };
 ```

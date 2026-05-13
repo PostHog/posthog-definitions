@@ -49,12 +49,15 @@ export default dashboard({
    - `endpoint:read`, `endpoint:write`
 
    Then add it (and your numeric project ID) to a `.env` (or `.envrc`) file:
+
    ```
    POSTHOG_PERSONAL_API_KEY=phx_...
    POSTHOG_PROJECT_ID=000000
    # POSTHOG_HOST=https://eu.posthog.com   # optional, defaults to us.posthog.com
    ```
+
    See `.envrc.example` in the repo for a copy-paste starting point.
+
 2. **Write definitions** as `.ts` files under `posthog/`.
 3. **Preview the plan** — diff your files against the live project, no writes:
    ```

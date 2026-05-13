@@ -1,17 +1,9 @@
 import { RESOURCES } from "../resources/index.js";
-import type {
-  DesiredState,
-  ResourceDiff,
-  ResourceModule,
-  ResourceOp,
-} from "../resources/types.js";
+import type { DesiredState, ResourceDiff, ResourceModule, ResourceOp } from "../resources/types.js";
 
 export type DiffResult = Map<string, ResourceDiff<unknown, unknown>>;
 
-export function diff(
-  desired: DesiredState,
-  current: Map<string, unknown[]>,
-): DiffResult {
+export function diff(desired: DesiredState, current: Map<string, unknown[]>): DiffResult {
   const result: DiffResult = new Map();
   for (const resource of RESOURCES) {
     result.set(resource.name, diffOne(resource, desired, current));

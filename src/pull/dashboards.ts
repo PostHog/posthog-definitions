@@ -2,11 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { isManagedTag } from "../apply/display.js";
 import type { ClientConfig } from "../client/config.js";
-import {
-  getDashboard,
-  listDashboards,
-  updateDashboard,
-} from "../resources/dashboard/client.js";
+import { getDashboard, listDashboards, updateDashboard } from "../resources/dashboard/client.js";
 import { dashboardTag } from "../resources/dashboard/pipeline.js";
 import { getInsight, updateInsight } from "../resources/insight/client.js";
 import { insightTag } from "../resources/insight/pipeline.js";
@@ -79,12 +75,7 @@ export async function pullDashboards(
       const tile = detail.tiles?.find((t) => t.insight?.id === serverId);
       const existingTags = (tile?.insight as { tags?: string[] } | null | undefined)?.tags;
       const newInsightTags = withManagedTag(existingTags, insightTag(key));
-      await updateInsight(
-        config,
-        serverId,
-        { tags: newInsightTags },
-        { verbose: options.verbose },
-      );
+      await updateInsight(config, serverId, { tags: newInsightTags }, { verbose: options.verbose });
       taggedInsightIds.add(serverId);
       insightsTagged++;
     }

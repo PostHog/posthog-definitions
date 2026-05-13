@@ -1,9 +1,5 @@
 import { RESOURCES } from "../resources/index.js";
-import type {
-  ApplyContext,
-  ResourceModule,
-  ResourceOp,
-} from "../resources/types.js";
+import type { ApplyContext, ResourceModule, ResourceOp } from "../resources/types.js";
 import { newApplyContext } from "../resources/types.js";
 import { renderLines, type DisplayValue } from "./display.js";
 import type { DiffResult } from "./diff.js";
@@ -29,13 +25,23 @@ function ansi(code: number): Style {
 function pickPalette(useColor: boolean): Palette {
   if (!useColor) {
     return {
-      bold: IDENTITY, dim: IDENTITY, red: IDENTITY, green: IDENTITY,
-      yellow: IDENTITY, blue: IDENTITY, cyan: IDENTITY,
+      bold: IDENTITY,
+      dim: IDENTITY,
+      red: IDENTITY,
+      green: IDENTITY,
+      yellow: IDENTITY,
+      blue: IDENTITY,
+      cyan: IDENTITY,
     };
   }
   return {
-    bold: ansi(1), dim: ansi(2), red: ansi(31), green: ansi(32),
-    yellow: ansi(33), blue: ansi(34), cyan: ansi(36),
+    bold: ansi(1),
+    dim: ansi(2),
+    red: ansi(31),
+    green: ansi(32),
+    yellow: ansi(33),
+    blue: ansi(34),
+    cyan: ansi(36),
   };
 }
 
@@ -171,10 +177,7 @@ function renderDiff(before: string[], after: string[], p: Palette): string[] {
   });
 }
 
-function lcsDiff(
-  a: string[],
-  b: string[],
-): Array<{ kind: "eq" | "del" | "add"; value: string }> {
+function lcsDiff(a: string[], b: string[]): Array<{ kind: "eq" | "del" | "add"; value: string }> {
   const n = a.length;
   const m = b.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));

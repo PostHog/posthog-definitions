@@ -5,7 +5,7 @@ description: Add support for a new PostHog resource type (feature flag, cohort, 
 
 # Adding a new resource to posthog-definitions
 
-This skill is the playbook for extending posthog-definitions with a new PostHog resource type. It covers the *what to change and why*, not the line-by-line code — copy the existing dashboard/insight pair as a reference and adapt.
+This skill is the playbook for extending posthog-definitions with a new PostHog resource type. It covers the _what to change and why_, not the line-by-line code — copy the existing dashboard/insight pair as a reference and adapt.
 
 ## When to use
 
@@ -32,7 +32,7 @@ Then read both existing implementations side by side. The insight implementation
 - `src/resources/insight/pipeline.ts` — tag/key/hash/payload, validate, execute, prune, and display functions.
 - `src/resources/insight/index.ts` — public exports plus the `insightResource` registration object.
 
-If the new resource has *references to other resources* (the way dashboards reference insights via tiles), study the dashboard pair as well — it shows the cross-resource id resolution pattern (`ctx.insightIdByKey`, populated by the insight module's executor and read by the dashboard module).
+If the new resource has _references to other resources_ (the way dashboards reference insights via tiles), study the dashboard pair as well — it shows the cross-resource id resolution pattern (`ctx.insightIdByKey`, populated by the insight module's executor and read by the dashboard module).
 
 ## The safety invariant (non-negotiable)
 
@@ -74,14 +74,14 @@ src/resources/foo/
 
 For a hypothetical resource `Foo` (substitute the real noun), here is the per-file content. Order matters — earlier files' types feed later ones.
 
-| # | File | What it contains |
-|---|------|------------------|
-| 1 | `src/resources/foo/sdk.ts` | The `Foo` user-facing type and the `foo(spec): Foo` factory helper. |
-| 2 | `src/resources/foo/client.ts` | `ServerFooSchema` (Zod, with `ServerFoo` derived via `z.infer`) + `list/get/create/update` HTTP wrappers that `.parse()` every response. `listManagedFoos` filters by `iac:foos:` tag. |
-| 3 | `src/resources/foo/pipeline.ts` | `fooTag(key)`, `fooKeyFromTags(tags)`, `fooHashFromTags(tags)`, `looksLikeFoo(value)`, `fooHash(spec)`, `fooPayload(spec, hash)`, `validateFoos(specs, state)`, `assertManagedFoo` (private), `runFooOp(config, op, ctx, options)`, `pruneFoo(config, orphan, options)`, `displayFoo(spec)`, `displayFooFromServer(server)`. |
-| 4 | `src/resources/foo/index.ts` | Re-export `foo` and `Foo` for users; export a `fooResource` registration object that the generic pipeline picks up. |
-| 5 | `src/resources/index.ts` | Add `fooResource` to the `RESOURCES` array. |
-| 6 | `src/index.ts` | Re-export `foo` and the `Foo` type for SDK users. |
+| #   | File                            | What it contains                                                                                                                                                                                                                                                                                                             |
+| --- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `src/resources/foo/sdk.ts`      | The `Foo` user-facing type and the `foo(spec): Foo` factory helper.                                                                                                                                                                                                                                                          |
+| 2   | `src/resources/foo/client.ts`   | `ServerFooSchema` (Zod, with `ServerFoo` derived via `z.infer`) + `list/get/create/update` HTTP wrappers that `.parse()` every response. `listManagedFoos` filters by `iac:foos:` tag.                                                                                                                                       |
+| 3   | `src/resources/foo/pipeline.ts` | `fooTag(key)`, `fooKeyFromTags(tags)`, `fooHashFromTags(tags)`, `looksLikeFoo(value)`, `fooHash(spec)`, `fooPayload(spec, hash)`, `validateFoos(specs, state)`, `assertManagedFoo` (private), `runFooOp(config, op, ctx, options)`, `pruneFoo(config, orphan, options)`, `displayFoo(spec)`, `displayFooFromServer(server)`. |
+| 4   | `src/resources/foo/index.ts`    | Re-export `foo` and `Foo` for users; export a `fooResource` registration object that the generic pipeline picks up.                                                                                                                                                                                                          |
+| 5   | `src/resources/index.ts`        | Add `fooResource` to the `RESOURCES` array.                                                                                                                                                                                                                                                                                  |
+| 6   | `src/index.ts`                  | Re-export `foo` and the `Foo` type for SDK users.                                                                                                                                                                                                                                                                            |
 
 Each resource is fully self-contained: SDK types live next to its `sdk.ts`, never in a shared `sdk/` directory. If two resources need to share a type, the dependent resource imports from the producer's `sdk.ts` directly (the way dashboard tiles import `Insight` from `src/resources/insight/sdk.ts`). Generic pipeline orchestration (hash, file load, the apply driver, plan formatter) stays in `src/apply/`. The CLI does not change — it iterates the registry.
 
@@ -125,7 +125,7 @@ Match the existing convention: lowercase, plural, colon-separated. The slug beco
 
 ### API response validation with Zod
 
-New resources must validate every response from the PostHog API with a Zod schema. The PostHog API is the only external boundary in this codebase and is the right place to fail loudly when the shape we expect drifts. Casting `JSON.parse(text) as ServerFoo` (what the dashboard/insight client modules still do, via `request<T>` in `src/client/http.ts`) is the *legacy* path — do not extend it. Those two will be migrated to Zod separately; new resources start on the validated path.
+New resources must validate every response from the PostHog API with a Zod schema. The PostHog API is the only external boundary in this codebase and is the right place to fail loudly when the shape we expect drifts. Casting `JSON.parse(text) as ServerFoo` (what the dashboard/insight client modules still do, via `request<T>` in `src/client/http.ts`) is the _legacy_ path — do not extend it. Those two will be migrated to Zod separately; new resources start on the validated path.
 
 If `zod` is not yet in `package.json`, add it: `pnpm add zod`. One-time cost for the first resource that adopts this.
 
@@ -134,13 +134,15 @@ Pattern for `src/resources/foo/client.ts`:
 ```ts
 import { z } from "zod";
 
-export const ServerFooSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  description: z.string().nullable().optional(),
-  tags: z.array(z.string()).default([]),
-  // … only the fields posthog-definitions actually reads
-}).passthrough();
+export const ServerFooSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    tags: z.array(z.string()).default([]),
+    // … only the fields posthog-definitions actually reads
+  })
+  .passthrough();
 
 export type ServerFoo = z.infer<typeof ServerFooSchema>;
 
@@ -156,13 +158,13 @@ Then in every wrapper, `.parse()` the response before returning. A failure surfa
 Rules of thumb:
 
 - **Use `.passthrough()` on the root object.** The PostHog API returns dozens of fields per resource; only schema the ones posthog-definitions reads. `.passthrough()` keeps unknown fields without making them part of the type.
-- **Be strict on the fields you *do* read.** No `z.unknown()` or `z.any()` for those — that defeats the whole point.
+- **Be strict on the fields you _do_ read.** No `z.unknown()` or `z.any()` for those — that defeats the whole point.
 - **Mirror server nullability faithfully.** PostHog often returns `null` rather than omitting a field. Use `.nullable()` (allows `null`) vs `.optional()` (allows missing) deliberately — they mean different things on the wire.
 - **No defaults that mask bugs.** Use `.default([])` only when the API genuinely may omit the field; otherwise let the parse fail.
 - **Parse, don't `safeParse` in the happy path.** A schema failure is a bug (ours or PostHog's), not a recoverable runtime condition. Let it throw; the CLI's existing error handling will surface it.
 - **Inline-validate the paginated wrapper too.** `paginate<T>` in `src/client/http.ts` currently casts — wrap it for new resources by parsing the page schema at the call site.
 
-What *not* to schema:
+What _not_ to schema:
 
 - Outgoing request bodies. They are constructed from typed `Foo` specs we already control; Zod adds nothing.
 - Response fields posthog-definitions never reads. Keeping them in `.passthrough()` is enough.
@@ -180,7 +182,7 @@ If hashing misses a field, that field will silently fail to sync on update. If i
 
 ### Cross-resource references
 
-If `Foo` references another resource by key (e.g. a survey references a feature flag), do **not** include the referenced server id in the hash — it is environment-specific. Include the *key* and resolve to the id at execute time, the way dashboards resolve insight ids via `insightIdByKey` in the legacy `src/apply/execute.ts`.
+If `Foo` references another resource by key (e.g. a survey references a feature flag), do **not** include the referenced server id in the hash — it is environment-specific. Include the _key_ and resolve to the id at execute time, the way dashboards resolve insight ids via `insightIdByKey` in the legacy `src/apply/execute.ts`.
 
 Plan the execute ordering: dependencies must be created before dependents. The simplest model is two passes: create all `Foo`s first if other resources reference them, then move on.
 
@@ -278,7 +280,7 @@ For a new resource `Foo`, add `src/resources/foo/pipeline.test.ts` covering:
 2. `unchanged` when desired hash matches the server's `iac:hash:` tag.
 3. `update` when the server hash differs.
 4. `orphan` when a server row has `iac:foos:<key>` but no matching spec.
-5. **Safety invariant:** a server row without any `iac:*` tag produces zero ops *and* zero orphans. This is the test that protects hand-built resources in a shared project.
+5. **Safety invariant:** a server row without any `iac:*` tag produces zero ops _and_ zero orphans. This is the test that protects hand-built resources in a shared project.
 
 The factory pattern (`serverRow` in either `pipeline.test.ts`) builds a server row with the right `iac:foos:<key>` and `iac:hash:<hex>` tags — copy it. The hash for "unchanged" cases must come from `fooHash`; call it from the test rather than hard-coding a hex.
 
@@ -303,8 +305,8 @@ Unit tests catch the easy failures; the manual flow catches everything else. Run
 4. `npx posthog-definitions apply`. Confirm the resource appears in the PostHog UI with the `iac:foos:<key>` and `iac:hash:<hex>` tags.
 5. Run `apply` again with no changes. The plan must show `0 to create · 0 to update · N unchanged` for the new resource. **If even one row is "to update" on a no-op apply, the hash projection is wrong** — fix it before moving on.
 6. Edit the spec, re-apply. Confirm an `update` op.
-7. Delete the spec file, re-apply. Confirm the resource appears as an *orphan* (left alone, not deleted — MVP doesn't do deletes).
-8. Manually create a *hand-built* `Foo` in the UI without any `iac:` tags. Re-apply. Confirm the hand-built one is untouched.
+7. Delete the spec file, re-apply. Confirm the resource appears as an _orphan_ (left alone, not deleted — MVP doesn't do deletes).
+8. Manually create a _hand-built_ `Foo` in the UI without any `iac:` tags. Re-apply. Confirm the hand-built one is untouched.
 
 The last step is the safety invariant smoke test. Do not skip it.
 

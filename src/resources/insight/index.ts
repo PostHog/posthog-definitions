@@ -15,14 +15,7 @@ import {
 import { listManagedInsights, type ServerInsight } from "./client.js";
 
 export { insight, trends, hogql } from "./sdk.js";
-export type {
-  Insight,
-  Query,
-  TrendsQuery,
-  HogQLQuery,
-  EventsNode,
-  InsightVizNode,
-} from "./sdk.js";
+export type { Insight, Query, TrendsQuery, HogQLQuery, EventsNode, InsightVizNode } from "./sdk.js";
 
 export const insightResource: ResourceModule<Insight, ServerInsight> = {
   name: "insights",

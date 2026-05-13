@@ -29,7 +29,8 @@ function formatMeta(meta: Record<string, unknown>): string {
 }
 
 function formatValue(v: unknown): string {
-  if (typeof v === "string") return v.length > 80 ? JSON.stringify(v.slice(0, 77) + "…") : JSON.stringify(v);
+  if (typeof v === "string")
+    return v.length > 80 ? JSON.stringify(v.slice(0, 77) + "…") : JSON.stringify(v);
   if (v instanceof Error) return JSON.stringify(v.message);
   return JSON.stringify(v);
 }

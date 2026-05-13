@@ -95,7 +95,9 @@ function reportDashboards(
 ): void {
   const target = path.join(path.resolve(dir), "dashboards");
   if (dryRun) {
-    console.log(`Dry run — ${result.skipped.length} dashboard file(s) would be written to ${target}/`);
+    console.log(
+      `Dry run — ${result.skipped.length} dashboard file(s) would be written to ${target}/`,
+    );
     for (const f of result.skipped) console.log(`  would write ${path.relative(process.cwd(), f)}`);
     console.log("Server tags would not change (dry run).");
   } else {

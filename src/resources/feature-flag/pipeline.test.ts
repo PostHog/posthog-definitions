@@ -16,12 +16,7 @@ function spec(key: string, overrides: Partial<FeatureFlag> = {}): FeatureFlag {
   };
 }
 
-function serverRow(
-  id: number,
-  key: string,
-  hash: string,
-  extra: string[] = [],
-): ServerFeatureFlag {
+function serverRow(id: number, key: string, hash: string, extra: string[] = []): ServerFeatureFlag {
   return {
     id,
     key,
@@ -36,7 +31,10 @@ function desiredFor(flags: FeatureFlag[]): DesiredState {
   const state: DesiredState = new Map();
   state.set("insights", []);
   state.set("dashboards", []);
-  state.set("feature-flags", flags.map((spec) => ({ path: "<test>", spec })));
+  state.set(
+    "feature-flags",
+    flags.map((spec) => ({ path: "<test>", spec })),
+  );
   return state;
 }
 
@@ -140,7 +138,9 @@ describe("feature flag validation", () => {
         filters: {
           groups: [
             {
-              properties: [{ key: "42", type: "flag", operator: "flag_evaluates_to", value: "true" }],
+              properties: [
+                { key: "42", type: "flag", operator: "flag_evaluates_to", value: "true" },
+              ],
               rollout_percentage: 100,
             },
           ],

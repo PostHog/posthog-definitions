@@ -100,11 +100,7 @@ export interface ResourceModule<TSpec = unknown, TServer = unknown> {
     options?: { verbose?: boolean },
   ): Promise<void>;
 
-  prune(
-    config: ClientConfig,
-    orphan: TServer,
-    options?: { verbose?: boolean },
-  ): Promise<boolean>;
+  prune(config: ClientConfig, orphan: TServer, options?: { verbose?: boolean }): Promise<boolean>;
 
   displaySpec(spec: TSpec, ctx: ApplyContext): DisplayValue;
   displayServer(server: TServer, ctx: ApplyContext): DisplayValue;

@@ -90,11 +90,15 @@ export function generateDashboardFile(
       tileLiterals.push(renderTextTile(tile));
       continue;
     }
-    warnings.push(`Skipped tile id=${tile.id ?? "?"}: unrecognized tile shape (no insight, no text).`);
+    warnings.push(
+      `Skipped tile id=${tile.id ?? "?"}: unrecognized tile shape (no insight, no text).`,
+    );
   }
 
   if (tileLiterals.length === 0) {
-    warnings.push(`Dashboard "${server.name}" (id=${server.id}) has no recognizable tiles; output may not pass validation.`);
+    warnings.push(
+      `Dashboard "${server.name}" (id=${server.id}) has no recognizable tiles; output may not pass validation.`,
+    );
   }
 
   const dashboardSpec: Record<string, string> = {

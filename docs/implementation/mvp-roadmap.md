@@ -6,16 +6,16 @@
 
 ## Cut scope — explicit non-goals for MVP
 
-| Feature | Why deferred |
-|---|---|
-| `dev` watch mode | Useful but not required to prove the loop works. Add after `apply` is solid. |
-| `pull` command | Requires the same diff logic in reverse; ship `apply` first. |
-| Delete on removal | Risky default. Ship `--prune` later, opt-in only. |
-| Multi-environment configs | One project per CLI invocation covers the common case via `--project`. |
-| Feature flags, actions, cohorts | Different data models. Each is a separate sprint. |
-| Query types beyond `trends` and `hogql` | Each is a typed wrapper, additive. Trends covers ~70% of demo cases. |
-| Drift detection on UI edits | Strictly post-MVP; needs a UX decision. |
-| Automated test suite | MVP verifies by running `apply` against a dev project. Backfill tests once the loop is shipping. |
+| Feature                                 | Why deferred                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `dev` watch mode                        | Useful but not required to prove the loop works. Add after `apply` is solid.                     |
+| `pull` command                          | Requires the same diff logic in reverse; ship `apply` first.                                     |
+| Delete on removal                       | Risky default. Ship `--prune` later, opt-in only.                                                |
+| Multi-environment configs               | One project per CLI invocation covers the common case via `--project`.                           |
+| Feature flags, actions, cohorts         | Different data models. Each is a separate sprint.                                                |
+| Query types beyond `trends` and `hogql` | Each is a typed wrapper, additive. Trends covers ~70% of demo cases.                             |
+| Drift detection on UI edits             | Strictly post-MVP; needs a UX decision.                                                          |
+| Automated test suite                    | MVP verifies by running `apply` against a dev project. Backfill tests once the loop is shipping. |
 
 ## Sequenced plan
 

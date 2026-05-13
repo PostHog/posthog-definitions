@@ -56,7 +56,7 @@ function withMarker(userDescription: string | undefined, key: string, hash: stri
 export function stripMarker(description: string | null | undefined): string | null {
   if (!description) return null;
   const parsed = parseMarker(description);
-  return parsed ? (parsed.userDescription || null) : description;
+  return parsed ? parsed.userDescription || null : description;
 }
 
 export function endpointKeyFromServer(server: ServerEndpoint): string | undefined {
@@ -94,8 +94,10 @@ export function endpointPayload(spec: Endpoint, hash: string): EndpointCreate {
   };
   if (spec.is_active !== undefined) payload.is_active = spec.is_active;
   if (spec.is_materialized !== undefined) payload.is_materialized = spec.is_materialized;
-  if (spec.derived_from_insight !== undefined) payload.derived_from_insight = spec.derived_from_insight;
-  if (spec.data_freshness_seconds !== undefined) payload.data_freshness_seconds = spec.data_freshness_seconds;
+  if (spec.derived_from_insight !== undefined)
+    payload.derived_from_insight = spec.derived_from_insight;
+  if (spec.data_freshness_seconds !== undefined)
+    payload.data_freshness_seconds = spec.data_freshness_seconds;
   if (spec.bucket_overrides !== undefined) payload.bucket_overrides = spec.bucket_overrides;
   return payload;
 }
@@ -116,9 +118,7 @@ export function validateEndpoints(specs: Endpoint[]): string[] {
     if (!spec.name) issues.push(`endpoint "${spec.key}" name is required`);
     if (!spec.query) issues.push(`endpoint "${spec.key}" is missing query`);
     if (spec.name && !NAME_PATTERN.test(spec.name)) {
-      issues.push(
-        `endpoint "${spec.key}" name "${spec.name}" must match ${NAME_PATTERN.source}`,
-      );
+      issues.push(`endpoint "${spec.key}" name "${spec.name}" must match ${NAME_PATTERN.source}`);
     }
     if (spec.name && spec.name.length > 128) {
       issues.push(`endpoint "${spec.key}" name exceeds 128 characters`);

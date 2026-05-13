@@ -24,6 +24,7 @@ Same approach for insights, keyed by `iac:insights:<key>`.
 ## Why a tag and not a separate field
 
 PostHog dashboards already have tags as a first-class concept. Reusing them avoids:
+
 - A schema migration (no new column).
 - A versioning question (no new field to maintain compatibility around).
 - A new endpoint (existing tag filtering works).

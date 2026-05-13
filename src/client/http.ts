@@ -112,7 +112,9 @@ async function attemptOnce<T>(
     const elapsed = Date.now() - startedAt;
     if (debug) {
       const note = isTimeoutError(err) ? ` (hit ${timeoutMs}ms timeout)` : "";
-      console.error(`[http] ✗ ${method} ${url.toString()} after ${elapsed}ms — ${reason(err)}${note}`);
+      console.error(
+        `[http] ✗ ${method} ${url.toString()} after ${elapsed}ms — ${reason(err)}${note}`,
+      );
     }
     throw err;
   }

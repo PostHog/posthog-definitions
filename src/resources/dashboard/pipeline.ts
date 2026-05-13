@@ -10,7 +10,12 @@ import {
   type DisplayValue,
 } from "../../apply/display.js";
 import { SafetyViolationError } from "../../apply/safety.js";
-import { getResourceKind, type ApplyContext, type DesiredState, type ResourceOp } from "../types.js";
+import {
+  getResourceKind,
+  type ApplyContext,
+  type DesiredState,
+  type ResourceOp,
+} from "../types.js";
 import type { Insight } from "../insight/sdk.js";
 import {
   type ButtonTile,
@@ -117,7 +122,10 @@ function serializeInsightTile(tile: InsightTile, insightIdByKey: Map<string, num
     insight: { id },
     layouts: layoutsFor(tile.layout),
     ...(tile.color !== undefined && { color: tile.color }),
-    ...(tile.filtersOverride !== undefined && { filters_hash: null, filters: tile.filtersOverride }),
+    ...(tile.filtersOverride !== undefined && {
+      filters_hash: null,
+      filters: tile.filtersOverride,
+    }),
   };
 }
 
@@ -182,7 +190,9 @@ function validateLayout(issues: string[], where: string, layout: Layout | undefi
   if (layout.x < 0 || layout.y < 0) issues.push(`${where}: layout x/y must be >= 0`);
   if (layout.w <= 0 || layout.h <= 0) issues.push(`${where}: layout w/h must be > 0`);
   if (layout.x + layout.w > GRID_WIDTH) {
-    issues.push(`${where}: layout overflows the ${GRID_WIDTH}-column grid (x=${layout.x}, w=${layout.w})`);
+    issues.push(
+      `${where}: layout overflows the ${GRID_WIDTH}-column grid (x=${layout.x}, w=${layout.w})`,
+    );
   }
 }
 
@@ -233,7 +243,9 @@ export function validateDashboards(specs: Dashboard[], state: DesiredState): str
   return issues;
 }
 
-export function extractInlineInsights(spec: Dashboard): Array<{ resourceName: string; spec: unknown }> {
+export function extractInlineInsights(
+  spec: Dashboard,
+): Array<{ resourceName: string; spec: unknown }> {
   const out: Array<{ resourceName: string; spec: unknown }> = [];
   for (const tile of spec.tiles) {
     if (isInsightTile(tile)) {
@@ -336,7 +348,10 @@ function displayTileSpec(tile: Tile): DisplayValue {
   return scalar(JSON.stringify(tile));
 }
 
-function displayServerTile(tile: ServerTile, insightKeyByServerId: Map<number, string>): DisplayValue {
+function displayServerTile(
+  tile: ServerTile,
+  insightKeyByServerId: Map<number, string>,
+): DisplayValue {
   if (tile.insight && typeof tile.insight.id === "number") {
     const key = insightKeyByServerId.get(tile.insight.id) ?? `id:${tile.insight.id}`;
     return obj([

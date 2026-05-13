@@ -9,13 +9,13 @@ This skill is the playbook for resources that exist exactly **once per project**
 
 ## When to use this skill vs `add-resource`
 
-| Signal | This skill | `add-resource` |
-|---|---|---|
-| API endpoint | `PATCH /api/projects/<id>/` (no sub-collection) | `POST /api/projects/<id>/<resource>/` |
-| Number of rows per project | exactly 1 | 0..N |
-| User declares | one block (`projectSettings({...})`) | many blocks across many files |
-| Has a writable `tags` field | usually no | yes (required) |
-| Can be deleted | no — always exists | yes |
+| Signal                      | This skill                                      | `add-resource`                        |
+| --------------------------- | ----------------------------------------------- | ------------------------------------- |
+| API endpoint                | `PATCH /api/projects/<id>/` (no sub-collection) | `POST /api/projects/<id>/<resource>/` |
+| Number of rows per project  | exactly 1                                       | 0..N                                  |
+| User declares               | one block (`projectSettings({...})`)            | many blocks across many files         |
+| Has a writable `tags` field | usually no                                      | yes (required)                        |
+| Can be deleted              | no — always exists                              | yes                                   |
 
 If you're unsure: list the API. If you GET a single object (not a paginated list of objects), it's a singleton. If you'd need a `key` field on the spec to tell two of them apart in code, it's not.
 
@@ -31,7 +31,7 @@ Then re-read the legacy insight pair (`src/sdk/insight.ts`, `src/client/insights
 
 ## The safety story (no tags — fundamentally different)
 
-Collection resources protect hand-built rows with a tag invariant: *if it doesn't have my tag, I don't touch it.* That mechanism is unavailable here — the project always exists, and we always have to write to it.
+Collection resources protect hand-built rows with a tag invariant: _if it doesn't have my tag, I don't touch it._ That mechanism is unavailable here — the project always exists, and we always have to write to it.
 
 Singletons instead enforce a **field-scoping invariant:**
 
@@ -64,14 +64,14 @@ src/resources/<singleton>/
 
 Note: there is no `serialize` step in the same sense — payload construction is "spread the declared keys" — but it's tiny, so it goes in `pipeline.ts` rather than its own file.
 
-| # | File | What it contains |
-|---|------|------------------|
-| 1 | `src/resources/<singleton>/sdk.ts` | The `XSettings` (or similar) user-facing type and the `xSettings(spec): XSettings` factory. The spec type is a `Partial` over the full configurable surface. |
-| 2 | `src/resources/<singleton>/client.ts` | `ServerXSchema` (Zod) + `getX(config)` and `patchX(config, partial)` wrappers. No `list*` — there's nothing to list. |
-| 3 | `src/resources/<singleton>/pipeline.ts` | `validateX(spec)`, `XDiff` shape (per-field), `diffX(spec, server)`, `runXOp(config, op)`, `renderXOp(op)`, `xPayload(spec)`. |
-| 4 | `src/resources/<singleton>/index.ts` | Re-export `xSettings` and `XSettings`; export an `xResource` registration object. |
-| 5 | `src/resources/index.ts` | Add `xResource` to the `RESOURCES` array. |
-| 6 | `src/index.ts` | Re-export `xSettings` and `XSettings`. |
+| #   | File                                    | What it contains                                                                                                                                             |
+| --- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `src/resources/<singleton>/sdk.ts`      | The `XSettings` (or similar) user-facing type and the `xSettings(spec): XSettings` factory. The spec type is a `Partial` over the full configurable surface. |
+| 2   | `src/resources/<singleton>/client.ts`   | `ServerXSchema` (Zod) + `getX(config)` and `patchX(config, partial)` wrappers. No `list*` — there's nothing to list.                                         |
+| 3   | `src/resources/<singleton>/pipeline.ts` | `validateX(spec)`, `XDiff` shape (per-field), `diffX(spec, server)`, `runXOp(config, op)`, `renderXOp(op)`, `xPayload(spec)`.                                |
+| 4   | `src/resources/<singleton>/index.ts`    | Re-export `xSettings` and `XSettings`; export an `xResource` registration object.                                                                            |
+| 5   | `src/resources/index.ts`                | Add `xResource` to the `RESOURCES` array.                                                                                                                    |
+| 6   | `src/index.ts`                          | Re-export `xSettings` and `XSettings`.                                                                                                                       |
 
 ### Identity (or rather, the lack of it)
 
@@ -86,14 +86,16 @@ Same rules as `add-resource` — every response goes through a Zod schema with `
 ```ts
 import { z } from "zod";
 
-export const ServerXSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  timezone: z.string(),
-  week_start_day: z.number().int().min(0).max(6),
-  autocapture_opt_out: z.boolean().nullable(),
-  // … only the declarable fields
-}).passthrough();
+export const ServerXSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    timezone: z.string(),
+    week_start_day: z.number().int().min(0).max(6),
+    autocapture_opt_out: z.boolean().nullable(),
+    // … only the declarable fields
+  })
+  .passthrough();
 
 export type ServerX = z.infer<typeof ServerXSchema>;
 ```
@@ -104,11 +106,11 @@ If a declarable field is `null`-on-the-wire, mirror that with `.nullable()`. The
 
 Three states need to stay distinct:
 
-| Where | State | Meaning |
-|---|---|---|
-| User spec | field absent (`undefined`) | "I do not manage this." Field is excluded from PATCH and from the diff. |
-| User spec | field present with a value, including `null` | "Set the server field to this value." Included in PATCH and diff. |
-| Server response | `null` | The field is unset on the server. |
+| Where           | State                                        | Meaning                                                                 |
+| --------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
+| User spec       | field absent (`undefined`)                   | "I do not manage this." Field is excluded from PATCH and from the diff. |
+| User spec       | field present with a value, including `null` | "Set the server field to this value." Included in PATCH and diff.       |
+| Server response | `null`                                       | The field is unset on the server.                                       |
 
 The factory accepts `field?: T \| null`. The diff treats `undefined` as "skip this field entirely" and `null` as "set to null." Document this in the factory JSDoc — it's the trickiest bit of the surface.
 
@@ -123,9 +125,7 @@ type XFieldChange = {
   after: unknown;
 };
 
-type XDiff =
-  | { kind: "unchanged" }
-  | { kind: "patch"; changes: XFieldChange[] };
+type XDiff = { kind: "unchanged" } | { kind: "patch"; changes: XFieldChange[] };
 ```
 
 The diff routine:
@@ -142,7 +142,7 @@ There is **no `iac:hash:*` tag**. The server's current value is the source of tr
 In `pipeline.ts`, export `validateX(spec): string[]`. The validator runs purely on the declared fields. Cover at minimum:
 
 - Each declared field passes its own per-field constraint (timezone is a known string, ratios are 0..1, etc.).
-- Cross-field invariants (if any) hold *only when both fields are declared* — never reject because an undeclared field is "missing." That would violate the field-scoping invariant.
+- Cross-field invariants (if any) hold _only when both fields are declared_ — never reject because an undeclared field is "missing." That would violate the field-scoping invariant.
 
 Push every error into the returned array — the generic pipeline driver aggregates and throws `ValidationError` once.
 
@@ -179,10 +179,10 @@ export { xSettings, type XSettings };
 
 export const xResource = {
   name: "<singleton>",
-  kind: "singleton",          // ← distinguishes from "collection"
-  fetch: getX,                // ← single GET, not a list
-  diff: diffX,                // ← takes (spec, server), returns XDiff
-  execute: runXOp,            // ← PATCH with declared fields only
+  kind: "singleton", // ← distinguishes from "collection"
+  fetch: getX, // ← single GET, not a list
+  diff: diffX, // ← takes (spec, server), returns XDiff
+  execute: runXOp, // ← PATCH with declared fields only
   validate: validateX,
   render: renderXOp,
 } as const;
@@ -224,7 +224,7 @@ Same shape as the collection flow, adapted:
 5. Re-apply with no spec changes. The plan must show `(unchanged)`. **If anything is listed as a field change on a no-op apply, the equality check is wrong** — fix it before moving on.
 6. Edit one declared field, re-apply. Confirm only that one field appears in the PATCH (use `--verbose` to inspect the request body).
 7. Remove a previously-declared field from the spec, re-apply. Confirm the plan is `(unchanged)` — the server value persists. This is the **abandoned-field smoke test**.
-8. Manually change an *undeclared* setting in the UI, re-apply. The CLI must leave it alone. This is the **field-scoping invariant smoke test**.
+8. Manually change an _undeclared_ setting in the UI, re-apply. The CLI must leave it alone. This is the **field-scoping invariant smoke test**.
 
 Steps 7 and 8 are the singleton equivalent of the safety invariant. Do not skip them.
 

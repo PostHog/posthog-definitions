@@ -26,7 +26,10 @@ function serverRow(id: number, key: string, hash: string, extra: string[] = []):
 
 function desiredFor(insights: Insight[]): DesiredState {
   const state: DesiredState = new Map();
-  state.set("insights", insights.map((spec) => ({ path: "<test>", spec })));
+  state.set(
+    "insights",
+    insights.map((spec) => ({ path: "<test>", spec })),
+  );
   state.set("dashboards", []);
   return state;
 }

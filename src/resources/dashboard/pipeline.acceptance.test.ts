@@ -151,7 +151,9 @@ describe("dashboard pipeline (acceptance)", () => {
       expect(pruned).toBe(true);
 
       const afterPrune = await listManagedDashboards(config);
-      expect(afterPrune.find((row) => dashboardKeyFromTags(row.tags) === dashboardKey)).toBe(undefined);
+      expect(afterPrune.find((row) => dashboardKeyFromTags(row.tags) === dashboardKey)).toBe(
+        undefined,
+      );
     });
   });
 });

@@ -10,13 +10,13 @@ $ npx posthog-definitions apply [--dry-run] [--project <id>] [--dir <path>]
 
 ### Flags
 
-| Flag | Default | Description |
-|---|---|---|
-| `--dry-run` | off | Print the diff without making API calls. |
-| `--prune` | off | Delete IaC-tagged resources that no longer have a matching source file. Opt-in. Only touches resources tagged `iac:dashboards:*` / `iac:insights:*` — hand-built resources are never considered. |
-| `--project <id>` | `$POSTHOG_PROJECT_ID` | Target project. |
-| `--dir <path>` | `posthog/` | Directory to scan for definition files. |
-| `--verbose` | off | Print each API call. |
+| Flag             | Default               | Description                                                                                                                                                                                      |
+| ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--dry-run`      | off                   | Print the diff without making API calls.                                                                                                                                                         |
+| `--prune`        | off                   | Delete IaC-tagged resources that no longer have a matching source file. Opt-in. Only touches resources tagged `iac:dashboards:*` / `iac:insights:*` — hand-built resources are never considered. |
+| `--project <id>` | `$POSTHOG_PROJECT_ID` | Target project.                                                                                                                                                                                  |
+| `--dir <path>`   | `posthog/`            | Directory to scan for definition files.                                                                                                                                                          |
+| `--verbose`      | off                   | Print each API call.                                                                                                                                                                             |
 
 ### Behavior
 
@@ -31,12 +31,12 @@ $ npx posthog-definitions apply [--dry-run] [--project <id>] [--dir <path>]
 
 ### Exit codes
 
-| Code | Meaning |
-|---|---|
-| 0 | Apply succeeded; project state matches the definitions. |
-| 1 | Validation failure; nothing was applied. |
-| 2 | API failure mid-apply; partial state may exist on the server. |
-| 3 | Authentication or configuration error; nothing was applied. |
+| Code | Meaning                                                       |
+| ---- | ------------------------------------------------------------- |
+| 0    | Apply succeeded; project state matches the definitions.       |
+| 1    | Validation failure; nothing was applied.                      |
+| 2    | API failure mid-apply; partial state may exist on the server. |
+| 3    | Authentication or configuration error; nothing was applied.   |
 
 ### Idempotence
 
@@ -65,13 +65,13 @@ $ npx posthog-definitions pull [--dry-run] [--kind <list>] [--project <id>] [--d
 
 ### Flags
 
-| Flag | Default | Description |
-|---|---|---|
-| `--kind <list>` | `dashboards` | Comma-separated entity kinds to pull. MVP supports `dashboards`. |
-| `--dry-run` | off | Print which files would be written, but do not write anything. |
-| `--project <id>` | `$POSTHOG_PROJECT_ID` | Source project. |
-| `--dir <path>` | `posthog/` | Destination directory; files are written to `<dir>/<kind>/<slug>.ts`. |
-| `--verbose` | off | Print each API call. |
+| Flag             | Default               | Description                                                           |
+| ---------------- | --------------------- | --------------------------------------------------------------------- |
+| `--kind <list>`  | `dashboards`          | Comma-separated entity kinds to pull. MVP supports `dashboards`.      |
+| `--dry-run`      | off                   | Print which files would be written, but do not write anything.        |
+| `--project <id>` | `$POSTHOG_PROJECT_ID` | Source project.                                                       |
+| `--dir <path>`   | `posthog/`            | Destination directory; files are written to `<dir>/<kind>/<slug>.ts`. |
+| `--verbose`      | off                   | Print each API call.                                                  |
 
 ### Behavior
 

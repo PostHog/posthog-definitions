@@ -12,11 +12,11 @@ The package ships a `posthog-definitions` CLI that runs via `npx`.
 
 The CLI reads three environment variables (typically `.env.local` for dev, project secrets in CI):
 
-| Variable | Required | Description |
-|---|---|---|
-| `POSTHOG_PERSONAL_API_KEY` | yes | Personal API key with `dashboard:write` and `insight:write` scopes. Create one at `<host>/settings/user-api-keys`. |
-| `POSTHOG_PROJECT_ID` | yes | Numeric project ID to sync into. |
-| `POSTHOG_HOST` | no | Defaults to `https://us.posthog.com`. Set to your EU or self-hosted URL. |
+| Variable                   | Required | Description                                                                                                        |
+| -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| `POSTHOG_PERSONAL_API_KEY` | yes      | Personal API key with `dashboard:write` and `insight:write` scopes. Create one at `<host>/settings/user-api-keys`. |
+| `POSTHOG_PROJECT_ID`       | yes      | Numeric project ID to sync into.                                                                                   |
+| `POSTHOG_HOST`             | no       | Defaults to `https://us.posthog.com`. Set to your EU or self-hosted URL.                                           |
 
 Example `.env.local`:
 
@@ -65,6 +65,7 @@ $ npx posthog-definitions apply
 ```
 
 The CLI:
+
 1. Loads every `.ts` file under `posthog/dashboards/`.
 2. Compares against the project's current IaC-managed state.
 3. Creates, updates, or leaves each managed resource untouched.

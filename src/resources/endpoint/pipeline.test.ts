@@ -44,7 +44,10 @@ function desiredFor(endpoints: Endpoint[]): DesiredState {
   const state: DesiredState = new Map();
   state.set("insights", []);
   state.set("dashboards", []);
-  state.set("endpoints", endpoints.map((spec) => ({ path: "<test>", spec })));
+  state.set(
+    "endpoints",
+    endpoints.map((spec) => ({ path: "<test>", spec })),
+  );
   return state;
 }
 

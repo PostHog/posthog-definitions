@@ -52,9 +52,13 @@ export async function getEndpoint(
   name: string,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
-  return request<ServerEndpoint>(config, endpointsPath(config.projectId, `${encodeURIComponent(name)}/`), {
-    verbose: options.verbose,
-  });
+  return request<ServerEndpoint>(
+    config,
+    endpointsPath(config.projectId, `${encodeURIComponent(name)}/`),
+    {
+      verbose: options.verbose,
+    },
+  );
 }
 
 export async function createEndpoint(
@@ -75,11 +79,15 @@ export async function updateEndpoint(
   payload: EndpointUpdate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
-  return request<ServerEndpoint>(config, endpointsPath(config.projectId, `${encodeURIComponent(name)}/`), {
-    method: "PATCH",
-    body: payload,
-    verbose: options.verbose,
-  });
+  return request<ServerEndpoint>(
+    config,
+    endpointsPath(config.projectId, `${encodeURIComponent(name)}/`),
+    {
+      method: "PATCH",
+      body: payload,
+      verbose: options.verbose,
+    },
+  );
 }
 
 export async function deleteEndpoint(

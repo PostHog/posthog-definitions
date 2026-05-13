@@ -135,9 +135,7 @@ export function validateFeatureFlags(specs: FeatureFlag[]): string[] {
       continue;
     }
     if (!KEY_PATTERN.test(spec.key)) {
-      issues.push(
-        `feature flag "${spec.key}" key must match /^[a-zA-Z0-9_-]+$/`,
-      );
+      issues.push(`feature flag "${spec.key}" key must match /^[a-zA-Z0-9_-]+$/`);
     }
     if (seen.has(spec.key)) {
       issues.push(`Duplicate feature flag key "${spec.key}"`);
@@ -152,9 +150,7 @@ export function validateFeatureFlags(specs: FeatureFlag[]): string[] {
     if (spec.filters.multivariate) {
       const variants = spec.filters.multivariate.variants ?? [];
       if (variants.length === 0) {
-        issues.push(
-          `feature flag "${spec.key}" multivariate has no variants`,
-        );
+        issues.push(`feature flag "${spec.key}" multivariate has no variants`);
       } else {
         const total = variants.reduce((sum, v) => sum + (v.rollout_percentage ?? 0), 0);
         if (total !== 100) {

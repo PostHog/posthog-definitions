@@ -2,11 +2,7 @@ import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/http.js";
 import { RESOURCES } from "../resources/index.js";
 import { diff } from "../apply/diff.js";
-import {
-  execute,
-  fetchCurrentState,
-  SafetyViolationError,
-} from "../apply/execute.js";
+import { execute, fetchCurrentState, SafetyViolationError } from "../apply/execute.js";
 import { formatPlan } from "../apply/format-plan.js";
 import { LoadError, loadDefinitions } from "../apply/load.js";
 import { ValidationError, validate } from "../apply/validate.js";
@@ -64,10 +60,7 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   );
   console.error(`Loaded ${summarySegments.join(" and ")} from ${args.dir}/`);
 
-  const totalDesired = RESOURCES.reduce(
-    (sum, r) => sum + (desired.get(r.name)?.length ?? 0),
-    0,
-  );
+  const totalDesired = RESOURCES.reduce((sum, r) => sum + (desired.get(r.name)?.length ?? 0), 0);
   if (args.dryRun && totalDesired === 0) {
     console.log("Nothing to do.");
     return 0;

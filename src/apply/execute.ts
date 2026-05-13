@@ -60,7 +60,9 @@ export async function fetchCurrentState(
   options: ExecuteOptions = {},
 ): Promise<Map<string, unknown[]>> {
   const entries = await Promise.all(
-    RESOURCES.map(async (r) => [r.name, await r.list(config, { verbose: options.verbose })] as const),
+    RESOURCES.map(
+      async (r) => [r.name, await r.list(config, { verbose: options.verbose })] as const,
+    ),
   );
   return new Map(entries);
 }

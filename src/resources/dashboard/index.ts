@@ -16,15 +16,7 @@ import {
 import { listManagedDashboards, type ServerDashboard } from "./client.js";
 
 export { dashboard, text, button } from "./sdk.js";
-export type {
-  Dashboard,
-  Tile,
-  InsightTile,
-  TextTile,
-  ButtonTile,
-  Layout,
-  Filters,
-} from "./sdk.js";
+export type { Dashboard, Tile, InsightTile, TextTile, ButtonTile, Layout, Filters } from "./sdk.js";
 
 export const dashboardResource: ResourceModule<Dashboard, ServerDashboard> = {
   name: "dashboards",

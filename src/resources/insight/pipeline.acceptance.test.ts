@@ -29,7 +29,10 @@ function buildInsight(key: string, event: string): Insight {
 
 function desiredFor(insights: Insight[]): DesiredState {
   const state: DesiredState = new Map();
-  state.set("insights", insights.map((spec) => ({ path: "<acceptance>", spec })));
+  state.set(
+    "insights",
+    insights.map((spec) => ({ path: "<acceptance>", spec })),
+  );
   state.set("dashboards", []);
   return state;
 }
