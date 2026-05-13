@@ -51,3 +51,15 @@ docs/
 ## Current status
 
 Pre-MVP. The MVP scope is **dashboard synchronization via `npx posthog-definitions apply`** — see [`implementation/mvp-roadmap.md`](implementation/mvp-roadmap.md).
+
+## Local development
+
+This repo uses [direnv](https://direnv.net/) to load PostHog credentials for testing `apply` against a dev project:
+
+```
+cp .envrc.example .envrc
+# edit .envrc with a dev-project personal API key + project id
+direnv allow
+```
+
+`.envrc` is gitignored. The CLI reads `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, and optionally `POSTHOG_HOST` from the environment — direnv just keeps them out of your shell history and out of git.
