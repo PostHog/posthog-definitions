@@ -2,7 +2,12 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { diff } from "../../apply/diff.js";
 import { newApplyContext, type DesiredState, type ResourceOp } from "../types.js";
-import { loadAcceptanceConfig, uniqueKey, withCleanup } from "../../test-helpers/acceptance.js";
+import {
+  loadAcceptanceConfig,
+  purgeStale,
+  uniqueKey,
+  withCleanup,
+} from "../../test-helpers/acceptance.js";
 import { deleteInsight, getInsight, listManagedInsights } from "./client.js";
 import {
   insightHash,
@@ -33,6 +38,14 @@ function desiredFor(insights: Insight[]): DesiredState {
 describe("insight pipeline (acceptance)", () => {
   it("creates, updates, re-diffs unchanged, then prunes a real insight", async () => {
     const config = loadAcceptanceConfig();
+    await purgeStale(
+      config,
+      listManagedInsights,
+      deleteInsight,
+      insightKeyFromTags,
+      "acceptance-insight-",
+    );
+
     const key = uniqueKey("acceptance-insight");
     const initial = buildInsight(key, "user signed up");
 

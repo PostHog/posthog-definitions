@@ -20,6 +20,25 @@ export function uniqueKey(prefix: string): string {
   return `${prefix}-${Date.now()}-${randomBytes(3).toString("hex")}`;
 }
 
+export async function purgeStale<T extends { id: number; tags?: string[] }>(
+  config: ClientConfig,
+  list: (config: ClientConfig) => Promise<T[]>,
+  remove: (config: ClientConfig, id: number) => Promise<void>,
+  keyFromTags: (tags: string[] | undefined) => string | undefined,
+  keyPrefix: string,
+): Promise<void> {
+  const rows = await list(config);
+  for (const row of rows) {
+    const key = keyFromTags(row.tags);
+    if (!key || !key.startsWith(keyPrefix)) continue;
+    try {
+      await remove(config, row.id);
+    } catch (err) {
+      console.error(`Failed to purge stale row ${row.id} (key=${key}):`, err);
+    }
+  }
+}
+
 type Cleanup = () => Promise<void> | void;
 
 export async function withCleanup<T>(

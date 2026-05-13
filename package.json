@@ -26,6 +26,7 @@
     "pull": "tsx src/cli/index.ts pull",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node scripts/run-tests.mjs unit",
+    "test:integration": "node scripts/run-tests.mjs integration",
     "test:acceptance": "node scripts/run-tests.mjs acceptance"
   },
   "dependencies": {

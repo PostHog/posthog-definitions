@@ -2,9 +2,14 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { diff } from "../../apply/diff.js";
 import { newApplyContext, type DesiredState, type ResourceOp } from "../types.js";
-import { loadAcceptanceConfig, uniqueKey, withCleanup } from "../../test-helpers/acceptance.js";
-import { deleteInsight } from "../insight/client.js";
-import { insightHash, runInsightOp } from "../insight/pipeline.js";
+import {
+  loadAcceptanceConfig,
+  purgeStale,
+  uniqueKey,
+  withCleanup,
+} from "../../test-helpers/acceptance.js";
+import { deleteInsight, listManagedInsights } from "../insight/client.js";
+import { insightHash, insightKeyFromTags, runInsightOp } from "../insight/pipeline.js";
 import { type Insight } from "../insight/sdk.js";
 import { deleteDashboard, getDashboard, listManagedDashboards } from "./client.js";
 import {
@@ -56,6 +61,21 @@ function desiredFor(insights: Insight[], dashboards: Dashboard[]): DesiredState 
 describe("dashboard pipeline (acceptance)", () => {
   it("creates, updates, re-diffs unchanged, then prunes a real dashboard", async () => {
     const config = loadAcceptanceConfig();
+    await purgeStale(
+      config,
+      listManagedDashboards,
+      deleteDashboard,
+      dashboardKeyFromTags,
+      "acceptance-dashboard-",
+    );
+    await purgeStale(
+      config,
+      listManagedInsights,
+      deleteInsight,
+      insightKeyFromTags,
+      "acceptance-insight-",
+    );
+
     const insightKey = uniqueKey("acceptance-insight");
     const dashboardKey = uniqueKey("acceptance-dashboard");
     const insightSpec = buildInsight(insightKey);

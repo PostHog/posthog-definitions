@@ -4,20 +4,28 @@ import { glob } from "tinyglobby";
 
 const mode = process.argv[2] ?? "unit";
 
+const ONLINE_SUFFIXES = ["acceptance", "integration"];
+const onlineNegations = ONLINE_SUFFIXES.map((s) => `!src/**/*.${s}.test.ts`);
+const onlinePatterns = ONLINE_SUFFIXES.map((s) => `src/**/*.${s}.test.ts`);
+
 const config = {
   unit: {
-    patterns: ["src/**/*.test.ts", "!src/**/*.acceptance.test.ts"],
+    patterns: ["src/**/*.test.ts", ...onlineNegations],
     timeoutMs: 500,
   },
   acceptance: {
-    patterns: ["src/**/*.acceptance.test.ts"],
+    patterns: onlinePatterns,
+    timeoutMs: 60_000,
+  },
+  integration: {
+    patterns: ["src/**/*.integration.test.ts"],
     timeoutMs: 60_000,
   },
 };
 
 const selected = config[mode];
 if (!selected) {
-  console.error(`Unknown test mode "${mode}". Use "unit" or "acceptance".`);
+  console.error(`Unknown test mode "${mode}". Use "unit", "acceptance", or "integration".`);
   process.exit(2);
 }
 
