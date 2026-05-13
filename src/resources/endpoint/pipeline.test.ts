@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import type { DesiredState } from "../types.js";
 import { hogql } from "../insight/sdk.js";
@@ -61,9 +60,9 @@ describe("endpoint pipeline", () => {
   it("emits create when desired has no matching server row", () => {
     const result = diff(desiredFor([spec("weekly_signups")]), currentFor([]));
     const slice = result.get("endpoints")!;
-    assert.equal(slice.ops.length, 1);
-    assert.equal(slice.ops[0]!.kind, "create");
-    assert.equal(slice.ops[0]!.key, "weekly_signups");
+    expect(slice.ops.length).toBe(1);
+    expect(slice.ops[0]!.kind).toBe("create");
+    expect(slice.ops[0]!.key).toBe("weekly_signups");
   });
 
   it("emits unchanged when server hash matches the desired spec's hash", () => {
@@ -71,8 +70,8 @@ describe("endpoint pipeline", () => {
     const server = serverRow("uuid-1", "weekly_signups", endpointHash(desired));
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("endpoints")!.ops[0]!;
-    assert.equal(op.kind, "unchanged");
-    if (op.kind === "unchanged") assert.equal(op.serverId, "uuid-1");
+    expect(op.kind).toBe("unchanged");
+    if (op.kind === "unchanged") expect(op.serverId).toBe("uuid-1");
   });
 
   it("emits update when server hash differs", () => {
@@ -80,16 +79,16 @@ describe("endpoint pipeline", () => {
     const server = serverRow("uuid-1", "weekly_signups", "stalehash00000000");
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("endpoints")!.ops[0]!;
-    assert.equal(op.kind, "update");
-    if (op.kind === "update") assert.equal(op.serverId, "uuid-1");
+    expect(op.kind).toBe("update");
+    if (op.kind === "update") expect(op.serverId).toBe("uuid-1");
   });
 
   it("classifies a server-only managed endpoint as an orphan", () => {
     const server = serverRow("uuid-ghost", "ghost", "any");
     const result = diff(desiredFor([]), currentFor([server]));
     const slice = result.get("endpoints")!;
-    assert.equal(slice.orphans.length, 1);
-    assert.equal((slice.orphans[0] as ServerEndpoint).id, "uuid-ghost");
+    expect(slice.orphans.length).toBe(1);
+    expect((slice.orphans[0] as ServerEndpoint).id).toBe("uuid-ghost");
   });
 
   it("safety invariant: ignores server rows without the iac:* marker", () => {
@@ -101,8 +100,8 @@ describe("endpoint pipeline", () => {
     };
     const result = diff(desiredFor([]), currentFor([handBuilt]));
     const slice = result.get("endpoints")!;
-    assert.equal(slice.ops.length, 0);
-    assert.equal(slice.orphans.length, 0);
+    expect(slice.ops.length).toBe(0);
+    expect(slice.orphans.length).toBe(0);
   });
 
   it("safety invariant: ignores server rows with marker NOT at the trailing position", () => {
@@ -114,18 +113,18 @@ describe("endpoint pipeline", () => {
     };
     const result = diff(desiredFor([]), currentFor([tampered]));
     const slice = result.get("endpoints")!;
-    assert.equal(slice.ops.length, 0);
-    assert.equal(slice.orphans.length, 0);
+    expect(slice.ops.length).toBe(0);
+    expect(slice.orphans.length).toBe(0);
   });
 
   it("strips marker for display, preserving the user description", () => {
     const desc = managedDescription("k", "h", "User-facing description");
-    assert.equal(stripMarker(desc), "User-facing description");
+    expect(stripMarker(desc)).toBe("User-facing description");
   });
 
   it("strips marker even with no user description, returning null", () => {
     const desc = managedDescription("k", "h", "");
-    assert.equal(stripMarker(desc), null);
+    expect(stripMarker(desc)).toBe(null);
   });
 
   it("extracts key and hash from a description with the marker", () => {
@@ -136,7 +135,7 @@ describe("endpoint pipeline", () => {
       description: desc,
       query: {},
     };
-    assert.equal(endpointKeyFromServer(server), "my_key");
-    assert.equal(endpointHashFromServer(server), "deadbeef");
+    expect(endpointKeyFromServer(server)).toBe("my_key");
+    expect(endpointHashFromServer(server)).toBe("deadbeef");
   });
 });

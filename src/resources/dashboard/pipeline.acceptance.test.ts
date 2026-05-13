@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import { newApplyContext, type DesiredState, type ResourceOp } from "../types.js";
 import {
@@ -92,9 +91,9 @@ describe("dashboard pipeline (acceptance)", () => {
       };
       await runInsightOp(config, insightOp, ctx);
       const insightId = ctx.insightIdByKey.get(insightKey);
-      assert.ok(insightId, "insight executor should record server id");
+      expect(insightId).toBeDefined();
       registerCleanup(async () => {
-        await deleteInsight(config, insightId).catch(() => undefined);
+        await deleteInsight(config, insightId!).catch(() => undefined);
       });
 
       const createOp: ResourceOp<Dashboard, never> = {
@@ -107,12 +106,9 @@ describe("dashboard pipeline (acceptance)", () => {
 
       const managed = await listManagedDashboards(config);
       const listed = managed.find((row) => dashboardKeyFromTags(row.tags) === dashboardKey);
-      assert.ok(listed, "listManagedDashboards should include the new dashboard");
-      assert.ok(
-        listed.tags?.includes(dashboardTag(dashboardKey)),
-        `dashboard should carry ${dashboardTag(dashboardKey)} tag`,
-      );
-      assert.equal(dashboardHashFromTags(listed.tags), dashboardHash(initial));
+      if (!listed) throw new Error("listManagedDashboards should include the new dashboard");
+      expect(listed.tags?.includes(dashboardTag(dashboardKey))).toBeTruthy();
+      expect(dashboardHashFromTags(listed.tags)).toBe(dashboardHash(initial));
 
       const dashboardId = listed.id;
       registerCleanup(async () => {
@@ -120,9 +116,9 @@ describe("dashboard pipeline (acceptance)", () => {
       });
 
       const inline = extractInlineInsights(initial);
-      assert.equal(inline.length, 1);
-      assert.equal(inline[0]!.resourceName, "insights");
-      assert.equal((inline[0]!.spec as Insight).key, insightKey);
+      expect(inline.length).toBe(1);
+      expect(inline[0]!.resourceName).toBe("insights");
+      expect((inline[0]!.spec as Insight).key).toBe(insightKey);
 
       const updated = buildDashboard(dashboardKey, "Acceptance dashboard v2", insightSpec);
       const updateOp: ResourceOp<Dashboard, typeof listed> = {
@@ -136,8 +132,8 @@ describe("dashboard pipeline (acceptance)", () => {
       await runDashboardOp(config, updateOp, ctx);
 
       const afterUpdate = await getDashboard(config, dashboardId);
-      assert.equal(afterUpdate.name, "Acceptance dashboard v2");
-      assert.equal(dashboardHashFromTags(afterUpdate.tags), dashboardHash(updated));
+      expect(afterUpdate.name).toBe("Acceptance dashboard v2");
+      expect(dashboardHashFromTags(afterUpdate.tags)).toBe(dashboardHash(updated));
 
       const managedAgain = await listManagedDashboards(config);
       const result = diff(
@@ -148,18 +144,14 @@ describe("dashboard pipeline (acceptance)", () => {
         ]),
       );
       const reDiffOp = result.get("dashboards")!.ops.find((o) => o.key === dashboardKey);
-      assert.ok(reDiffOp, "re-diff should include the managed dashboard");
-      assert.equal(reDiffOp.kind, "unchanged");
+      expect(reDiffOp).toBeDefined();
+      expect(reDiffOp!.kind).toBe("unchanged");
 
       const pruned = await pruneDashboard(config, afterUpdate);
-      assert.equal(pruned, true);
+      expect(pruned).toBe(true);
 
       const afterPrune = await listManagedDashboards(config);
-      assert.equal(
-        afterPrune.find((row) => dashboardKeyFromTags(row.tags) === dashboardKey),
-        undefined,
-        "dashboard should no longer appear in listManagedDashboards after prune",
-      );
+      expect(afterPrune.find((row) => dashboardKeyFromTags(row.tags) === dashboardKey)).toBe(undefined);
     });
   });
 });

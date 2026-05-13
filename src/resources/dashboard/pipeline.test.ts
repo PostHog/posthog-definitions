@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import type { DesiredState } from "../types.js";
 import { type Dashboard } from "./sdk.js";
@@ -57,28 +56,28 @@ describe("dashboard pipeline", () => {
   it("emits create when desired has no matching server row", () => {
     const result = diff(desiredFor([spec("growth", "weekly-signups")]), currentFor([]));
     const slice = result.get("dashboards")!;
-    assert.equal(slice.ops.length, 1);
-    assert.equal(slice.ops[0]!.kind, "create");
+    expect(slice.ops.length).toBe(1);
+    expect(slice.ops[0]!.kind).toBe("create");
   });
 
   it("emits unchanged when server hash matches", () => {
     const desired = spec("growth", "weekly-signups");
     const server = serverRow(7, "growth", dashboardHash(desired));
     const result = diff(desiredFor([desired]), currentFor([server]));
-    assert.equal(result.get("dashboards")!.ops[0]!.kind, "unchanged");
+    expect(result.get("dashboards")!.ops[0]!.kind).toBe("unchanged");
   });
 
   it("emits update when server hash drifted", () => {
     const desired = spec("growth", "weekly-signups");
     const server = serverRow(7, "growth", "deadbeef12345678");
     const result = diff(desiredFor([desired]), currentFor([server]));
-    assert.equal(result.get("dashboards")!.ops[0]!.kind, "update");
+    expect(result.get("dashboards")!.ops[0]!.kind).toBe("update");
   });
 
   it("classifies a server-only managed dashboard as an orphan", () => {
     const server = serverRow(123, "ghost", "any");
     const result = diff(desiredFor([]), currentFor([server]));
-    assert.equal(result.get("dashboards")!.orphans.length, 1);
+    expect(result.get("dashboards")!.orphans.length).toBe(1);
   });
 
   it("safety invariant: ignores server rows without an iac:* tag", () => {
@@ -92,7 +91,7 @@ describe("dashboard pipeline", () => {
     };
     const result = diff(desiredFor([]), currentFor([handBuilt]));
     const slice = result.get("dashboards")!;
-    assert.equal(slice.ops.length, 0);
-    assert.equal(slice.orphans.length, 0);
+    expect(slice.ops.length).toBe(0);
+    expect(slice.orphans.length).toBe(0);
   });
 });

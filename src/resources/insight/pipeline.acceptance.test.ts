@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import { newApplyContext, type DesiredState, type ResourceOp } from "../types.js";
 import {
@@ -61,23 +60,20 @@ describe("insight pipeline (acceptance)", () => {
       await runInsightOp(config, createOp, ctx);
 
       const serverId = ctx.insightIdByKey.get(key);
-      assert.ok(serverId, "executor should record server id after create");
+      expect(serverId).toBeDefined();
       registerCleanup(async () => {
-        await deleteInsight(config, serverId).catch(() => undefined);
+        await deleteInsight(config, serverId!).catch(() => undefined);
       });
 
-      const afterCreate = await getInsight(config, serverId);
-      assert.ok(
-        afterCreate.tags?.includes(insightTag(key)),
-        `created insight should carry ${insightTag(key)} tag`,
-      );
-      assert.equal(insightKeyFromTags(afterCreate.tags), key);
-      assert.equal(insightHashFromTags(afterCreate.tags), insightHash(initial));
+      const afterCreate = await getInsight(config, serverId!);
+      expect(afterCreate.tags?.includes(insightTag(key))).toBeTruthy();
+      expect(insightKeyFromTags(afterCreate.tags)).toBe(key);
+      expect(insightHashFromTags(afterCreate.tags)).toBe(insightHash(initial));
 
       const managed = await listManagedInsights(config);
       const listed = managed.find((row) => insightKeyFromTags(row.tags) === key);
-      assert.ok(listed, "listManagedInsights should include the new insight");
-      assert.equal(listed.id, serverId);
+      expect(listed).toBeDefined();
+      expect(listed!.id).toBe(serverId);
 
       const updated = buildInsight(key, "user logged in");
       const updateOp: ResourceOp<Insight, typeof afterCreate> = {
@@ -85,14 +81,14 @@ describe("insight pipeline (acceptance)", () => {
         key,
         spec: updated,
         hash: insightHash(updated),
-        serverId,
+        serverId: serverId!,
         server: afterCreate,
       };
       await runInsightOp(config, updateOp, ctx);
 
-      const afterUpdate = await getInsight(config, serverId);
-      assert.equal(insightHashFromTags(afterUpdate.tags), insightHash(updated));
-      assert.notEqual(insightHashFromTags(afterUpdate.tags), insightHash(initial));
+      const afterUpdate = await getInsight(config, serverId!);
+      expect(insightHashFromTags(afterUpdate.tags)).toBe(insightHash(updated));
+      expect(insightHashFromTags(afterUpdate.tags)).not.toBe(insightHash(initial));
 
       const managedAgain = await listManagedInsights(config);
       const result = diff(
@@ -103,18 +99,14 @@ describe("insight pipeline (acceptance)", () => {
         ]),
       );
       const reDiffOp = result.get("insights")!.ops.find((o) => o.key === key);
-      assert.ok(reDiffOp, "re-diff should include the managed insight");
-      assert.equal(reDiffOp.kind, "unchanged");
+      expect(reDiffOp).toBeDefined();
+      expect(reDiffOp!.kind).toBe("unchanged");
 
       const pruned = await pruneInsight(config, afterUpdate);
-      assert.equal(pruned, true);
+      expect(pruned).toBe(true);
 
       const afterPrune = await listManagedInsights(config);
-      assert.equal(
-        afterPrune.find((row) => insightKeyFromTags(row.tags) === key),
-        undefined,
-        "insight should no longer appear in listManagedInsights after prune",
-      );
+      expect(afterPrune.find((row) => insightKeyFromTags(row.tags) === key)).toBe(undefined);
     });
   });
 });

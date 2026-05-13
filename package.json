@@ -25,9 +25,10 @@
     "apply": "tsx src/cli/index.ts apply",
     "pull": "tsx src/cli/index.ts pull",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node scripts/run-tests.mjs unit",
-    "test:integration": "node scripts/run-tests.mjs integration",
-    "test:acceptance": "node scripts/run-tests.mjs acceptance"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "VITEST_MODE=integration vitest run",
+    "test:acceptance": "VITEST_MODE=acceptance vitest run"
   },
   "dependencies": {
     "enquirer": "^2.4.1",
@@ -37,7 +38,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=22"
