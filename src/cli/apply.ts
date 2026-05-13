@@ -5,7 +5,7 @@ import { diff } from "../apply/diff.js";
 import { execute, fetchCurrentState, SafetyViolationError } from "../apply/execute.js";
 import { formatPlan } from "../apply/format-plan.js";
 import { LoadError, loadDefinitions } from "../apply/load.js";
-import { ValidationError, validate } from "../apply/validate.js";
+import { validate } from "../apply/validate.js";
 import type { ApplyArgs } from "./args.js";
 import { createDebug, debugEnabled } from "./debug.js";
 
@@ -44,14 +44,10 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("definitions loaded", Object.fromEntries(loadedCounts));
 
   debug("validating definitions");
-  try {
-    validate(desired);
-  } catch (err) {
-    if (err instanceof ValidationError) {
-      console.error(`error: ${err.message}`);
-      return 1;
-    }
-    throw err;
+  const validation = validate(desired);
+  if (!validation.ok) {
+    console.error(`error: Validation failed:\n - ${validation.error.join("\n - ")}`);
+    return 1;
   }
   debug("validation passed");
 
