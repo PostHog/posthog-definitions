@@ -3,9 +3,13 @@ import type { DesiredState, ResourceDiff, ResourceModule, ResourceOp } from "../
 
 export type DiffResult = Map<string, ResourceDiff<unknown, unknown>>;
 
-export function diff(desired: DesiredState, current: Map<string, unknown[]>): DiffResult {
+export function diff(
+  desired: DesiredState,
+  current: Map<string, unknown[]>,
+  resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
+): DiffResult {
   const result: DiffResult = new Map();
-  for (const resource of RESOURCES) {
+  for (const resource of resources) {
     result.set(resource.name, diffOne(resource, desired, current));
   }
   return result;
