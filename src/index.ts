@@ -27,3 +27,6 @@ export type {
   Variant,
   PropertyFilter,
 } from "./resources/feature-flag/index.js";
+
+export { endpoint } from "./resources/endpoint/index.js";
+export type { Endpoint } from "./resources/endpoint/index.js";

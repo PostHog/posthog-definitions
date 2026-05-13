@@ -210,8 +210,8 @@ export async function runFeatureFlagOp(
     return;
   }
 
-  await assertManagedFeatureFlag(config, op.serverId, op.key, options);
-  await updateFeatureFlag(config, op.serverId, payload, options);
+  await assertManagedFeatureFlag(config, op.serverId as number, op.key, options);
+  await updateFeatureFlag(config, op.serverId as number, payload, options);
 }
 
 export async function pruneFeatureFlag(

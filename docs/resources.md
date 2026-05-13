@@ -55,6 +55,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Warehouse view links | ✅ `environments/{id}/warehouse_view_links` | ❌ | |
 | Batch exports | ✅ `environments/{id}/batch_exports` | ❌ | |
 | Managed migrations (imports) | ✅ `projects/{id}/managed_migrations` | ❌ | |
+| Endpoints | ✅ `environments/{id}/endpoints` | ✅ | Saved HogQL queries served as a URL. No `tags` field — identity tracked via a trailing HTML comment marker in `description` |
 
 ## CDP & messaging
 
@@ -94,7 +95,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 ## Summary
 
-Currently shipped: **2 resource types** (Dashboards, Insights).
+Currently shipped: **4 resource types** (Dashboards, Insights, Feature flags, Endpoints).
 Reasonable IaC targets across the API surface: **~25–30** (flags, cohorts, actions, surveys, experiments, annotations, alerts, hog functions/flows, error-tracking rules, warehouse queries, batch exports, …).
 
 Next likely candidates per `implementation/mvp-roadmap.md`: feature flags, then actions and cohorts.

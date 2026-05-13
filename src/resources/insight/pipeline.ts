@@ -10,7 +10,7 @@ import {
   type DisplayValue,
 } from "../../apply/display.js";
 import { SafetyViolationError } from "../../apply/safety.js";
-import type { ApplyContext, ResourceOp } from "../types.js";
+import { getResourceKind, type ApplyContext, type ResourceOp } from "../types.js";
 import type { Insight, Query } from "./sdk.js";
 import {
   createInsight,
@@ -91,6 +91,9 @@ export function insightHash(spec: Insight): string {
 }
 
 export function looksLikeInsight(value: unknown): value is Insight {
+  const kind = getResourceKind(value);
+  if (kind !== undefined) return kind === "insight";
+  // Structural fallback for inline tile.insight specs that bypass the factory.
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (
@@ -136,7 +139,7 @@ export async function runInsightOp(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   if (op.kind === "unchanged") {
-    ctx.insightIdByKey.set(op.key, op.serverId);
+    ctx.insightIdByKey.set(op.key, op.serverId as number);
     return;
   }
 
@@ -148,8 +151,8 @@ export async function runInsightOp(
     return;
   }
 
-  await assertManagedInsight(config, op.serverId, op.key, options);
-  const updated = await updateInsight(config, op.serverId, payload, options);
+  await assertManagedInsight(config, op.serverId as number, op.key, options);
+  const updated = await updateInsight(config, op.serverId as number, payload, options);
   ctx.insightIdByKey.set(op.key, updated.id);
 }
 

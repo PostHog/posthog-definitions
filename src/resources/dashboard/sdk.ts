@@ -1,4 +1,5 @@
 import type { Insight } from "../insight/sdk.js";
+import { markResourceKind } from "../types.js";
 
 export type Layout = { x: number; y: number; w: number; h: number };
 
@@ -57,7 +58,7 @@ export function isButtonTile(tile: Tile): tile is ButtonTile {
 }
 
 export function dashboard(spec: Dashboard): Dashboard {
-  return spec;
+  return markResourceKind(spec, "dashboard");
 }
 
 export function text(spec: { body: string; layout: Layout }): TextTile {

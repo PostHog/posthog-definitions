@@ -1,10 +1,41 @@
 import type { ClientConfig } from "../client/config.js";
 import type { DisplayValue } from "../apply/display.js";
 
+/**
+ * Non-enumerable marker installed by each resource's user-facing factory
+ * (`insight()`, `dashboard()`, `endpoint()`, …). Lets the loader unambiguously
+ * route a default-exported spec to its module — distinct resources can share a
+ * structural shape (e.g. insight and endpoint both have `key + name + query`).
+ */
+export const RESOURCE_KIND = Symbol.for("posthog-definitions/resource-kind");
+
+export function markResourceKind<T extends object>(spec: T, kind: string): T {
+  Object.defineProperty(spec, RESOURCE_KIND, {
+    value: kind,
+    enumerable: false,
+    configurable: true,
+    writable: false,
+  });
+  return spec;
+}
+
+export function getResourceKind(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const kind = (value as Record<symbol, unknown>)[RESOURCE_KIND];
+  return typeof kind === "string" ? kind : undefined;
+}
+
 export type ResourceOp<TSpec, TServer> =
   | { kind: "create"; key: string; spec: TSpec; hash: string }
-  | { kind: "update"; key: string; spec: TSpec; hash: string; serverId: number; server: TServer }
-  | { kind: "unchanged"; key: string; spec: TSpec; serverId: number };
+  | {
+      kind: "update";
+      key: string;
+      spec: TSpec;
+      hash: string;
+      serverId: number | string;
+      server: TServer;
+    }
+  | { kind: "unchanged"; key: string; spec: TSpec; serverId: number | string };
 
 export type LoadedSpec<TSpec = unknown> = { path: string; spec: TSpec };
 

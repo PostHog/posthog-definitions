@@ -10,7 +10,7 @@ import {
   type DisplayValue,
 } from "../../apply/display.js";
 import { SafetyViolationError } from "../../apply/safety.js";
-import type { ApplyContext, DesiredState, ResourceOp } from "../types.js";
+import { getResourceKind, type ApplyContext, type DesiredState, type ResourceOp } from "../types.js";
 import type { Insight } from "../insight/sdk.js";
 import {
   type ButtonTile,
@@ -167,6 +167,8 @@ export function dashboardPayload(
 }
 
 export function looksLikeDashboard(value: unknown): value is Dashboard {
+  const kind = getResourceKind(value);
+  if (kind !== undefined) return kind === "dashboard";
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return typeof v.key === "string" && typeof v.name === "string" && Array.isArray(v.tiles);
@@ -268,8 +270,8 @@ export async function runDashboardOp(
     return;
   }
 
-  await assertManagedDashboard(config, op.serverId, op.key, options);
-  await updateDashboard(config, op.serverId, payload, options);
+  await assertManagedDashboard(config, op.serverId as number, op.key, options);
+  await updateDashboard(config, op.serverId as number, payload, options);
 }
 
 export async function pruneDashboard(

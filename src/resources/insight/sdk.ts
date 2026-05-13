@@ -41,8 +41,10 @@ export type Insight = {
   tags?: string[];
 };
 
+import { markResourceKind } from "../types.js";
+
 export function insight(spec: Insight): Insight {
-  return spec;
+  return markResourceKind(spec, "insight");
 }
 
 export function trends(spec: {
