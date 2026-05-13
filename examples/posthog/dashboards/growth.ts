@@ -1,19 +1,9 @@
 import { dashboard, insight, text, trends } from "../../../src/index.js";
 
-const signups = insight({
-  key: "weekly-signups",
-  name: "Weekly signups",
-  description: "Count of `user signed up` events per ISO week.",
-  query: trends({
-    series: [{ event: "user signed up", math: "total" }],
-    interval: "week",
-    dateRange: { date_from: "-90d" },
-  }),
-});
-
-const activeUsers = insight({
+const weeklyActive = insight({
   key: "weekly-active",
   name: "Weekly active users",
+  description: "Unique users with at least one $pageview in the rolling week.",
   query: trends({
     series: [{ event: "$pageview", math: "weekly_active" }],
     interval: "week",
@@ -21,15 +11,73 @@ const activeUsers = insight({
   }),
 });
 
+const dailyPageviews = insight({
+  key: "daily-pageviews",
+  name: "Daily pageviews",
+  query: trends({
+    series: [{ event: "$pageview", math: "total" }],
+    interval: "day",
+    dateRange: { date_from: "-30d" },
+  }),
+});
+
+const dashboardsViewed = insight({
+  key: "dashboards-viewed-daily",
+  name: "Dashboards viewed per day",
+  query: trends({
+    series: [{ event: "viewed dashboard", math: "total" }],
+    interval: "day",
+    dateRange: { date_from: "-30d" },
+  }),
+});
+
+const queriesCompleted = insight({
+  key: "queries-completed-daily",
+  name: "Queries completed per day",
+  query: trends({
+    series: [{ event: "query completed", math: "total" }],
+    interval: "day",
+    dateRange: { date_from: "-30d" },
+  }),
+});
+
+const exceptionsDaily = insight({
+  key: "exceptions-daily",
+  name: "Exceptions per day",
+  query: trends({
+    series: [{ event: "$exception", math: "total" }],
+    interval: "day",
+    dateRange: { date_from: "-30d" },
+  }),
+});
+
+const featureFlagsEvaluated = insight({
+  key: "feature-flags-evaluated-daily",
+  name: "Feature flag evaluations per day",
+  query: trends({
+    series: [{ event: "$feature_flag_called", math: "total" }],
+    interval: "day",
+    dateRange: { date_from: "-30d" },
+  }),
+});
+
 export default dashboard({
   key: "growth",
-  name: "Growth (iac)",
-  description: "Smoke-test dashboard managed by posthog-definitions.",
+  name: "PostHog dev usage (iac)",
+  description:
+    "Smoke-test dashboard managed by posthog-definitions. Tracks pageviews, dashboard views, queries, exceptions, and feature flag evaluations on the dev project.",
   pinned: false,
-  tags: ["growth"],
+  tags: ["dev-usage"],
   tiles: [
-    { insight: signups, layout: { x: 0, y: 0, w: 6, h: 4 } },
-    { insight: activeUsers, layout: { x: 6, y: 0, w: 6, h: 4 } },
-    text({ body: "Managed by posthog-definitions. Edit the source file, then run `apply`.", layout: { x: 0, y: 4, w: 12, h: 1 } }),
+    { insight: weeklyActive, layout: { x: 0, y: 0, w: 6, h: 4 } },
+    { insight: dailyPageviews, layout: { x: 6, y: 0, w: 6, h: 4 } },
+    { insight: dashboardsViewed, layout: { x: 0, y: 4, w: 6, h: 4 } },
+    { insight: queriesCompleted, layout: { x: 6, y: 4, w: 6, h: 4 } },
+    { insight: exceptionsDaily, layout: { x: 0, y: 8, w: 6, h: 4 } },
+    { insight: featureFlagsEvaluated, layout: { x: 6, y: 8, w: 6, h: 4 } },
+    text({
+      body: "Managed by posthog-definitions. Edit `examples/posthog/dashboards/growth.ts` and run `apply`.",
+      layout: { x: 0, y: 12, w: 12, h: 1 },
+    }),
   ],
 });
