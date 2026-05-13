@@ -23,7 +23,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 | Resource | PostHog API | posthog-definitions | Notes |
 | --- | --- | --- | --- |
-| Feature flags | ✅ `projects/{id}/feature_flags` | ❌ | Called out in MVP roadmap as next-up |
+| Feature flags | ✅ `projects/{id}/feature_flags` | ✅ | Tag-identified via `iac:feature-flags:<key>`; dependent flags and encrypted payloads not yet supported |
 | Experiments | ✅ `projects/{id}/experiments` | ❌ | Enterprise viewset |
 | Experiment holdouts | ✅ `projects/{id}/experiment_holdouts` | ❌ | |
 | Experiment saved metrics | ✅ `projects/{id}/experiment_saved_metrics` | ❌ | |

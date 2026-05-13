@@ -18,3 +18,12 @@ export type {
   EventsNode,
   InsightVizNode,
 } from "./resources/insight/index.js";
+
+export { featureFlag } from "./resources/feature-flag/index.js";
+export type {
+  FeatureFlag,
+  FeatureFlagFilters,
+  ReleaseConditionGroup,
+  Variant,
+  PropertyFilter,
+} from "./resources/feature-flag/index.js";

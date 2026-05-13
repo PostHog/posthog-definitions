@@ -30,7 +30,8 @@
   "dependencies": {
     "enquirer": "^2.4.1",
     "tinyglobby": "^0.2.10",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
