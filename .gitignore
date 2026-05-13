@@ -22,3 +22,6 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Claude Code per-project state
+.claude/
