@@ -43,7 +43,20 @@ Two mechanisms enforce this — both must be replicated for the new resource:
 1. **List filter.** `list<Resource>` only returns rows whose tags contain `iac:<resource>:<...>`. See `listManagedInsights` in `src/resources/insight/client.ts`.
 2. **Pre-write assertion.** Before any `PATCH` or `DELETE`, refetch the row and confirm its `iac:<resource>:<key>` tag is still there. If it's been removed (e.g. an operator stripped it in the UI), abort with `SafetyViolationError`. See `assertManagedInsight` in `src/resources/insight/pipeline.ts`.
 
-If the resource's API has no `tags` field, this skill does not apply — bring it up with the user before proceeding. The whole identity model depends on writable tags. The most common reason for "no tags" is that the resource is a **singleton** (one row per project, e.g. project settings): in that case use the sibling skill `add-singleton-resource`, which covers the field-level diff and PATCH-only model.
+If the resource's API has no `tags` field, the identity carrier changes but the invariant doesn't:
+
+- **Singleton resources** (one row per project, e.g. project settings) → use the sibling skill `add-singleton-resource`. No identity needed; field-level diff, PATCH-only.
+- **Collection resources without tags** (e.g. endpoints) → carry identity in the `description` (or another free-form text field the API round-trips). Append a trailing HTML comment marker, anchored to end-of-string:
+
+  ```
+  <user description>
+
+  <!-- iac:<resources>:<key> iac:hash:<hex> -->
+  ```
+
+  List filter: `description.includes("<!-- iac:<resources>:")`. Pre-write assertion: refetch, confirm the marker is still the trailing content. Display functions must strip the marker before rendering so spec ↔ server diffs line up. See `src/resources/endpoint/pipeline.ts` for the reference.
+
+The safety invariant survives because rows without the marker (or with the marker no longer at end-of-string) are invisible to the CLI.
 
 ## Directory layout for a new resource
 
@@ -71,6 +84,34 @@ For a hypothetical resource `Foo` (substitute the real noun), here is the per-fi
 | 6 | `src/index.ts` | Re-export `foo` and the `Foo` type for SDK users. |
 
 Each resource is fully self-contained: SDK types live next to its `sdk.ts`, never in a shared `sdk/` directory. If two resources need to share a type, the dependent resource imports from the producer's `sdk.ts` directly (the way dashboard tiles import `Insight` from `src/resources/insight/sdk.ts`). Generic pipeline orchestration (hash, file load, the apply driver, plan formatter) stays in `src/apply/`. The CLI does not change — it iterates the registry.
+
+### Resource-kind discriminator
+
+The loader routes each loaded default export to the resource whose `isSpec(value)` returns true. Several resources share a structural shape (insights, endpoints, and dashboards all have `{key, name, query | tiles}`), so `isSpec` cannot rely on shape alone.
+
+Every user-facing factory must install a non-enumerable kind marker, and every `looksLike<Resource>` must check it first:
+
+```ts
+// sdk.ts
+import { markResourceKind } from "../types.js";
+
+export function foo(spec: Foo): Foo {
+  return markResourceKind(spec, "foo");
+}
+
+// pipeline.ts
+import { getResourceKind } from "../types.js";
+
+export function looksLikeFoo(value: unknown): value is Foo {
+  return getResourceKind(value) === "foo";
+}
+```
+
+If the resource may also appear inline inside another resource's spec (the way insights appear inside dashboard tiles) and could bypass the factory, fall back to a structural check when `getResourceKind` returns `undefined` — but the marker check must come first so factory-produced specs route deterministically.
+
+### Server ids
+
+`ResourceOp.serverId` is `number | string`. Cast to the concrete type your API uses at the call site. For resources addressed by something other than a numeric id (e.g. endpoints, which are keyed by `name` in the URL), use `op.server.<field>` in `executeOp` and `prune` rather than `op.serverId`.
 
 ### Identity tag
 
