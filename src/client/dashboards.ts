@@ -34,14 +34,21 @@ function dashboardsPath(projectId: string, suffix = ""): string {
   return `/api/projects/${projectId}/dashboards/${suffix}`;
 }
 
+export async function listDashboards(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerDashboard[]> {
+  return paginate<ServerDashboard>(config, dashboardsPath(config.projectId), {
+    query: { limit: 100 },
+    verbose: options.verbose,
+  });
+}
+
 export async function listManagedDashboards(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerDashboard[]> {
-  const all = await paginate<ServerDashboard>(config, dashboardsPath(config.projectId), {
-    query: { limit: 100 },
-    verbose: options.verbose,
-  });
+  const all = await listDashboards(config, options);
   return all.filter((d) => d.tags?.some((tag) => tag.startsWith("iac:dashboards:")));
 }
 

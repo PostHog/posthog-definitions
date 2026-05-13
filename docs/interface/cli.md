@@ -51,7 +51,38 @@ Pass `--prune` to delete the orphans (only ones tagged `iac:dashboards:*` / `iac
 ### What `apply` does **not** do (MVP scope)
 
 - **No watch mode.** `apply` is one-shot. (Tracked: post-MVP `posthog-definitions dev`.)
-- **No pull.** Existing UI-created dashboards are not imported. (Tracked: post-MVP `posthog-definitions pull`.)
 - **No environments.** Single project per run. Multi-env via separate `--project` calls.
 
 See [`implementation/mvp-roadmap.md`](../implementation/mvp-roadmap.md) for the full cut-scope rationale.
+
+## `posthog-definitions pull`
+
+Bootstrap a definitions directory by importing existing entities from a PostHog project. Useful for adopting `posthog-definitions` on a project that already has dashboards built in the UI.
+
+```
+$ npx posthog-definitions pull [--dry-run] [--kind <list>] [--project <id>] [--dir <path>]
+```
+
+### Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--kind <list>` | `dashboards` | Comma-separated entity kinds to pull. MVP supports `dashboards`. |
+| `--dry-run` | off | Print which files would be written, but do not write anything. |
+| `--project <id>` | `$POSTHOG_PROJECT_ID` | Source project. |
+| `--dir <path>` | `posthog/` | Destination directory; files are written to `<dir>/<kind>/<slug>.ts`. |
+| `--verbose` | off | Print each API call. |
+
+### Behavior
+
+1. **List** every entity of the requested kind in the project — not just `iac:*`-tagged ones.
+2. **Fetch detail** for each (dashboard tiles, insight queries) so the generated file is self-contained.
+3. **Codegen** a TypeScript file per dashboard with inline `insight(...)` declarations and `text(...)` tiles. Filename is the slugified dashboard name.
+4. **Write** to `<dir>/dashboards/`. Existing files with the same name are overwritten — review with `git diff` before committing.
+
+### Limitations
+
+- Only `TrendsQuery` and `HogQLQuery` insights round-trip cleanly through the SDK helpers. Other query kinds are emitted as raw object literals with a cast and a warning — you'll need to edit them by hand.
+- Insights are inlined per dashboard. Insights shared across multiple dashboards are duplicated; deduplication into shared `posthog/insights/*.ts` files is post-MVP.
+- Buttons authored via the SDK `button(...)` helper round-trip as plain `text(...)` tiles (the server stores them as markdown).
+- `pull` overwrites; it does not merge with hand edits.
