@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && chmod +x dist/cli/index.js",
+    "prepare": "tsc -p tsconfig.json && chmod +x dist/cli/index.js",
     "dev": "tsx src/cli/index.ts",
     "apply": "tsx src/cli/index.ts apply",
     "pull": "tsx src/cli/index.ts pull",
