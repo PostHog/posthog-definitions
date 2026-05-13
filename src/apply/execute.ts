@@ -2,7 +2,6 @@ import type { ClientConfig } from "../client/config.js";
 import { ApiError } from "../client/http.js";
 import { RESOURCES } from "../resources/index.js";
 import {
-  type ApplyContext,
   newApplyContext,
   type ResourceCounts,
   type ResourceModule,

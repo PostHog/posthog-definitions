@@ -8,8 +8,8 @@ export function loadAcceptanceConfig(): ClientConfig {
     if (err instanceof ConfigError) {
       throw new Error(
         `Acceptance tests require POSTHOG_PERSONAL_API_KEY and POSTHOG_PROJECT_ID ` +
-          `(optionally POSTHOG_HOST) to be set, same as the apply/pull CLIs. ` +
-          `Underlying error: ${err.message}`,
+          `(optionally POSTHOG_HOST) to be set, same as the apply/pull CLIs.`,
+        { cause: err },
       );
     }
     throw err;
