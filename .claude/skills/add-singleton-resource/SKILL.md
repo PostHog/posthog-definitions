@@ -19,6 +19,10 @@ This skill is the playbook for resources that exist exactly **once per project**
 
 If you're unsure: list the API. If you GET a single object (not a paginated list of objects), it's a singleton. If you'd need a `key` field on the spec to tell two of them apart in code, it's not.
 
+## No scaffolder for singletons
+
+The `pnpm scaffold-resource` script in `scripts/scaffold-resource.ts` is collection-only — it assumes a paginated list endpoint with `iac:<plural>:` tag identity. Singletons need a different shape (one declarative block, field-level diff, PATCH-only) and have no list endpoint to scaffold from, so hand-write the files following this skill. The `pnpm check-resources` drift check can still apply if you add a manifest entry pointing at the singleton's OpenAPI component, but the bigger value there is for collection resources.
+
 ## Before you touch anything
 
 Re-read the same three architecture docs as `add-resource`:

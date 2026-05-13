@@ -32,7 +32,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "VITEST_MODE=integration vitest run",
-    "test:acceptance": "VITEST_MODE=acceptance vitest run"
+    "test:acceptance": "VITEST_MODE=acceptance vitest run",
+    "scaffold-resource": "tsx scripts/scaffold-resource.ts",
+    "check-resources": "tsx scripts/check-resources.ts"
   },
   "dependencies": {
     "enquirer": "^2.4.1",
@@ -45,6 +47,7 @@
     "@types/node": "^22.10.2",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
+    "openapi-zod-client": "^1.18.3",
     "prettier": "^3.8.3",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.59.2",
