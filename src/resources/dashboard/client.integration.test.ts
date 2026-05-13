@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { before, describe, it } from "node:test";
+import { beforeAll, describe, expect, it } from "vitest";
 import type { ClientConfig } from "../../client/config.js";
 import {
   loadAcceptanceConfig,
@@ -34,7 +33,7 @@ function basePayload(key: string): DashboardCreate {
 describe("dashboard client (integration)", () => {
   let config: ClientConfig;
 
-  before(async () => {
+  beforeAll(async () => {
     config = loadAcceptanceConfig();
     await purgeStale(
       config,
@@ -58,12 +57,12 @@ describe("dashboard client (integration)", () => {
         await deleteDashboard(config, created.id).catch(() => undefined);
       });
 
-      assert.ok(typeof created.id === "number" && created.id > 0, "id should be a positive number");
-      assert.equal(created.name, payload.name);
-      assert.equal(created.description, payload.description);
-      assert.equal(created.pinned, true);
-      assert.equal(created.restriction_level, RESTRICTION_COLLABORATORS);
-      assert.ok(created.tags?.includes(dashboardTag(key)));
+      expect(typeof created.id === "number" && created.id > 0).toBeTruthy();
+      expect(created.name).toBe(payload.name);
+      expect(created.description).toBe(payload.description);
+      expect(created.pinned).toBe(true);
+      expect(created.restriction_level).toBe(RESTRICTION_COLLABORATORS);
+      expect(created.tags?.includes(dashboardTag(key))).toBeTruthy();
     });
   });
 
@@ -76,12 +75,12 @@ describe("dashboard client (integration)", () => {
       });
 
       const fetched = await getDashboard(config, created.id);
-      assert.equal(fetched.id, created.id);
-      assert.equal(fetched.name, created.name);
-      assert.equal(fetched.description, created.description);
-      assert.equal(fetched.pinned, false);
-      assert.ok(fetched.tags?.includes(dashboardTag(key)));
-      assert.ok(Array.isArray(fetched.tiles), "tiles should be an array on the detail response");
+      expect(fetched.id).toBe(created.id);
+      expect(fetched.name).toBe(created.name);
+      expect(fetched.description).toBe(created.description);
+      expect(fetched.pinned).toBe(false);
+      expect(fetched.tags?.includes(dashboardTag(key))).toBeTruthy();
+      expect(Array.isArray(fetched.tiles)).toBeTruthy();
     });
   });
 
@@ -95,10 +94,10 @@ describe("dashboard client (integration)", () => {
 
       const managed = await listManagedDashboards(config);
       const listed = managed.find((row) => row.id === created.id);
-      assert.ok(listed, "listManagedDashboards should include the new dashboard");
-      assert.equal(dashboardKeyFromTags(listed.tags), key);
-      assert.equal(listed.name, created.name);
-      assert.equal(listed.deleted ?? false, false);
+      expect(listed).toBeDefined();
+      expect(dashboardKeyFromTags(listed!.tags)).toBe(key);
+      expect(listed!.name).toBe(created.name);
+      expect(listed!.deleted ?? false).toBe(false);
     });
   });
 
@@ -112,14 +111,14 @@ describe("dashboard client (integration)", () => {
 
       const newName = `${created.name} (renamed)`;
       const updated = await updateDashboard(config, created.id, { name: newName });
-      assert.equal(updated.name, newName);
-      assert.equal(updated.description, created.description);
-      assert.equal(updated.pinned, false);
-      assert.ok(updated.tags?.includes(dashboardTag(key)));
+      expect(updated.name).toBe(newName);
+      expect(updated.description).toBe(created.description);
+      expect(updated.pinned).toBe(false);
+      expect(updated.tags?.includes(dashboardTag(key))).toBeTruthy();
 
       const refetched = await getDashboard(config, created.id);
-      assert.equal(refetched.name, newName);
-      assert.equal(refetched.description, created.description);
+      expect(refetched.name).toBe(newName);
+      expect(refetched.description).toBe(created.description);
     });
   });
 
@@ -135,19 +134,19 @@ describe("dashboard client (integration)", () => {
         await deleteDashboard(config, created.id).catch(() => undefined);
       });
 
-      assert.equal(created.pinned, false);
-      assert.equal(created.restriction_level, RESTRICTION_EVERYONE);
+      expect(created.pinned).toBe(false);
+      expect(created.restriction_level).toBe(RESTRICTION_EVERYONE);
 
       const updated = await updateDashboard(config, created.id, {
         pinned: true,
         restriction_level: RESTRICTION_COLLABORATORS,
       });
-      assert.equal(updated.pinned, true);
-      assert.equal(updated.restriction_level, RESTRICTION_COLLABORATORS);
+      expect(updated.pinned).toBe(true);
+      expect(updated.restriction_level).toBe(RESTRICTION_COLLABORATORS);
 
       const refetched = await getDashboard(config, created.id);
-      assert.equal(refetched.pinned, true);
-      assert.equal(refetched.restriction_level, RESTRICTION_COLLABORATORS);
+      expect(refetched.pinned).toBe(true);
+      expect(refetched.restriction_level).toBe(RESTRICTION_COLLABORATORS);
     });
   });
 });

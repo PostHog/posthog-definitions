@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { ServerFeatureFlagSchema } from "./client.js";
 
 // Hand-derived from a real GET /api/projects/<id>/feature_flags/<id>/ response.
@@ -58,20 +57,20 @@ const realFixture = {
 describe("ServerFeatureFlagSchema", () => {
   it("parses a real-shape response cleanly", () => {
     const parsed = ServerFeatureFlagSchema.parse(realFixture);
-    assert.equal(parsed.id, 12345);
-    assert.equal(parsed.key, "new-onboarding-flow");
-    assert.equal(parsed.active, true);
-    assert.ok(parsed.tags.includes("iac:feature-flags:new-onboarding-flow"));
+    expect(parsed.id).toBe(12345);
+    expect(parsed.key).toBe("new-onboarding-flow");
+    expect(parsed.active).toBe(true);
+    expect(parsed.tags.includes("iac:feature-flags:new-onboarding-flow")).toBeTruthy();
   });
 
   it("throws when a required field is missing", () => {
     const { key: _omitted, ...broken } = realFixture;
-    assert.throws(() => ServerFeatureFlagSchema.parse(broken));
+    expect(() => ServerFeatureFlagSchema.parse(broken)).toThrow();
   });
 
   it("throws when `id` has the wrong type", () => {
-    assert.throws(() =>
+    expect(() =>
       ServerFeatureFlagSchema.parse({ ...realFixture, id: "not-a-number" }),
-    );
+    ).toThrow();
   });
 });

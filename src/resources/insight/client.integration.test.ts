@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { before, describe, it } from "node:test";
+import { beforeAll, describe, expect, it } from "vitest";
 import type { ClientConfig } from "../../client/config.js";
 import {
   loadAcceptanceConfig,
@@ -39,16 +38,16 @@ function basePayload(key: string, event: string): InsightCreate {
 
 function assertTrendsEvent(server: ServerInsight, event: string): void {
   const wrapper = server.query as { kind?: string; source?: { kind?: string; series?: unknown[] } };
-  assert.equal(wrapper?.kind, "InsightVizNode");
-  assert.equal(wrapper?.source?.kind, "TrendsQuery");
+  expect(wrapper?.kind).toBe("InsightVizNode");
+  expect(wrapper?.source?.kind).toBe("TrendsQuery");
   const series = wrapper?.source?.series as Array<{ event?: string }> | undefined;
-  assert.equal(series?.[0]?.event, event);
+  expect(series?.[0]?.event).toBe(event);
 }
 
 describe("insight client (integration)", () => {
   let config: ClientConfig;
 
-  before(async () => {
+  beforeAll(async () => {
     config = loadAcceptanceConfig();
     await purgeStale(config, listManagedInsights, deleteInsight, insightKeyFromTags, PURGE_PREFIX);
   });
@@ -62,11 +61,11 @@ describe("insight client (integration)", () => {
         await deleteInsight(config, created.id).catch(() => undefined);
       });
 
-      assert.ok(typeof created.id === "number" && created.id > 0, "id should be a positive number");
-      assert.ok(typeof created.short_id === "string" && created.short_id.length > 0);
-      assert.equal(created.name, payload.name);
-      assert.equal(created.description, payload.description);
-      assert.deepEqual(created.tags?.filter((t) => t === insightTag(key)), [insightTag(key)]);
+      expect(typeof created.id === "number" && created.id > 0).toBeTruthy();
+      expect(typeof created.short_id === "string" && created.short_id.length > 0).toBeTruthy();
+      expect(created.name).toBe(payload.name);
+      expect(created.description).toBe(payload.description);
+      expect(created.tags?.filter((t) => t === insightTag(key))).toEqual([insightTag(key)]);
       assertTrendsEvent(created, "user signed up");
     });
   });
@@ -80,11 +79,11 @@ describe("insight client (integration)", () => {
       });
 
       const fetched = await getInsight(config, created.id);
-      assert.equal(fetched.id, created.id);
-      assert.equal(fetched.short_id, created.short_id);
-      assert.equal(fetched.name, created.name);
-      assert.equal(fetched.description, created.description);
-      assert.ok(fetched.tags?.includes(insightTag(key)));
+      expect(fetched.id).toBe(created.id);
+      expect(fetched.short_id).toBe(created.short_id);
+      expect(fetched.name).toBe(created.name);
+      expect(fetched.description).toBe(created.description);
+      expect(fetched.tags?.includes(insightTag(key))).toBeTruthy();
       assertTrendsEvent(fetched, "user logged in");
     });
   });
@@ -99,10 +98,10 @@ describe("insight client (integration)", () => {
 
       const managed = await listManagedInsights(config);
       const listed = managed.find((row) => row.id === created.id);
-      assert.ok(listed, "listManagedInsights should include the new insight");
-      assert.equal(insightKeyFromTags(listed.tags), key);
-      assert.equal(listed.name, created.name);
-      assert.ok(listed.tags?.every((t) => typeof t === "string"));
+      expect(listed).toBeDefined();
+      expect(insightKeyFromTags(listed!.tags)).toBe(key);
+      expect(listed!.name).toBe(created.name);
+      expect(listed!.tags?.every((t) => typeof t === "string")).toBeTruthy();
     });
   });
 
@@ -116,14 +115,14 @@ describe("insight client (integration)", () => {
 
       const newName = `${created.name} (renamed)`;
       const updated = await updateInsight(config, created.id, { name: newName });
-      assert.equal(updated.name, newName);
-      assert.equal(updated.description, created.description);
+      expect(updated.name).toBe(newName);
+      expect(updated.description).toBe(created.description);
       assertTrendsEvent(updated, "user signed up");
-      assert.ok(updated.tags?.includes(insightTag(key)));
+      expect(updated.tags?.includes(insightTag(key))).toBeTruthy();
 
       const refetched = await getInsight(config, created.id);
-      assert.equal(refetched.name, newName);
-      assert.equal(refetched.description, created.description);
+      expect(refetched.name).toBe(newName);
+      expect(refetched.description).toBe(created.description);
       assertTrendsEvent(refetched, "user signed up");
     });
   });
@@ -143,11 +142,11 @@ describe("insight client (integration)", () => {
         tags: [insightTag(key), "extra-tag"],
       });
 
-      assert.equal(updated.name, `Integration insight ${key} (rewritten)`);
-      assert.equal(updated.description, "Rewritten description");
+      expect(updated.name).toBe(`Integration insight ${key} (rewritten)`);
+      expect(updated.description).toBe("Rewritten description");
       assertTrendsEvent(updated, "user logged in");
-      assert.ok(updated.tags?.includes(insightTag(key)));
-      assert.ok(updated.tags?.includes("extra-tag"));
+      expect(updated.tags?.includes(insightTag(key))).toBeTruthy();
+      expect(updated.tags?.includes("extra-tag")).toBeTruthy();
     });
   });
 });

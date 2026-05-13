@@ -1,5 +1,4 @@
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import type { DesiredState } from "../types.js";
 import type { FeatureFlag } from "./sdk.js";
@@ -53,9 +52,9 @@ describe("feature flag pipeline", () => {
   it("emits create when desired has no matching server row", () => {
     const result = diff(desiredFor([spec("new-onboarding")]), currentFor([]));
     const slice = result.get("feature-flags")!;
-    assert.equal(slice.ops.length, 1);
-    assert.equal(slice.ops[0]!.kind, "create");
-    assert.equal(slice.ops[0]!.key, "new-onboarding");
+    expect(slice.ops.length).toBe(1);
+    expect(slice.ops[0]!.kind).toBe("create");
+    expect(slice.ops[0]!.key).toBe("new-onboarding");
   });
 
   it("emits unchanged when server hash matches the desired spec's hash", () => {
@@ -63,8 +62,8 @@ describe("feature flag pipeline", () => {
     const server = serverRow(42, "new-onboarding", featureFlagHash(desired));
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("feature-flags")!.ops[0]!;
-    assert.equal(op.kind, "unchanged");
-    if (op.kind === "unchanged") assert.equal(op.serverId, 42);
+    expect(op.kind).toBe("unchanged");
+    if (op.kind === "unchanged") expect(op.serverId).toBe(42);
   });
 
   it("emits update when server hash differs", () => {
@@ -72,16 +71,16 @@ describe("feature flag pipeline", () => {
     const server = serverRow(42, "new-onboarding", "stalehash00000000");
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("feature-flags")!.ops[0]!;
-    assert.equal(op.kind, "update");
-    if (op.kind === "update") assert.equal(op.serverId, 42);
+    expect(op.kind).toBe("update");
+    if (op.kind === "update") expect(op.serverId).toBe(42);
   });
 
   it("classifies a server-only managed flag as an orphan", () => {
     const server = serverRow(99, "ghost", "any");
     const result = diff(desiredFor([]), currentFor([server]));
     const slice = result.get("feature-flags")!;
-    assert.equal(slice.orphans.length, 1);
-    assert.equal((slice.orphans[0] as ServerFeatureFlag).id, 99);
+    expect(slice.orphans.length).toBe(1);
+    expect((slice.orphans[0] as ServerFeatureFlag).id).toBe(99);
   });
 
   it("safety invariant: ignores server rows without an iac:* tag", () => {
@@ -95,20 +94,20 @@ describe("feature flag pipeline", () => {
     };
     const result = diff(desiredFor([]), currentFor([handBuilt]));
     const slice = result.get("feature-flags")!;
-    assert.equal(slice.ops.length, 0);
-    assert.equal(slice.orphans.length, 0);
+    expect(slice.ops.length).toBe(0);
+    expect(slice.orphans.length).toBe(0);
   });
 });
 
 describe("feature flag validation", () => {
   it("rejects keys that don't match the allowed pattern", () => {
     const issues = validateFeatureFlags([spec("not valid!")]);
-    assert.ok(issues.some((m) => m.includes("must match")));
+    expect(issues.some((m) => m.includes("must match"))).toBeTruthy();
   });
 
   it("rejects duplicate keys", () => {
     const issues = validateFeatureFlags([spec("dup"), spec("dup")]);
-    assert.ok(issues.some((m) => m.includes("Duplicate")));
+    expect(issues.some((m) => m.includes("Duplicate"))).toBeTruthy();
   });
 
   it("requires multivariate variant percentages to sum to 100", () => {
@@ -125,14 +124,14 @@ describe("feature flag validation", () => {
         },
       }),
     ]);
-    assert.ok(issues.some((m) => m.includes("sums to 60")));
+    expect(issues.some((m) => m.includes("sums to 60"))).toBeTruthy();
   });
 
   it("rejects encrypted payloads as not yet supported", () => {
     const issues = validateFeatureFlags([
       spec("encrypted", { is_remote_configuration: true, has_encrypted_payloads: true }),
     ]);
-    assert.ok(issues.some((m) => m.includes("has_encrypted_payloads")));
+    expect(issues.some((m) => m.includes("has_encrypted_payloads"))).toBeTruthy();
   });
 
   it("rejects dependent flag references as not yet supported", () => {
@@ -148,11 +147,11 @@ describe("feature flag validation", () => {
         },
       }),
     ]);
-    assert.ok(issues.some((m) => m.includes("dependent flags")));
+    expect(issues.some((m) => m.includes("dependent flags"))).toBeTruthy();
   });
 
   it("accepts a minimal valid spec", () => {
     const issues = validateFeatureFlags([spec("ok")]);
-    assert.deepEqual(issues, []);
+    expect(issues).toEqual([]);
   });
 });
