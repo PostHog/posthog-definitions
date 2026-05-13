@@ -30,20 +30,32 @@ export async function request<T>(
 ): Promise<T> {
   const method = options.method ?? "GET";
   const debug = options.verbose || isDebugEnv();
-  const maxAttempts = retryMaxAttempts();
+  const deadlineMs = Date.now() + overallTimeoutMs();
 
   for (let attempt = 1; ; attempt++) {
+    const remaining = Math.max(0, deadlineMs - Date.now());
+    if (remaining === 0) {
+      throw new DeadlineExceededError(method, path, attempt - 1);
+    }
     try {
-      return await attemptOnce<T>(config, path, options);
+      return await attemptOnce<T>(config, path, options, remaining);
     } catch (err) {
       const verdict = classify(err, method);
-      if (verdict.kind === "fatal" || attempt >= maxAttempts) {
+      if (verdict.kind === "fatal") throw err;
+
+      const delayMs = verdict.retryAfterMs ?? backoffDelay(attempt);
+      const remainingAfterDelay = deadlineMs - Date.now() - delayMs;
+      if (remainingAfterDelay <= 0) {
+        if (debug) {
+          console.error(
+            `[http] giving up after ${attempt} attempt(s) — next backoff ${delayMs}ms would exceed deadline (${reason(err)})`,
+          );
+        }
         throw err;
       }
-      const delayMs = verdict.retryAfterMs ?? backoffDelay(attempt);
       if (debug) {
         console.error(
-          `[http] retry ${attempt + 1}/${maxAttempts} in ${delayMs}ms — ${reason(err)}`,
+          `[http] retry ${attempt + 1} in ${delayMs}ms (${Math.round(remainingAfterDelay / 1000)}s left) — ${reason(err)}`,
         );
       }
       await sleep(delayMs);
@@ -51,10 +63,18 @@ export async function request<T>(
   }
 }
 
+export class DeadlineExceededError extends Error {
+  constructor(method: string, path: string, attempts: number) {
+    super(`Deadline exceeded for ${method} ${path} after ${attempts} attempt(s).`);
+    this.name = "DeadlineExceededError";
+  }
+}
+
 async function attemptOnce<T>(
   config: ClientConfig,
   path: string,
   options: RequestOptions,
+  remainingDeadlineMs: number,
 ): Promise<T> {
   const method = options.method ?? "GET";
   const url = new URL(path, `${config.host}/`);
@@ -73,7 +93,7 @@ async function attemptOnce<T>(
   }
 
   const debug = options.verbose || isDebugEnv();
-  const timeoutMs = requestTimeoutMs();
+  const timeoutMs = Math.min(attemptTimeoutMs(), remainingDeadlineMs);
 
   if (debug) {
     console.error(`[http] → ${method} ${url.toString()} (timeout ${timeoutMs}ms)`);
@@ -202,12 +222,12 @@ function isDebugEnv(): boolean {
   return d === "1" || d === "true" || p === "1" || p === "true";
 }
 
-function requestTimeoutMs(): number {
+function overallTimeoutMs(): number {
   return readPositiveInt("POSTHOG_API_TIMEOUT_MS", 5 * 60 * 1000);
 }
 
-function retryMaxAttempts(): number {
-  return readPositiveInt("POSTHOG_API_MAX_ATTEMPTS", 4);
+function attemptTimeoutMs(): number {
+  return readPositiveInt("POSTHOG_API_ATTEMPT_TIMEOUT_MS", 30_000);
 }
 
 function retryBaseDelayMs(): number {
