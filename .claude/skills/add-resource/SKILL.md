@@ -44,20 +44,34 @@ Two mechanisms enforce this — both must be replicated for the new resource:
 
 If the resource's API has no `tags` field, this skill does not apply — bring it up with the user before proceeding. The whole identity model depends on writable tags.
 
-## The eight files to change
+## Directory layout for a new resource
 
-For a hypothetical resource `Foo` (substitute the real noun), here is the surgery checklist. Order matters — earlier steps' types feed later ones.
+Each new resource lives in its own self-contained directory under `src/resources/<resource>/`. The directory is the unit of contribution: everything a reviewer needs to understand the resource is co-located, and the generic pipeline (under `src/apply/`) is the only thing that depends on it.
 
-| # | File | What changes |
-|---|------|--------------|
-| 1 | `src/sdk/types.ts` | Add the `Foo` user-facing type. |
-| 2 | `src/sdk/foo.ts` (new) | Add the `foo(spec): Foo` factory helper. |
-| 3 | `src/index.ts` | Re-export `foo` and the `Foo` type. |
-| 4 | `src/client/foos.ts` (new) | Zod schema `ServerFooSchema` (with `ServerFoo` derived via `z.infer`) + `list/get/create/update` HTTP wrappers that `.parse()` every response, with `listManagedFoos` filtering by `iac:foos:` tag. |
-| 5 | `src/apply/serialize.ts` | `fooTag(key)`, `fooKeyFromTags(tags)`, `fooPayload(spec, hash)` mirroring the insight versions. |
-| 6 | `src/apply/load.ts` | Recognise `Foo` exports via `looksLikeFoo`, collect into `DesiredState.foos`. |
-| 7 | `src/apply/validate.ts` | Validate required fields and unique keys for the `Foo` half of `DesiredState`. |
-| 8 | `src/apply/diff.ts`, `src/apply/execute.ts`, `src/apply/format-plan.ts` | Add `FooOp`, the diff loop, the execute loop with `assertManagedFoo`, and a plan-render block. Wire into `src/cli/apply.ts` (load the server list, pass through, count it). |
+```
+src/resources/foo/
+├── sdk.ts               user-facing factory + the Foo type
+├── client.ts            ServerFooSchema (Zod) + list/get/create/update wrappers
+├── pipeline.ts          serialize, validate, diff, execute, format — pipeline plumbing
+├── pipeline.test.ts     hash determinism, diff op selection, safety invariant
+├── client.test.ts       Zod schema parses real fixtures (only if non-trivial shape)
+└── index.ts             public surface + registration object for the pipeline
+```
+
+For a hypothetical resource `Foo` (substitute the real noun), here is the per-file content. Order matters — earlier files' types feed later ones.
+
+| # | File | What it contains |
+|---|------|------------------|
+| 1 | `src/resources/foo/sdk.ts` | The `Foo` user-facing type and the `foo(spec): Foo` factory helper. |
+| 2 | `src/resources/foo/client.ts` | `ServerFooSchema` (Zod, with `ServerFoo` derived via `z.infer`) + `list/get/create/update` HTTP wrappers that `.parse()` every response. `listManagedFoos` filters by `iac:foos:` tag. |
+| 3 | `src/resources/foo/pipeline.ts` | `fooTag(key)`, `fooKeyFromTags(tags)`, `fooPayload(spec, hash)`, `validateFoos`, `FooOp` union, `diffFoos`, `fooPayloadHash`, `runFooOp` with `assertManagedFoo`, `renderFooOp` for plan output. |
+| 4 | `src/resources/foo/index.ts` | Re-export `foo` and `Foo` for users; export a `fooResource` registration object that the generic pipeline picks up. |
+| 5 | `src/resources/index.ts` | Add `fooResource` to the `RESOURCES` array. |
+| 6 | `src/index.ts` | Re-export `foo` and the `Foo` type for SDK users. |
+
+Truly cross-resource types (`Layout`, `Filters`, the query node types) stay in `src/sdk/types.ts`. Generic pipeline orchestration (hash, file load, the apply driver) stays in `src/apply/`. The CLI does not change — it iterates the registry.
+
+**Legacy note.** Dashboards and insights still live in the flat layout — `src/sdk/{dashboard,insight,types}.ts`, `src/client/{dashboards,insights}.ts`, and the shared `src/apply/{serialize,validate,diff,execute,format-plan}.ts` files. New resources go in the per-directory layout above; the existing two will be migrated separately. Read the legacy files as reference, but do not extend them in place.
 
 ### Identity tag
 
@@ -75,7 +89,7 @@ New resources must validate every response from the PostHog API with a Zod schem
 
 If `zod` is not yet in `package.json`, add it: `pnpm add zod`. One-time cost for the first resource that adopts this.
 
-Pattern for `src/client/foos.ts`:
+Pattern for `src/resources/foo/client.ts`:
 
 ```ts
 import { z } from "zod";
@@ -115,62 +129,94 @@ What *not* to schema:
 
 ### Hashing
 
-Reuse `specHash` from `src/apply/hash.ts:14` on a canonical projection of the desired spec. The projection must:
+Reuse `specHash` from `src/apply/hash.ts` on a canonical projection of the desired spec, exported from `pipeline.ts` as `fooPayloadHash`. The projection must:
 
 - Include every field the API round-trips.
 - Exclude server-only fields (`id`, `created_at`, …).
 - Exclude managed tags (the `iac:*` ones) — they are not user-authored.
 - Be stable under key reordering (the hash function canonicalises, but don't rely on it for arrays of objects — sort by a stable key if order is irrelevant).
 
-If hashing misses a field, that field will silently fail to sync on update. If it includes a server-generated field, every apply will be marked dirty. The dashboard implementation in `dashboardSpecForHash` at `src/apply/diff.ts:88` is the canonical example.
+If hashing misses a field, that field will silently fail to sync on update. If it includes a server-generated field, every apply will be marked dirty. The legacy dashboard implementation in `dashboardSpecForHash` at `src/apply/diff.ts:88` is the canonical example to copy from.
 
 ### Cross-resource references
 
-If `Foo` references another resource by key (e.g. a survey references a feature flag), do **not** include the referenced server id in the hash — it is environment-specific. Include the *key* and resolve to the id at execute time, the way dashboards resolve insight ids via `insightIdByKey` in `src/apply/execute.ts:58`.
+If `Foo` references another resource by key (e.g. a survey references a feature flag), do **not** include the referenced server id in the hash — it is environment-specific. Include the *key* and resolve to the id at execute time, the way dashboards resolve insight ids via `insightIdByKey` in the legacy `src/apply/execute.ts`.
 
 Plan the execute ordering: dependencies must be created before dependents. The simplest model is two passes: create all `Foo`s first if other resources reference them, then move on.
 
 ## Validation
 
-Replicate the insight-style checks in `src/apply/validate.ts`:
+In `pipeline.ts`, export `validateFoos(state): string[]` returning all issues. Cover at minimum:
 
 - `key` is required and unique.
 - `name` is required.
 - Any resource-specific invariants (e.g. survey must have at least one question).
 - Cross-resource references resolve.
 
-Push every error into `issues` and throw `ValidationError` at the end — do not bail on the first. The CLI shows all problems at once.
+Push every error into the returned array — do not bail on the first. The generic pipeline driver aggregates issues across resources and throws `ValidationError` once at the end. The CLI shows all problems at once.
 
 ## Plan rendering
 
-In `src/apply/format-plan.ts`, add:
+In `pipeline.ts`, also export:
 
-- A `display<Foo>` and `display<Foo>FromServer` pair that returns a `DisplayValue` tree.
-- A `renderFooOp` matching `renderInsightOp` / `renderDashboardOp`.
-- A line in `formatPlan` for the per-resource summary counts.
-- Optional: orphan rendering for `Foo`s that exist on the server but not in code.
+- A `displayFoo` and `displayFooFromServer` pair returning a `DisplayValue` tree.
+- A `renderFooOp` matching the legacy `renderInsightOp` / `renderDashboardOp`.
 
-The shape that comes out of `display<Foo>FromServer` must match `display<Foo>` (same field order, same value coercions), otherwise the diff renderer will show spurious changes on `unchanged` rows.
+The generic plan formatter calls `renderFooOp` for each op and stacks them with the per-resource counts.
 
-## CLI wiring
+The shape that comes out of `displayFooFromServer` must match `displayFoo` (same field order, same value coercions), otherwise the diff renderer will show spurious changes on `unchanged` rows.
 
-In `src/cli/apply.ts`:
+## Registration (no CLI change)
 
-1. Fetch the server list in parallel with the existing ones (`Promise.all`).
-2. Pass `foos` through to `diff()`.
-3. Include the count in the "Loaded N foo(s)" log line.
-4. Add `summary.foosCreated/Updated/Unchanged` to the "Applied:" summary.
+The CLI does not change. Each resource exports a registration object from its `index.ts` that the generic driver picks up:
+
+```ts
+// src/resources/foo/index.ts
+import { foo, type Foo } from "./sdk.js";
+import { listManagedFoos, getFoo } from "./client.js";
+import {
+  fooTag,
+  fooKeyFromTags,
+  fooPayloadHash,
+  diffFoos,
+  runFooOp,
+  validateFoos,
+  renderFooOp,
+} from "./pipeline.js";
+
+export { foo, type Foo };
+
+export const fooResource = {
+  name: "foos",
+  identityPrefix: "iac:foos:",
+  list: listManagedFoos,
+  get: getFoo,
+  diff: diffFoos,
+  execute: runFooOp,
+  validate: validateFoos,
+  render: renderFooOp,
+} as const;
+```
+
+Then add it to the registry:
+
+```ts
+// src/resources/index.ts
+export const RESOURCES = [insightResource, dashboardResource, fooResource];
+```
+
+That is the only place the new resource becomes visible to the pipeline.
 
 ## Unit tests (required for new resources)
 
 The pipeline's pure functions are testable with no mocking; the test budget per new resource is small but non-negotiable. Use Node's built-in test runner — no test framework dependency. Run with `pnpm test`.
 
-Two reference test files already exist:
+Two reference test files exist in the legacy layout:
 
 - `src/apply/hash.test.ts` — `specHash` determinism, key-order invariance, leaf sensitivity.
-- `src/apply/diff.test.ts` — op selection (create / update / unchanged / orphan) for insights and dashboards, plus the **safety invariant** test that confirms server rows without an `iac:*` tag are ignored entirely.
+- `src/apply/diff.test.ts` — op selection (create / update / unchanged / orphan) for insights and dashboards, plus the **safety invariant** test confirming server rows without an `iac:*` tag are ignored entirely.
 
-For a new resource `Foo`, add a `diff.test.ts` block that exercises:
+For a new resource `Foo`, add `src/resources/foo/pipeline.test.ts` covering:
 
 1. `create` when desired exists and server is empty.
 2. `unchanged` when desired hash matches the server's `iac:hash:` tag.
@@ -178,16 +224,18 @@ For a new resource `Foo`, add a `diff.test.ts` block that exercises:
 4. `orphan` when a server row has `iac:foos:<key>` but no matching spec.
 5. **Safety invariant:** a server row without any `iac:*` tag produces zero ops *and* zero orphans. This is the test that protects hand-built resources in a shared project.
 
-The reference factory pattern (`serverInsight` / `serverDashboard` in `src/apply/diff.test.ts`) builds a server row with the right `iac:foos:<key>` and `iac:hash:<hex>` tags — copy it. The hash for "unchanged" cases must come from the public `insightPayloadHash` / `dashboardPayloadHash` helpers in `src/apply/diff.ts`; export an equivalent `fooPayloadHash` from `diff.ts` for the new resource and call it from the test.
+The factory pattern (`serverInsight` in `src/apply/diff.test.ts`) builds a server row with the right `iac:foos:<key>` and `iac:hash:<hex>` tags — copy it. The hash for "unchanged" cases must come from `fooPayloadHash`; call it from the test rather than hard-coding a hex.
 
-If the resource uses Zod, also add a `client/foos.test.ts` with two cases:
+If the Zod schema for `Foo` is non-trivial, also add `src/resources/foo/client.test.ts` with two cases:
 
 1. Real-shaped fixture parses cleanly.
 2. Fixture with a missing required field throws.
 
 Fixtures should be hand-authored from an actual `curl` against the PostHog API, not invented — the whole point of the Zod schema is to catch drift from the real wire format.
 
-**Do not** write tests for `execute.ts` (HTTP I/O), `format-plan.ts` (rendering), or `load.ts` (filesystem). The manual dev-project flow covers those at the right level.
+**Do not** write tests for HTTP wrappers, plan rendering, or filesystem loading. The manual dev-project flow covers those at the right level.
+
+Test files run under a 500ms per-case timeout (`--test-timeout=500` in the `test` script). Anything slower means a hang — fix the test, do not raise the cap.
 
 ## Verification (manual, end-to-end)
 
