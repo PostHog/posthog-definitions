@@ -25,6 +25,8 @@
     "apply": "tsx src/cli/index.ts apply",
     "pull": "tsx src/cli/index.ts pull",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "VITEST_MODE=integration vitest run",
@@ -37,8 +39,11 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.2",
+    "eslint": "^10.3.0",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.59.2",
     "vitest": "^2.1.8"
   },
   "engines": {
