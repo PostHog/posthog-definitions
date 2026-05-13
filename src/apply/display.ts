@@ -20,7 +20,10 @@ export function displayJson(value: unknown): DisplayValue {
   if (typeof value !== "object") return scalar(value);
   if (Array.isArray(value)) return arr(value.map(displayJson));
   const entries: Array<[string, DisplayValue]> = [];
-  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+  const sorted = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const [k, v] of sorted) {
     entries.push([k, displayJson(v)]);
   }
   return obj(entries);
