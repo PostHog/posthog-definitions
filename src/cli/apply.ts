@@ -2,17 +2,22 @@ import { listManagedDashboards } from "../client/dashboards.js";
 import { listManagedInsights } from "../client/insights.js";
 import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/http.js";
-import { diff, type DiffResult } from "../apply/diff.js";
+import { diff } from "../apply/diff.js";
 import { execute, SafetyViolationError } from "../apply/execute.js";
+import { formatPlan } from "../apply/format-plan.js";
 import { LoadError, loadDefinitions } from "../apply/load.js";
 import { ValidationError, validate } from "../apply/validate.js";
 import type { ApplyArgs } from "./args.js";
+import { createDebug, debugEnabled } from "./debug.js";
 
 export async function runApply(args: ApplyArgs): Promise<number> {
+  const debug = createDebug(debugEnabled(args.verbose));
+
   const overrides: { host?: string; projectId?: string } = {};
   if (args.host !== undefined) overrides.host = args.host;
   if (args.project !== undefined) overrides.projectId = args.project;
 
+  debug("loading config", { host: overrides.host, project: overrides.projectId });
   let config;
   try {
     config = loadConfig(overrides);
@@ -23,7 +28,9 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     }
     throw err;
   }
+  debug("config loaded", { host: config.host, projectId: config.projectId });
 
+  debug("loading definitions", { dir: args.dir });
   let desired;
   try {
     desired = await loadDefinitions(args.dir);
@@ -34,7 +41,12 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     }
     throw err;
   }
+  debug("definitions loaded", {
+    dashboards: desired.dashboards.length,
+    insights: desired.insights.length,
+  });
 
+  debug("validating definitions");
   try {
     validate(desired);
   } catch (err) {
@@ -44,6 +56,7 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     }
     throw err;
   }
+  debug("validation passed");
 
   console.error(
     `Loaded ${desired.dashboards.length} dashboard(s) and ${desired.insights.length} insight(s) from ${args.dir}/`,
@@ -54,6 +67,7 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     return 0;
   }
 
+  debug("fetching current server state");
   let current;
   try {
     const [insights, dashboards] = await Promise.all([
@@ -64,21 +78,34 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   } catch (err) {
     return reportApiError(err, "while fetching current state");
   }
+  debug("current state fetched", {
+    serverInsights: current.insights.length,
+    serverDashboards: current.dashboards.length,
+  });
 
+  debug("diffing");
   const diffResult = diff(
     { dashboards: desired.dashboards.map((d) => d.spec), insights: desired.insights.map((i) => i.spec) },
     current,
   );
+  debug("diff complete", {
+    insightOps: diffResult.insightOps.length,
+    dashboardOps: diffResult.dashboardOps.length,
+    orphanInsights: diffResult.orphanInsights.length,
+    orphanDashboards: diffResult.orphanDashboards.length,
+  });
 
-  printPlan(diffResult);
+  console.log(formatPlan(diffResult, { serverInsights: current.insights }));
 
   if (args.dryRun) {
     console.log("\nDry run — no changes applied.");
     return 0;
   }
 
+  debug("executing apply");
   try {
     const summary = await execute(config, diffResult, { verbose: args.verbose });
+    debug("apply complete", { ...summary });
     console.log(
       `\nApplied: ${summary.insightsCreated + summary.dashboardsCreated} created, ` +
         `${summary.insightsUpdated + summary.dashboardsUpdated} updated, ` +
@@ -92,42 +119,6 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     }
     return reportApiError(err, "during apply");
   }
-}
-
-function printPlan(result: DiffResult): void {
-  const ins = countOps(result.insightOps);
-  const dash = countOps(result.dashboardOps);
-  console.log(`\nPlan:`);
-  console.log(
-    `  insights:   ${ins.create} to create, ${ins.update} to update, ${ins.unchanged} unchanged`,
-  );
-  console.log(
-    `  dashboards: ${dash.create} to create, ${dash.update} to update, ${dash.unchanged} unchanged`,
-  );
-  if (result.orphanInsights.length > 0 || result.orphanDashboards.length > 0) {
-    console.log(
-      `  orphans:    ${result.orphanInsights.length} insight(s), ${result.orphanDashboards.length} dashboard(s) ` +
-        `tagged iac:* with no matching source file (MVP leaves these alone)`,
-    );
-  }
-  for (const op of result.insightOps) {
-    if (op.kind !== "unchanged") console.log(`  ${op.kind} insight   ${op.key}`);
-  }
-  for (const op of result.dashboardOps) {
-    if (op.kind !== "unchanged") console.log(`  ${op.kind} dashboard ${op.key}`);
-  }
-}
-
-function countOps(
-  ops: Array<{ kind: "create" | "update" | "unchanged" }>,
-): { create: number; update: number; unchanged: number } {
-  return ops.reduce(
-    (acc, op) => {
-      acc[op.kind]++;
-      return acc;
-    },
-    { create: 0, update: 0, unchanged: 0 },
-  );
 }
 
 function reportApiError(err: unknown, context: string): number {

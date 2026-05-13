@@ -12,12 +12,12 @@ import {
 
 export type InsightOp =
   | { kind: "create"; key: string; spec: Insight; hash: string }
-  | { kind: "update"; key: string; spec: Insight; hash: string; serverId: number }
+  | { kind: "update"; key: string; spec: Insight; hash: string; serverId: number; server: ServerInsight }
   | { kind: "unchanged"; key: string; spec: Insight; serverId: number };
 
 export type DashboardOp =
   | { kind: "create"; key: string; spec: Dashboard; hash: string }
-  | { kind: "update"; key: string; spec: Dashboard; hash: string; serverId: number }
+  | { kind: "update"; key: string; spec: Dashboard; hash: string; serverId: number; server: ServerDashboard }
   | { kind: "unchanged"; key: string; spec: Dashboard; serverId: number };
 
 export type DiffResult = {
@@ -48,7 +48,7 @@ export function diff(
     } else if (extractHash(server.tags) === hash) {
       insightOps.push({ kind: "unchanged", key: spec.key, spec, serverId: server.id });
     } else {
-      insightOps.push({ kind: "update", key: spec.key, spec, hash, serverId: server.id });
+      insightOps.push({ kind: "update", key: spec.key, spec, hash, serverId: server.id, server });
     }
   }
 
@@ -72,7 +72,7 @@ export function diff(
     } else if (extractHash(server.tags) === hash) {
       dashboardOps.push({ kind: "unchanged", key: spec.key, spec, serverId: server.id });
     } else {
-      dashboardOps.push({ kind: "update", key: spec.key, spec, hash, serverId: server.id });
+      dashboardOps.push({ kind: "update", key: spec.key, spec, hash, serverId: server.id, server });
     }
   }
 

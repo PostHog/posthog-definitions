@@ -40,17 +40,39 @@ export async function request<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  if (options.verbose) {
-    console.error(`[http] ${method} ${url.toString()}`);
+  const debug = options.verbose || isDebugEnv();
+  const timeoutMs = requestTimeoutMs();
+
+  if (debug) {
+    console.error(`[http] → ${method} ${url.toString()} (timeout ${timeoutMs}ms)`);
   }
 
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  const startedAt = Date.now();
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (err) {
+    const elapsed = Date.now() - startedAt;
+    if (debug) {
+      const reason = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+      const note = isTimeoutError(err) ? ` (hit ${timeoutMs}ms timeout)` : "";
+      console.error(`[http] ✗ ${method} ${url.toString()} after ${elapsed}ms — ${reason}${note}`);
+    }
+    throw err;
+  }
 
   const text = await response.text();
+  const elapsed = Date.now() - startedAt;
+  if (debug) {
+    console.error(
+      `[http] ← ${method} ${url.toString()} ${response.status} ${response.statusText} ${elapsed}ms (${text.length}B)`,
+    );
+  }
   if (!response.ok) {
     throw new ApiError(response.status, method, url.toString(), text);
   }
@@ -58,6 +80,25 @@ export async function request<T>(
     return undefined as T;
   }
   return JSON.parse(text) as T;
+}
+
+function isTimeoutError(err: unknown): boolean {
+  return err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+}
+
+function isDebugEnv(): boolean {
+  const d = process.env.DEBUG;
+  const p = process.env.POSTHOG_DEBUG;
+  return d === "1" || d === "true" || p === "1" || p === "true";
+}
+
+function requestTimeoutMs(): number {
+  const raw = process.env.POSTHOG_API_TIMEOUT_MS;
+  if (raw) {
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return 5 * 60 * 1000;
 }
 
 export type Paginated<T> = {
