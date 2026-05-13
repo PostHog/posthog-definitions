@@ -1,6 +1,6 @@
 # Risks and open questions
 
-Block on these before committing to the MVP timeline. Each is a quick investigation, not a build task.
+Block on these before committing to the MVP. Each is a quick investigation, not a build task.
 
 ## R1 — Tags round-trip through dashboard/insight writes
 

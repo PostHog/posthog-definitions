@@ -1,0 +1,12 @@
+# Copy to .envrc and fill in real values, then run `direnv allow`.
+# .envrc is gitignored — never commit real credentials.
+
+# Personal API key with dashboard:write and insight:write scopes.
+# Create one at <host>/settings/user-api-keys.
+export POSTHOG_PERSONAL_API_KEY=phx_replace_me
+
+# Numeric project ID to sync into. Use a dev project for testing.
+export POSTHOG_PROJECT_ID=000000
+
+# Defaults to https://us.posthog.com. Override for EU or self-hosted.
+# export POSTHOG_HOST=https://eu.posthog.com

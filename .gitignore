@@ -1,0 +1,27 @@
+# Direnv — local credentials, never committed
+.envrc
+.direnv/
+
+# Dotenv variants
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Claude Code per-project state
+.claude/
