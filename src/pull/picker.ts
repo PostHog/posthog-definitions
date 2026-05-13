@@ -1,5 +1,5 @@
 import enquirer from "enquirer";
-import type { ServerDashboard } from "../client/dashboards.js";
+import type { ServerDashboard } from "../resources/dashboard/client.js";
 
 export class PickAbortedError extends Error {
   constructor() {

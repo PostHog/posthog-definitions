@@ -1,9 +1,15 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { dashboardTag, insightTag, isManagedTag } from "../apply/serialize.js";
+import { isManagedTag } from "../apply/display.js";
 import type { ClientConfig } from "../client/config.js";
-import { getDashboard, listDashboards, updateDashboard } from "../client/dashboards.js";
-import { getInsight, updateInsight } from "../client/insights.js";
+import {
+  getDashboard,
+  listDashboards,
+  updateDashboard,
+} from "../resources/dashboard/client.js";
+import { dashboardTag } from "../resources/dashboard/pipeline.js";
+import { getInsight, updateInsight } from "../resources/insight/client.js";
+import { insightTag } from "../resources/insight/pipeline.js";
 import { generateDashboardFile, type GeneratedFile } from "./codegen.js";
 import { partitionDashboards, type FilterReason } from "./filter.js";
 

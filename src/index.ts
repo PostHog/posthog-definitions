@@ -1,19 +1,20 @@
-export { dashboard } from "./sdk/dashboard.js";
-export { insight } from "./sdk/insight.js";
-export { text, button } from "./sdk/tiles.js";
-export { trends, hogql } from "./sdk/queries.js";
+export { dashboard, text, button } from "./resources/dashboard/index.js";
 export type {
   Dashboard,
-  Insight,
   Tile,
   InsightTile,
   TextTile,
   ButtonTile,
   Layout,
   Filters,
+} from "./resources/dashboard/index.js";
+
+export { insight, trends, hogql } from "./resources/insight/index.js";
+export type {
+  Insight,
   Query,
   TrendsQuery,
   HogQLQuery,
   EventsNode,
   InsightVizNode,
-} from "./sdk/types.js";
+} from "./resources/insight/index.js";

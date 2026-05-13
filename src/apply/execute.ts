@@ -1,201 +1,74 @@
 import type { ClientConfig } from "../client/config.js";
-import {
-  createDashboard,
-  deleteDashboard,
-  getDashboard,
-  type ServerDashboard,
-  updateDashboard,
-} from "../client/dashboards.js";
 import { ApiError } from "../client/http.js";
+import { RESOURCES } from "../resources/index.js";
 import {
-  createInsight,
-  deleteInsight,
-  getInsight,
-  type ServerInsight,
-  updateInsight,
-} from "../client/insights.js";
-import type { DashboardOp, DiffResult, InsightOp } from "./diff.js";
-import {
-  dashboardKeyFromTags,
-  dashboardPayload,
-  dashboardTag,
-  insightKeyFromTags,
-  insightPayload,
-  insightTag,
-} from "./serialize.js";
+  type ApplyContext,
+  newApplyContext,
+  type ResourceCounts,
+  type ResourceModule,
+  type ResourceOp,
+} from "../resources/types.js";
+import type { DiffResult } from "./diff.js";
 
-export class SafetyViolationError extends Error {
-  constructor(kind: "dashboard" | "insight", id: number, key: string) {
-    super(
-      `Refusing to write to ${kind} ${id} (key="${key}"): its tags no longer include the managed iac:* identity tag. This usually means the tag was removed in the UI between fetch and write. Aborting.`,
-    );
-    this.name = "SafetyViolationError";
-  }
-}
+export { SafetyViolationError } from "./safety.js";
 
 export type ExecuteOptions = {
   verbose?: boolean;
   prune?: boolean;
 };
 
-export type ExecuteSummary = {
-  insightsCreated: number;
-  insightsUpdated: number;
-  insightsUnchanged: number;
-  insightsPruned: number;
-  dashboardsCreated: number;
-  dashboardsUpdated: number;
-  dashboardsUnchanged: number;
-  dashboardsPruned: number;
-};
+export type ExecuteSummary = Map<string, ResourceCounts>;
 
 export async function execute(
   config: ClientConfig,
   diffResult: DiffResult,
   options: ExecuteOptions = {},
 ): Promise<ExecuteSummary> {
-  const summary: ExecuteSummary = {
-    insightsCreated: 0,
-    insightsUpdated: 0,
-    insightsUnchanged: 0,
-    insightsPruned: 0,
-    dashboardsCreated: 0,
-    dashboardsUpdated: 0,
-    dashboardsUnchanged: 0,
-    dashboardsPruned: 0,
-  };
+  const summary: ExecuteSummary = new Map();
+  const ctx = newApplyContext();
 
-  const insightIdByKey = new Map<string, number>();
-
-  for (const op of diffResult.insightOps) {
-    const id = await runInsightOp(config, op, options);
-    insightIdByKey.set(op.key, id);
-    if (op.kind === "create") summary.insightsCreated++;
-    else if (op.kind === "update") summary.insightsUpdated++;
-    else summary.insightsUnchanged++;
-  }
-
-  for (const op of diffResult.dashboardOps) {
-    await runDashboardOp(config, op, insightIdByKey, options);
-    if (op.kind === "create") summary.dashboardsCreated++;
-    else if (op.kind === "update") summary.dashboardsUpdated++;
-    else summary.dashboardsUnchanged++;
-  }
-
-  if (options.prune) {
-    for (const orphan of diffResult.orphanDashboards) {
-      const key = dashboardKeyFromTags(orphan.tags) ?? `id:${orphan.id}`;
-      if (await pruneDashboard(config, orphan.id, key, options)) {
-        summary.dashboardsPruned++;
+  for (const resource of RESOURCES) {
+    const counts: ResourceCounts = { created: 0, updated: 0, unchanged: 0, pruned: 0 };
+    const slice = diffResult.get(resource.name);
+    if (slice) {
+      for (const op of slice.ops) {
+        await resource.executeOp(config, op, ctx, { verbose: options.verbose });
+        bumpCount(counts, op);
+      }
+      if (options.prune) {
+        for (const orphan of slice.orphans) {
+          if (await resource.prune(config, orphan, { verbose: options.verbose })) {
+            counts.pruned++;
+          }
+        }
       }
     }
-    for (const orphan of diffResult.orphanInsights) {
-      const key = insightKeyFromTags(orphan.tags) ?? `id:${orphan.id}`;
-      if (await pruneInsight(config, orphan.id, key, options)) {
-        summary.insightsPruned++;
-      }
-    }
+    summary.set(resource.name, counts);
   }
 
   return summary;
 }
 
-async function runInsightOp(
+function bumpCount(counts: ResourceCounts, op: ResourceOp<unknown, unknown>): void {
+  if (op.kind === "create") counts.created++;
+  else if (op.kind === "update") counts.updated++;
+  else counts.unchanged++;
+}
+
+export async function fetchCurrentState(
   config: ClientConfig,
-  op: InsightOp,
-  options: ExecuteOptions,
-): Promise<number> {
-  if (op.kind === "unchanged") return op.serverId;
-
-  const payload = insightPayload(op.spec, op.hash);
-
-  if (op.kind === "create") {
-    const created = await createInsight(config, payload, options);
-    return created.id;
-  }
-
-  await assertManagedInsight(config, op.serverId, op.key, options);
-  const updated = await updateInsight(config, op.serverId, payload, options);
-  return updated.id;
+  options: ExecuteOptions = {},
+): Promise<Map<string, unknown[]>> {
+  const entries = await Promise.all(
+    RESOURCES.map(async (r) => [r.name, await r.list(config, { verbose: options.verbose })] as const),
+  );
+  return new Map(entries);
 }
 
-async function runDashboardOp(
-  config: ClientConfig,
-  op: DashboardOp,
-  insightIdByKey: Map<string, number>,
-  options: ExecuteOptions,
-): Promise<void> {
-  if (op.kind === "unchanged") return;
-
-  const payload = dashboardPayload(op.spec, op.hash, insightIdByKey);
-
-  if (op.kind === "create") {
-    await createDashboard(config, payload, options);
-    return;
-  }
-
-  await assertManagedDashboard(config, op.serverId, op.key, options);
-  await updateDashboard(config, op.serverId, payload, options);
+/** Re-exported so the CLI doesn't need to know about the underlying error class. */
+export function isApiError(err: unknown): err is ApiError {
+  return err instanceof ApiError;
 }
 
-async function pruneDashboard(
-  config: ClientConfig,
-  id: number,
-  key: string,
-  options: ExecuteOptions,
-): Promise<boolean> {
-  try {
-    await assertManagedDashboard(config, id, key, options);
-  } catch (err) {
-    if (isNotFound(err)) return false;
-    throw err;
-  }
-  await deleteDashboard(config, id, options);
-  return true;
-}
-
-async function pruneInsight(
-  config: ClientConfig,
-  id: number,
-  key: string,
-  options: ExecuteOptions,
-): Promise<boolean> {
-  try {
-    await assertManagedInsight(config, id, key, options);
-  } catch (err) {
-    if (isNotFound(err)) return false;
-    throw err;
-  }
-  await deleteInsight(config, id, options);
-  return true;
-}
-
-async function assertManagedInsight(
-  config: ClientConfig,
-  id: number,
-  key: string,
-  options: ExecuteOptions,
-): Promise<void> {
-  const current: ServerInsight = await getInsight(config, id, options);
-  const expected = insightTag(key);
-  if (!current.tags?.includes(expected)) {
-    throw new SafetyViolationError("insight", id, key);
-  }
-}
-
-async function assertManagedDashboard(
-  config: ClientConfig,
-  id: number,
-  key: string,
-  options: ExecuteOptions,
-): Promise<void> {
-  const current: ServerDashboard = await getDashboard(config, id, options);
-  const expected = dashboardTag(key);
-  if (!current.tags?.includes(expected)) {
-    throw new SafetyViolationError("dashboard", id, key);
-  }
-}
-
-function isNotFound(err: unknown): boolean {
-  return err instanceof ApiError && err.status === 404;
-}
+// Re-export resource module type for downstream consumers that build their own diffs.
+export type { ResourceModule };

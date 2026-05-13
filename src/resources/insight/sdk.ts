@@ -1,4 +1,49 @@
-import type { EventsNode, HogQLQuery, TrendsQuery } from "./types.js";
+export type EventsNode = {
+  kind?: "EventsNode";
+  event?: string | null;
+  name?: string;
+  math?: string;
+  math_property?: string;
+  properties?: unknown[];
+  [key: string]: unknown;
+};
+
+export type TrendsQuery = {
+  kind: "TrendsQuery";
+  series: EventsNode[];
+  interval?: "hour" | "day" | "week" | "month";
+  dateRange?: { date_from?: string; date_to?: string };
+  breakdownFilter?: Record<string, unknown>;
+  trendsFilter?: Record<string, unknown>;
+  properties?: unknown[];
+  [key: string]: unknown;
+};
+
+export type HogQLQuery = {
+  kind: "HogQLQuery";
+  query: string;
+  values?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+export type InsightVizNode = {
+  kind: "InsightVizNode";
+  source: TrendsQuery;
+};
+
+export type Query = TrendsQuery | HogQLQuery;
+
+export type Insight = {
+  key: string;
+  name: string;
+  description?: string;
+  query: Query;
+  tags?: string[];
+};
+
+export function insight(spec: Insight): Insight {
+  return spec;
+}
 
 export function trends(spec: {
   series: EventsNode[];

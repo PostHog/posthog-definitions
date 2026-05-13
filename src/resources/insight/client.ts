@@ -1,5 +1,5 @@
-import type { ClientConfig } from "./config.js";
-import { paginate, request } from "./http.js";
+import type { ClientConfig } from "../../client/config.js";
+import { paginate, request } from "../../client/http.js";
 
 export type ServerInsight = {
   id: number;

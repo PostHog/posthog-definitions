@@ -1,4 +1,4 @@
-import type { ServerDashboard } from "../client/dashboards.js";
+import type { ServerDashboard } from "../resources/dashboard/client.js";
 
 const EXCLUDED_NAME_PREFIXES = [
   "Generated Dashboard:",

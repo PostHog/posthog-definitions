@@ -1,9 +1,12 @@
-import { listManagedDashboards } from "../client/dashboards.js";
-import { listManagedInsights } from "../client/insights.js";
 import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/http.js";
+import { RESOURCES } from "../resources/index.js";
 import { diff } from "../apply/diff.js";
-import { execute, SafetyViolationError } from "../apply/execute.js";
+import {
+  execute,
+  fetchCurrentState,
+  SafetyViolationError,
+} from "../apply/execute.js";
 import { formatPlan } from "../apply/format-plan.js";
 import { LoadError, loadDefinitions } from "../apply/load.js";
 import { ValidationError, validate } from "../apply/validate.js";
@@ -41,10 +44,8 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     }
     throw err;
   }
-  debug("definitions loaded", {
-    dashboards: desired.dashboards.length,
-    insights: desired.insights.length,
-  });
+  const loadedCounts = describeCounts(desired);
+  debug("definitions loaded", Object.fromEntries(loadedCounts));
 
   debug("validating definitions");
   try {
@@ -58,11 +59,16 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   }
   debug("validation passed");
 
-  console.error(
-    `Loaded ${desired.dashboards.length} dashboard(s) and ${desired.insights.length} insight(s) from ${args.dir}/`,
+  const summarySegments = RESOURCES.map(
+    (r) => `${desired.get(r.name)?.length ?? 0} ${r.displayName}(s)`,
   );
+  console.error(`Loaded ${summarySegments.join(" and ")} from ${args.dir}/`);
 
-  if (args.dryRun && desired.dashboards.length === 0 && desired.insights.length === 0) {
+  const totalDesired = RESOURCES.reduce(
+    (sum, r) => sum + (desired.get(r.name)?.length ?? 0),
+    0,
+  );
+  if (args.dryRun && totalDesired === 0) {
     console.log("Nothing to do.");
     return 0;
   }
@@ -70,34 +76,19 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("fetching current server state");
   let current;
   try {
-    const [insights, dashboards] = await Promise.all([
-      listManagedInsights(config, { verbose: args.verbose }),
-      listManagedDashboards(config, { verbose: args.verbose }),
-    ]);
-    current = { insights, dashboards };
+    current = await fetchCurrentState(config, { verbose: args.verbose });
   } catch (err) {
     return reportApiError(err, "while fetching current state");
   }
-  debug("current state fetched", {
-    serverInsights: current.insights.length,
-    serverDashboards: current.dashboards.length,
-  });
+  debug(
+    "current state fetched",
+    Object.fromEntries(Array.from(current.entries()).map(([k, v]) => [k, v.length])),
+  );
 
   debug("diffing");
-  const diffResult = diff(
-    { dashboards: desired.dashboards.map((d) => d.spec), insights: desired.insights.map((i) => i.spec) },
-    current,
-  );
-  debug("diff complete", {
-    insightOps: diffResult.insightOps.length,
-    dashboardOps: diffResult.dashboardOps.length,
-    orphanInsights: diffResult.orphanInsights.length,
-    orphanDashboards: diffResult.orphanDashboards.length,
-  });
+  const diffResult = diff(desired, current);
 
-  console.log(
-    formatPlan(diffResult, { serverInsights: current.insights, prune: args.prune }),
-  );
+  console.log(formatPlan(diffResult, { serverState: current, prune: args.prune }));
 
   if (args.dryRun) {
     console.log("\nDry run — no changes applied.");
@@ -110,13 +101,20 @@ export async function runApply(args: ApplyArgs): Promise<number> {
       verbose: args.verbose,
       prune: args.prune,
     });
-    debug("apply complete", { ...summary });
-    const pruned = summary.insightsPruned + summary.dashboardsPruned;
-    const prunedSegment = args.prune ? `, ${pruned} deleted` : "";
+    debug("apply complete", summaryToObject(summary));
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalUnchanged = 0;
+    let totalPruned = 0;
+    for (const counts of summary.values()) {
+      totalCreated += counts.created;
+      totalUpdated += counts.updated;
+      totalUnchanged += counts.unchanged;
+      totalPruned += counts.pruned;
+    }
+    const prunedSegment = args.prune ? `, ${totalPruned} deleted` : "";
     console.log(
-      `\nApplied: ${summary.insightsCreated + summary.dashboardsCreated} created, ` +
-        `${summary.insightsUpdated + summary.dashboardsUpdated} updated, ` +
-        `${summary.insightsUnchanged + summary.dashboardsUnchanged} unchanged${prunedSegment}.`,
+      `\nApplied: ${totalCreated} created, ${totalUpdated} updated, ${totalUnchanged} unchanged${prunedSegment}.`,
     );
     return 0;
   } catch (err) {
@@ -126,6 +124,14 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     }
     return reportApiError(err, "during apply");
   }
+}
+
+function describeCounts(desired: Map<string, Array<unknown>>): Array<[string, number]> {
+  return Array.from(desired.entries()).map(([k, v]) => [k, v.length]);
+}
+
+function summaryToObject(summary: Map<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(summary.entries());
 }
 
 function reportApiError(err: unknown, context: string): number {

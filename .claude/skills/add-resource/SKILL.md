@@ -27,11 +27,12 @@ Re-read these three files. The whole architecture is in them:
 
 Then read both existing implementations side by side. The insight implementation is the simpler one and is closer to what most new resources will look like:
 
-- SDK: `src/sdk/insight.ts`, `src/sdk/types.ts` (the `Insight` type)
-- Client: `src/client/insights.ts`
-- Pipeline: relevant blocks in `src/apply/{load,validate,diff,serialize,execute,format-plan}.ts`
+- `src/resources/insight/sdk.ts` — the `Insight` type and `insight()` factory.
+- `src/resources/insight/client.ts` — `ServerInsight` plus the HTTP wrappers, including `listManagedInsights`.
+- `src/resources/insight/pipeline.ts` — tag/key/hash/payload, validate, execute, prune, and display functions.
+- `src/resources/insight/index.ts` — public exports plus the `insightResource` registration object.
 
-If the new resource has *references to other resources* (the way dashboards reference insights via tiles), study the dashboard pair as well — it shows the cross-resource id resolution pattern (`insightIdByKey`).
+If the new resource has *references to other resources* (the way dashboards reference insights via tiles), study the dashboard pair as well — it shows the cross-resource id resolution pattern (`ctx.insightIdByKey`, populated by the insight module's executor and read by the dashboard module).
 
 ## The safety invariant (non-negotiable)
 
@@ -39,8 +40,8 @@ If the new resource has *references to other resources* (the way dashboards refe
 
 Two mechanisms enforce this — both must be replicated for the new resource:
 
-1. **List filter.** `list<Resource>` only returns rows whose tags contain `iac:<resource>:<...>`. See `listManagedDashboards` in `src/client/dashboards.ts:37`.
-2. **Pre-write assertion.** Before any `PATCH`, refetch the row and confirm its `iac:<resource>:<key>` tag is still there. If it's been removed (e.g. an operator stripped it in the UI), abort with `SafetyViolationError`. See `assertManagedDashboard` in `src/apply/execute.ts:129`.
+1. **List filter.** `list<Resource>` only returns rows whose tags contain `iac:<resource>:<...>`. See `listManagedInsights` in `src/resources/insight/client.ts`.
+2. **Pre-write assertion.** Before any `PATCH` or `DELETE`, refetch the row and confirm its `iac:<resource>:<key>` tag is still there. If it's been removed (e.g. an operator stripped it in the UI), abort with `SafetyViolationError`. See `assertManagedInsight` in `src/resources/insight/pipeline.ts`.
 
 If the resource's API has no `tags` field, this skill does not apply — bring it up with the user before proceeding. The whole identity model depends on writable tags. The most common reason for "no tags" is that the resource is a **singleton** (one row per project, e.g. project settings): in that case use the sibling skill `add-singleton-resource`, which covers the field-level diff and PATCH-only model.
 
@@ -64,14 +65,12 @@ For a hypothetical resource `Foo` (substitute the real noun), here is the per-fi
 |---|------|------------------|
 | 1 | `src/resources/foo/sdk.ts` | The `Foo` user-facing type and the `foo(spec): Foo` factory helper. |
 | 2 | `src/resources/foo/client.ts` | `ServerFooSchema` (Zod, with `ServerFoo` derived via `z.infer`) + `list/get/create/update` HTTP wrappers that `.parse()` every response. `listManagedFoos` filters by `iac:foos:` tag. |
-| 3 | `src/resources/foo/pipeline.ts` | `fooTag(key)`, `fooKeyFromTags(tags)`, `fooPayload(spec, hash)`, `validateFoos`, `FooOp` union, `diffFoos`, `fooPayloadHash`, `runFooOp` with `assertManagedFoo`, `renderFooOp` for plan output. |
+| 3 | `src/resources/foo/pipeline.ts` | `fooTag(key)`, `fooKeyFromTags(tags)`, `fooHashFromTags(tags)`, `looksLikeFoo(value)`, `fooHash(spec)`, `fooPayload(spec, hash)`, `validateFoos(specs, state)`, `assertManagedFoo` (private), `runFooOp(config, op, ctx, options)`, `pruneFoo(config, orphan, options)`, `displayFoo(spec)`, `displayFooFromServer(server)`. |
 | 4 | `src/resources/foo/index.ts` | Re-export `foo` and `Foo` for users; export a `fooResource` registration object that the generic pipeline picks up. |
 | 5 | `src/resources/index.ts` | Add `fooResource` to the `RESOURCES` array. |
 | 6 | `src/index.ts` | Re-export `foo` and the `Foo` type for SDK users. |
 
-Truly cross-resource types (`Layout`, `Filters`, the query node types) stay in `src/sdk/types.ts`. Generic pipeline orchestration (hash, file load, the apply driver) stays in `src/apply/`. The CLI does not change — it iterates the registry.
-
-**Legacy note.** Dashboards and insights still live in the flat layout — `src/sdk/{dashboard,insight,types}.ts`, `src/client/{dashboards,insights}.ts`, and the shared `src/apply/{serialize,validate,diff,execute,format-plan}.ts` files. New resources go in the per-directory layout above; the existing two will be migrated separately. Read the legacy files as reference, but do not extend them in place.
+Each resource is fully self-contained: SDK types live next to its `sdk.ts`, never in a shared `sdk/` directory. If two resources need to share a type, the dependent resource imports from the producer's `sdk.ts` directly (the way dashboard tiles import `Insight` from `src/resources/insight/sdk.ts`). Generic pipeline orchestration (hash, file load, the apply driver, plan formatter) stays in `src/apply/`. The CLI does not change — it iterates the registry.
 
 ### Identity tag
 
@@ -85,7 +84,7 @@ Match the existing convention: lowercase, plural, colon-separated. The slug beco
 
 ### API response validation with Zod
 
-New resources must validate every response from the PostHog API with a Zod schema. The PostHog API is the only external boundary in this codebase and is the right place to fail loudly when the shape we expect drifts. Casting `JSON.parse(text) as ServerFoo` (what the existing dashboard/insight client does, see `src/client/http.ts:139`) is the *legacy* path — do not extend it. Eventually those will be migrated; new resources start on the validated path.
+New resources must validate every response from the PostHog API with a Zod schema. The PostHog API is the only external boundary in this codebase and is the right place to fail loudly when the shape we expect drifts. Casting `JSON.parse(text) as ServerFoo` (what the dashboard/insight client modules still do, via `request<T>` in `src/client/http.ts`) is the *legacy* path — do not extend it. Those two will be migrated to Zod separately; new resources start on the validated path.
 
 If `zod` is not yet in `package.json`, add it: `pnpm add zod`. One-time cost for the first resource that adopts this.
 
@@ -120,7 +119,7 @@ Rules of thumb:
 - **Mirror server nullability faithfully.** PostHog often returns `null` rather than omitting a field. Use `.nullable()` (allows `null`) vs `.optional()` (allows missing) deliberately — they mean different things on the wire.
 - **No defaults that mask bugs.** Use `.default([])` only when the API genuinely may omit the field; otherwise let the parse fail.
 - **Parse, don't `safeParse` in the happy path.** A schema failure is a bug (ours or PostHog's), not a recoverable runtime condition. Let it throw; the CLI's existing error handling will surface it.
-- **Inline-validate the paginated wrapper too.** `paginate<T>` in `src/client/http.ts:257` currently casts — wrap it for new resources by parsing the page schema at the call site.
+- **Inline-validate the paginated wrapper too.** `paginate<T>` in `src/client/http.ts` currently casts — wrap it for new resources by parsing the page schema at the call site.
 
 What *not* to schema:
 
@@ -136,7 +135,7 @@ Reuse `specHash` from `src/apply/hash.ts` on a canonical projection of the desir
 - Exclude managed tags (the `iac:*` ones) — they are not user-authored.
 - Be stable under key reordering (the hash function canonicalises, but don't rely on it for arrays of objects — sort by a stable key if order is irrelevant).
 
-If hashing misses a field, that field will silently fail to sync on update. If it includes a server-generated field, every apply will be marked dirty. The legacy dashboard implementation in `dashboardSpecForHash` at `src/apply/diff.ts:88` is the canonical example to copy from.
+If hashing misses a field, that field will silently fail to sync on update. If it includes a server-generated field, every apply will be marked dirty. The canonical examples to copy from are `dashboardSpecForHash` in `src/resources/dashboard/pipeline.ts` and `insightSpecForHash` in `src/resources/insight/pipeline.ts`.
 
 ### Cross-resource references
 
@@ -173,48 +172,64 @@ The CLI does not change. Each resource exports a registration object from its `i
 ```ts
 // src/resources/foo/index.ts
 import { foo, type Foo } from "./sdk.js";
-import { listManagedFoos, getFoo } from "./client.js";
+import type { ApplyContext, ResourceModule } from "../types.js";
+import { listManagedFoos, type ServerFoo } from "./client.js";
 import {
-  fooTag,
+  FOO_TAG_PREFIX,
+  displayFoo,
+  displayFooFromServer,
+  fooHash,
+  fooHashFromTags,
   fooKeyFromTags,
-  fooPayloadHash,
-  diffFoos,
+  looksLikeFoo,
+  pruneFoo,
   runFooOp,
   validateFoos,
-  renderFooOp,
 } from "./pipeline.js";
 
-export { foo, type Foo };
+export { foo } from "./sdk.js";
+export type { Foo } from "./sdk.js";
 
-export const fooResource = {
+export const fooResource: ResourceModule<Foo, ServerFoo> = {
   name: "foos",
-  identityPrefix: "iac:foos:",
+  displayName: "foo",
+  identityPrefix: FOO_TAG_PREFIX,
+
+  isSpec: looksLikeFoo,
+  specKey: (spec) => spec.key,
+
   list: listManagedFoos,
-  get: getFoo,
-  diff: diffFoos,
-  execute: runFooOp,
-  validate: validateFoos,
-  render: renderFooOp,
-} as const;
+  keyFromServer: (server) => fooKeyFromTags(server.tags),
+  hashFromServer: (server) => fooHashFromTags(server.tags),
+
+  hash: fooHash,
+  validate: (specs, state) => validateFoos(specs, state),
+  executeOp: runFooOp,
+  prune: pruneFoo,
+
+  displaySpec: (spec, _ctx: ApplyContext) => displayFoo(spec),
+  displayServer: (server, _ctx: ApplyContext) => displayFooFromServer(server),
+};
 ```
 
-Then add it to the registry:
+Then add it to the registry, in the order it should run relative to other resources (dependencies before dependents):
 
 ```ts
 // src/resources/index.ts
 export const RESOURCES = [insightResource, dashboardResource, fooResource];
 ```
 
-That is the only place the new resource becomes visible to the pipeline.
+That is the only place the new resource becomes visible to the pipeline. `apply`'s load, validate, diff, execute, and plan-render steps all iterate `RESOURCES` and dispatch through each module's hooks.
 
 ## Unit tests (required for new resources)
 
 The pipeline's pure functions are testable with no mocking; the test budget per new resource is small but non-negotiable. Use Node's built-in test runner — no test framework dependency. Run with `pnpm test`.
 
-Two reference test files exist in the legacy layout:
+Three reference test files exist:
 
-- `src/apply/hash.test.ts` — `specHash` determinism, key-order invariance, leaf sensitivity.
-- `src/apply/diff.test.ts` — op selection (create / update / unchanged / orphan) for insights and dashboards, plus the **safety invariant** test confirming server rows without an `iac:*` tag are ignored entirely.
+- `src/apply/hash.test.ts` — `specHash` determinism, key-order invariance, leaf sensitivity (shared across all resources).
+- `src/resources/insight/pipeline.test.ts` — op selection (create / update / unchanged / orphan) plus the **safety invariant** test for insights.
+- `src/resources/dashboard/pipeline.test.ts` — same coverage for dashboards.
 
 For a new resource `Foo`, add `src/resources/foo/pipeline.test.ts` covering:
 
@@ -224,7 +239,7 @@ For a new resource `Foo`, add `src/resources/foo/pipeline.test.ts` covering:
 4. `orphan` when a server row has `iac:foos:<key>` but no matching spec.
 5. **Safety invariant:** a server row without any `iac:*` tag produces zero ops *and* zero orphans. This is the test that protects hand-built resources in a shared project.
 
-The factory pattern (`serverInsight` in `src/apply/diff.test.ts`) builds a server row with the right `iac:foos:<key>` and `iac:hash:<hex>` tags — copy it. The hash for "unchanged" cases must come from `fooPayloadHash`; call it from the test rather than hard-coding a hex.
+The factory pattern (`serverRow` in either `pipeline.test.ts`) builds a server row with the right `iac:foos:<key>` and `iac:hash:<hex>` tags — copy it. The hash for "unchanged" cases must come from `fooHash`; call it from the test rather than hard-coding a hex.
 
 If the Zod schema for `Foo` is non-trivial, also add `src/resources/foo/client.test.ts` with two cases:
 
@@ -262,7 +277,7 @@ After the resource ships, flip its row from ❌ to ✅ in `docs/resources.md`.
 
 Pruning must follow the same safety invariant as updates:
 
-1. **Refetch + assert tag.** Before issuing `DELETE`, refetch the row and confirm `iac:foos:<key>` is still on it. If the tag has been removed in the UI between fetch and write, abort with `SafetyViolationError`. The legacy reference is `pruneDashboard` and `pruneInsight` at `src/apply/execute.ts:141, 157` — both call `assertManagedDashboard` / `assertManagedInsight` first.
+1. **Refetch + assert tag.** Before issuing `DELETE`, refetch the row and confirm `iac:foos:<key>` is still on it. If the tag has been removed in the UI between fetch and write, abort with `SafetyViolationError`. The reference is `pruneInsight` and `pruneDashboard` in their respective `src/resources/<name>/pipeline.ts` — both call `assertManagedXxx` first.
 2. **Tolerate `404`.** If the row was deleted out-of-band between list and delete, treat it as a successful no-op and continue. The legacy helpers use `isNotFound(err)` to handle this.
 3. **Use the API's "delete" verb faithfully.** PostHog's dashboard/insight delete is a `PATCH {deleted: true}` (soft delete), not a `DELETE`. Many other resources use real `DELETE`. Check what the API does and mirror it.
 

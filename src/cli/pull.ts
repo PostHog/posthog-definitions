@@ -1,5 +1,5 @@
 import path from "node:path";
-import { listDashboards } from "../client/dashboards.js";
+import { listDashboards } from "../resources/dashboard/client.js";
 import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/http.js";
 import { pullDashboards } from "../pull/dashboards.js";

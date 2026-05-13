@@ -1,49 +1,8 @@
+import type { Insight } from "../insight/sdk.js";
+
 export type Layout = { x: number; y: number; w: number; h: number };
 
 export type Filters = Record<string, unknown>;
-
-export type EventsNode = {
-  kind?: "EventsNode";
-  event?: string | null;
-  name?: string;
-  math?: string;
-  math_property?: string;
-  properties?: unknown[];
-  [key: string]: unknown;
-};
-
-export type TrendsQuery = {
-  kind: "TrendsQuery";
-  series: EventsNode[];
-  interval?: "hour" | "day" | "week" | "month";
-  dateRange?: { date_from?: string; date_to?: string };
-  breakdownFilter?: Record<string, unknown>;
-  trendsFilter?: Record<string, unknown>;
-  properties?: unknown[];
-  [key: string]: unknown;
-};
-
-export type HogQLQuery = {
-  kind: "HogQLQuery";
-  query: string;
-  values?: Record<string, unknown>;
-  [key: string]: unknown;
-};
-
-export type InsightVizNode = {
-  kind: "InsightVizNode";
-  source: TrendsQuery;
-};
-
-export type Query = TrendsQuery | HogQLQuery;
-
-export type Insight = {
-  key: string;
-  name: string;
-  description?: string;
-  query: Query;
-  tags?: string[];
-};
 
 export type InsightTile = {
   insight: Insight;
@@ -95,4 +54,29 @@ export function isTextTile(tile: Tile): tile is TextTile {
 
 export function isButtonTile(tile: Tile): tile is ButtonTile {
   return "kind" in tile && tile.kind === "button";
+}
+
+export function dashboard(spec: Dashboard): Dashboard {
+  return spec;
+}
+
+export function text(spec: { body: string; layout: Layout }): TextTile {
+  return { kind: "text", body: spec.body, layout: spec.layout };
+}
+
+export function button(spec: {
+  url: string;
+  text: string;
+  layout: Layout;
+  placement?: "left" | "right";
+  style?: "primary" | "secondary";
+}): ButtonTile {
+  return {
+    kind: "button",
+    url: spec.url,
+    text: spec.text,
+    layout: spec.layout,
+    placement: spec.placement,
+    style: spec.style,
+  };
 }
