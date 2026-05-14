@@ -1,0 +1,39 @@
+# Allowlist of PostHog API operations exposed in the typed client.
+# openapi-format keeps only these operationIds and strips everything else,
+# then prunes orphaned components.
+inverseOperationIds:
+  - insights_list
+  - insights_create
+  - insights_retrieve
+  - insights_update
+  - insights_partial_update
+  - insights_destroy
+
+  - dashboards_list
+  - dashboards_create
+  - dashboards_retrieve
+  - dashboards_update
+  - dashboards_partial_update
+  - dashboards_destroy
+
+  - feature_flags_list
+  - feature_flags_create
+  - feature_flags_retrieve
+  - feature_flags_update
+  - feature_flags_partial_update
+  - feature_flags_destroy
+
+  - environments_endpoints_list
+  - environments_endpoints_create
+  - environments_endpoints_retrieve
+  - environments_endpoints_update
+  - environments_endpoints_partial_update
+  - environments_endpoints_destroy
+
+unusedComponents:
+  - schemas
+  - parameters
+  - examples
+  - headers
+  - requestBodies
+  - responses

@@ -29,6 +29,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "codegen": "tsx scripts/codegen.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "VITEST_MODE=integration vitest run",
@@ -36,6 +37,7 @@
   },
   "dependencies": {
     "enquirer": "^2.4.1",
+    "openapi-fetch": "^0.17.0",
     "tinyglobby": "^0.2.10",
     "tsx": "^4.19.2",
     "zod": "^4.4.3"
@@ -45,6 +47,8 @@
     "@types/node": "^22.10.2",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
+    "openapi-format": "^1.31.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.3",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.59.2",
