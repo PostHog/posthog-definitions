@@ -4362,9 +4362,8 @@ export interface components {
              */
             kind: "ExperimentMetric";
             /**
-             * Metric Type
-             * @default funnel
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "funnel";
             /**
@@ -4528,9 +4527,8 @@ export interface components {
              */
             lower_bound_percentile: number | null;
             /**
-             * Metric Type
-             * @default mean
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "mean";
             /**
@@ -4693,7 +4691,7 @@ export interface components {
              * Metric
              * @default null
              */
-            metric: components["schemas"]["ExperimentMeanMetric"] | components["schemas"]["ExperimentFunnelMetric"] | components["schemas"]["ExperimentRatioMetric"] | components["schemas"]["ExperimentRetentionMetric"] | null;
+            metric: (components["schemas"]["ExperimentMeanMetric"] | components["schemas"]["ExperimentFunnelMetric"] | components["schemas"]["ExperimentRatioMetric"] | components["schemas"]["ExperimentRetentionMetric"]) | null;
             /**
              * P Value
              * @default null
@@ -4761,9 +4759,8 @@ export interface components {
              */
             kind: "ExperimentMetric";
             /**
-             * Metric Type
-             * @default ratio
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "ratio";
             /**
@@ -4829,9 +4826,8 @@ export interface components {
              */
             kind: "ExperimentMetric";
             /**
-             * Metric Type
-             * @default retention
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "retention";
             /**
