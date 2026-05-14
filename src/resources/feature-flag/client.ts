@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ClientConfig } from "../../client/config.js";
-import { request } from "../../client/http.js";
+import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
 
 export const ServerFeatureFlagSchema = z
   .object({
@@ -22,13 +22,6 @@ export const ServerFeatureFlagSchema = z
 
 export type ServerFeatureFlag = z.infer<typeof ServerFeatureFlagSchema>;
 
-const PaginatedFeatureFlagSchema = z.object({
-  count: z.number().optional(),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
-  results: z.array(ServerFeatureFlagSchema),
-});
-
 export type FeatureFlagCreate = {
   key: string;
   name?: string | null;
@@ -44,34 +37,24 @@ export type FeatureFlagCreate = {
 
 export type FeatureFlagUpdate = Partial<FeatureFlagCreate> & { version?: number };
 
-function featureFlagsPath(projectId: string, suffix = ""): string {
-  return `/api/projects/${projectId}/feature_flags/${suffix}`;
-}
-
 export async function listManagedFeatureFlags(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag[]> {
-  const collected: ServerFeatureFlag[] = [];
-  let nextPath: string | null = `${featureFlagsPath(config.projectId)}?limit=100`;
-  while (nextPath) {
-    const raw: unknown = await request<unknown>(config, nextPath, {
-      verbose: options.verbose,
-    });
-    const page = PaginatedFeatureFlagSchema.parse(raw);
-    for (const row of page.results) {
-      if (row.tags?.some((tag) => tag.startsWith("iac:feature-flags:"))) {
-        collected.push(row);
-      }
-    }
-    if (page.next) {
-      const url = new URL(page.next);
-      nextPath = `${url.pathname}${url.search}`;
-    } else {
-      nextPath = null;
-    }
-  }
-  return collected;
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/projects/{project_id}/feature_flags/", {
+    params: {
+      path: { project_id: config.projectId },
+      query: { limit: 100 },
+    },
+  });
+  const firstPage = data as unknown as Paginated<unknown>;
+  const allRaw = await followPagination<unknown>(config, firstPage, {
+    verbose: options.verbose,
+  });
+  return allRaw
+    .map((row) => ServerFeatureFlagSchema.parse(row))
+    .filter((row) => row.tags?.some((tag) => tag.startsWith("iac:feature-flags:")));
 }
 
 export async function getFeatureFlag(
@@ -79,12 +62,11 @@ export async function getFeatureFlag(
   id: number,
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag> {
-  const raw: unknown = await request<unknown>(
-    config,
-    featureFlagsPath(config.projectId, `${id}/`),
-    { verbose: options.verbose },
-  );
-  return ServerFeatureFlagSchema.parse(raw);
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/projects/{project_id}/feature_flags/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+  });
+  return ServerFeatureFlagSchema.parse(data);
 }
 
 export async function createFeatureFlag(
@@ -92,12 +74,12 @@ export async function createFeatureFlag(
   payload: FeatureFlagCreate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag> {
-  const raw: unknown = await request<unknown>(config, featureFlagsPath(config.projectId), {
-    method: "POST",
-    body: payload,
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.POST("/api/projects/{project_id}/feature_flags/", {
+    params: { path: { project_id: config.projectId } },
+    body: payload as never,
   });
-  return ServerFeatureFlagSchema.parse(raw);
+  return ServerFeatureFlagSchema.parse(data);
 }
 
 export async function updateFeatureFlag(
@@ -106,16 +88,12 @@ export async function updateFeatureFlag(
   payload: FeatureFlagUpdate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag> {
-  const raw: unknown = await request<unknown>(
-    config,
-    featureFlagsPath(config.projectId, `${id}/`),
-    {
-      method: "PATCH",
-      body: { ...payload, version: -1 },
-      verbose: options.verbose,
-    },
-  );
-  return ServerFeatureFlagSchema.parse(raw);
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.PATCH("/api/projects/{project_id}/feature_flags/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+    body: { ...payload, version: -1 } as never,
+  });
+  return ServerFeatureFlagSchema.parse(data);
 }
 
 export async function deleteFeatureFlag(
@@ -123,9 +101,9 @@ export async function deleteFeatureFlag(
   id: number,
   options: { verbose?: boolean } = {},
 ): Promise<void> {
-  await request<void>(config, featureFlagsPath(config.projectId, `${id}/`), {
-    method: "PATCH",
-    body: { deleted: true, version: -1 },
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.PATCH("/api/projects/{project_id}/feature_flags/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+    body: { deleted: true, version: -1 } as never,
   });
 }
