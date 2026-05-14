@@ -30,6 +30,22 @@ inverseOperationIds:
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
 
+  - event_definitions_list
+  - event_definitions_create
+  - event_definitions_retrieve
+  - event_definitions_partial_update
+  - event_definitions_destroy
+
+  - schema_property_groups_list
+  - schema_property_groups_create
+  - schema_property_groups_retrieve
+  - schema_property_groups_partial_update
+  - schema_property_groups_destroy
+
+  - event_schemas_list
+  - event_schemas_create
+  - event_schemas_destroy
+
 unusedComponents:
   - schemas
   - parameters

@@ -88,6 +88,70 @@ export interface paths {
         patch: operations["dashboards_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/event_definitions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["event_definitions_list"];
+        put?: never;
+        post: operations["event_definitions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/event_definitions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["event_definitions_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["event_definitions_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["event_definitions_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/event_schemas/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["event_schemas_list"];
+        put?: never;
+        post: operations["event_schemas_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/event_schemas/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["event_schemas_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/feature_flags/": {
         parameters: {
             query?: never;
@@ -217,6 +281,38 @@ export interface paths {
          *     cached response, ensuring the request is authorized.
          */
         patch: operations["insights_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/schema_property_groups/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schema_property_groups_list"];
+        put?: never;
+        post: operations["schema_property_groups_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/schema_property_groups/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schema_property_groups_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["schema_property_groups_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["schema_property_groups_partial_update"];
         trace?: never;
     };
 }
@@ -2085,6 +2181,48 @@ export interface components {
             types: unknown[] | null;
         };
         /**
+         * @description * `allow` - Allow
+         *     * `reject` - Reject
+         * @enum {string}
+         */
+        EnforcementModeEnum: "allow" | "reject";
+        /** @description Serializer mixin that handles tags for objects. */
+        EnterpriseEventDefinition: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            owner?: number | null;
+            description?: string | null;
+            tags?: unknown[];
+            /** Format: date-time */
+            readonly created_at: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly updated_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly last_seen_at: string | null;
+            /** Format: date-time */
+            readonly last_updated_at: string;
+            verified?: boolean;
+            /** Format: date-time */
+            readonly verified_at: string | null;
+            readonly verified_by: components["schemas"]["UserBasic"];
+            hidden?: boolean | null;
+            enforcement_mode?: components["schemas"]["EnforcementModeEnum"];
+            /** @description Name of a single property on this event that PostHog UIs should display alongside the event (for example `$pathname` on `$pageview`). When set, surfaces like the session replay inspector show the property's value next to the event name without the user having to open the event. */
+            primary_property?: string | null;
+            readonly is_action: boolean;
+            readonly action_id: number;
+            readonly is_calculating: boolean;
+            /** Format: date-time */
+            readonly last_calculated_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** @default false */
+            post_to_slack: boolean;
+            default_columns?: string[];
+            readonly media_preview_urls: string[];
+        };
+        /**
          * EntityType
          * @enum {string}
          */
@@ -2594,6 +2732,11 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        EventDefinitionBasic: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         /** EventMetadataPropertyFilter */
         EventMetadataPropertyFilter: {
             /** Key */
@@ -2650,6 +2793,19 @@ export interface components {
              * @default null
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        EventSchema: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            event_definition: string;
+            readonly property_group: components["schemas"]["SchemaPropertyGroup"];
+            /** Format: uuid */
+            property_group_id: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
         };
         /** EventsNode */
         EventsNode: {
@@ -7258,6 +7414,36 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["EndpointResponse"][];
         };
+        PaginatedEnterpriseEventDefinitionList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["EnterpriseEventDefinition"][];
+        };
+        PaginatedEventSchemaList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["EventSchema"][];
+        };
         PaginatedFeatureFlagList: {
             /** @example 123 */
             count: number;
@@ -7287,6 +7473,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Insight"][];
+        };
+        PaginatedSchemaPropertyGroupList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["SchemaPropertyGroup"][];
         };
         /** @description Serializer mixin that handles tags for objects. */
         PatchedDashboard: {
@@ -7371,6 +7572,42 @@ export interface components {
             } | null;
             /** @description Set to true to soft-delete this endpoint. */
             deleted?: boolean | null;
+        };
+        /** @description Serializer mixin that handles tags for objects. */
+        PatchedEnterpriseEventDefinition: {
+            /** Format: uuid */
+            readonly id?: string;
+            name?: string;
+            owner?: number | null;
+            description?: string | null;
+            tags?: unknown[];
+            /** Format: date-time */
+            readonly created_at?: string | null;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            readonly updated_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly last_seen_at?: string | null;
+            /** Format: date-time */
+            readonly last_updated_at?: string;
+            verified?: boolean;
+            /** Format: date-time */
+            readonly verified_at?: string | null;
+            readonly verified_by?: components["schemas"]["UserBasic"];
+            hidden?: boolean | null;
+            enforcement_mode?: components["schemas"]["EnforcementModeEnum"];
+            /** @description Name of a single property on this event that PostHog UIs should display alongside the event (for example `$pathname` on `$pageview`). When set, surfaces like the session replay inspector show the property's value next to the event name without the user having to open the event. */
+            primary_property?: string | null;
+            readonly is_action?: boolean;
+            readonly action_id?: number;
+            readonly is_calculating?: boolean;
+            /** Format: date-time */
+            readonly last_calculated_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** @default false */
+            post_to_slack: boolean;
+            default_columns?: string[];
+            readonly media_preview_urls?: string[];
         };
         PatchedFeatureFlagPartialUpdateRequestSchema: {
             /** @description Feature flag key. */
@@ -7457,6 +7694,19 @@ export interface components {
             readonly alerts?: unknown[];
             /** Format: date-time */
             readonly last_viewed_at?: string | null;
+        };
+        PatchedSchemaPropertyGroup: {
+            /** Format: uuid */
+            readonly id?: string;
+            name?: string;
+            description?: string;
+            properties?: components["schemas"]["SchemaPropertyGroupProperty"][];
+            readonly events?: components["schemas"]["EventDefinitionBasic"][];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
         };
         /** PathCleaningFilter */
         PathCleaningFilter: {
@@ -10386,6 +10636,41 @@ export interface components {
          * @enum {string}
          */
         Scale: "linear" | "logarithmic";
+        SchemaPropertyGroup: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            description?: string;
+            properties?: components["schemas"]["SchemaPropertyGroupProperty"][];
+            readonly events: components["schemas"]["EventDefinitionBasic"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+        };
+        SchemaPropertyGroupProperty: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            property_type: components["schemas"]["SchemaPropertyGroupPropertyPropertyTypeEnum"];
+            is_required?: boolean;
+            is_optional_in_types?: boolean;
+            description?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `DateTime` - DateTime
+         *     * `String` - String
+         *     * `Numeric` - Numeric
+         *     * `Boolean` - Boolean
+         *     * `Object` - Object
+         * @enum {string}
+         */
+        SchemaPropertyGroupPropertyPropertyTypeEnum: "DateTime" | "String" | "Numeric" | "Boolean" | "Object";
         /** SessionAttributionExplorerQuery */
         SessionAttributionExplorerQuery: {
             /** @default null */
@@ -12946,6 +13231,216 @@ export interface operations {
             };
         };
     };
+    event_definitions_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEnterpriseEventDefinitionList"];
+                };
+            };
+        };
+    };
+    event_definitions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnterpriseEventDefinition"];
+                "application/x-www-form-urlencoded": components["schemas"]["EnterpriseEventDefinition"];
+                "multipart/form-data": components["schemas"]["EnterpriseEventDefinition"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnterpriseEventDefinition"];
+                };
+            };
+        };
+    };
+    event_definitions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this event definition. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnterpriseEventDefinition"];
+                };
+            };
+        };
+    };
+    event_definitions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this event definition. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    event_definitions_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this event definition. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEnterpriseEventDefinition"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEnterpriseEventDefinition"];
+                "multipart/form-data": components["schemas"]["PatchedEnterpriseEventDefinition"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnterpriseEventDefinition"];
+                };
+            };
+        };
+    };
+    event_schemas_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEventSchemaList"];
+                };
+            };
+        };
+    };
+    event_schemas_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventSchema"];
+                "application/x-www-form-urlencoded": components["schemas"]["EventSchema"];
+                "multipart/form-data": components["schemas"]["EventSchema"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSchema"];
+                };
+            };
+        };
+    };
+    event_schemas_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this event schema. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     feature_flags_list: {
         parameters: {
             query?: {
@@ -13352,6 +13847,138 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Insight"];
                     "text/csv": components["schemas"]["Insight"];
+                };
+            };
+        };
+    };
+    schema_property_groups_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSchemaPropertyGroupList"];
+                };
+            };
+        };
+    };
+    schema_property_groups_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchemaPropertyGroup"];
+                "application/x-www-form-urlencoded": components["schemas"]["SchemaPropertyGroup"];
+                "multipart/form-data": components["schemas"]["SchemaPropertyGroup"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaPropertyGroup"];
+                };
+            };
+        };
+    };
+    schema_property_groups_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this schema property group. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaPropertyGroup"];
+                };
+            };
+        };
+    };
+    schema_property_groups_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this schema property group. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    schema_property_groups_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this schema property group. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSchemaPropertyGroup"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSchemaPropertyGroup"];
+                "multipart/form-data": components["schemas"]["PatchedSchemaPropertyGroup"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaPropertyGroup"];
                 };
             };
         };
