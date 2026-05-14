@@ -314,6 +314,10 @@ The last step is the safety invariant smoke test. Do not skip it.
 
 After the resource ships, flip its row from ❌ to ✅ in `docs/resources.md`.
 
+## Update the README
+
+The top-level `README.md` lists supported resources in its intro sentence and the required API scopes in the "Authenticate" step. Add the new resource to the intro list and append its `read`/`write` scope(s) to the bullet list. If the resource reuses an existing scope (e.g. holdouts under `experiment:*`), note it inline rather than duplicating the bullet.
+
 ## Deletes
 
 `apply` is non-destructive by default: orphans (server rows tagged `iac:foos:<key>` with no matching spec in code) are listed in the plan but left alone. With the `--prune` flag, `apply` deletes them.

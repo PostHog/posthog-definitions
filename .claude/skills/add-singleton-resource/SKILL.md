@@ -232,6 +232,10 @@ Steps 7 and 8 are the singleton equivalent of the safety invariant. Do not skip 
 
 Flip the singleton's row from ❌ to ✅ in `docs/resources.md`. Note in the entry that it is a singleton — users coming from feature flags or cohorts will expect a key.
 
+## Update the README
+
+The top-level `README.md` lists supported resources in its intro sentence and the required API scopes in the "Authenticate" step. Add the singleton to the intro list and append its `read`/`write` scope(s) to the bullet list.
+
 ## Deletes / prune
 
 Singletons cannot be deleted. `--prune` is a no-op for them. The registration object has no `prune` hook.
