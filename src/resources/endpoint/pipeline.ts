@@ -1,5 +1,5 @@
 import type { ClientConfig } from "../../client/config.js";
-import { ApiError } from "../../client/http.js";
+import { ApiError } from "../../client/typed.js";
 import { specHash } from "../../apply/hash.js";
 import { displayJson, obj, scalar, type DisplayValue } from "../../apply/display.js";
 import { SafetyViolationError } from "../../apply/execute.js";

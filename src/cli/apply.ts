@@ -1,5 +1,5 @@
 import { ConfigError, loadConfig } from "../client/config.js";
-import { ApiError } from "../client/http.js";
+import { ApiError } from "../client/typed.js";
 import { RESOURCES } from "../resources/index.js";
 import { diff } from "../apply/diff.js";
 import { execute, fetchCurrentState, SafetyViolationError } from "../apply/execute.js";

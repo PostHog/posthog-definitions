@@ -1,5 +1,5 @@
 import type { ClientConfig } from "../client/config.js";
-import { ApiError } from "../client/http.js";
+import { ApiError } from "../client/typed.js";
 import { RESOURCES } from "../resources/index.js";
 import {
   newApplyContext,

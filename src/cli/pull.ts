@@ -1,7 +1,7 @@
 import path from "node:path";
 import { listDashboards } from "../resources/dashboard/client.js";
 import { ConfigError, loadConfig } from "../client/config.js";
-import { ApiError } from "../client/http.js";
+import { ApiError } from "../client/typed.js";
 import { pullDashboards } from "../pull/dashboards.js";
 import { partitionDashboards } from "../pull/filter.js";
 import { PickAbortedError, pickDashboardIds } from "../pull/picker.js";
