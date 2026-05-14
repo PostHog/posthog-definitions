@@ -34,7 +34,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "VITEST_MODE=integration vitest run",
-    "test:acceptance": "VITEST_MODE=acceptance vitest run"
+    "test:acceptance": "VITEST_MODE=acceptance vitest run",
+    "smoke": "./scripts/smoke.sh"
   },
   "dependencies": {
     "enquirer": "^2.4.1",

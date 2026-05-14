@@ -18,6 +18,9 @@ pnpm-debug.log*
 dist/
 *.tsbuildinfo
 
+# Smoke test scratch dir
+.smoke-work/
+
 # Editor / OS
 .DS_Store
 .vscode/
