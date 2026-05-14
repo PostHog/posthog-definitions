@@ -216,10 +216,10 @@ describe("SafetyViolationError", () => {
 });
 
 describe("fetchCurrentState", () => {
-  it("calls list on every resource and keys the result by resource name", async () => {
+  it("calls list when prune is on (or specs are declared) and keys the result by resource name", async () => {
     const alpha = makeFakeResource({ name: "alpha", list: async () => [{ id: 1 }] });
     const beta = makeFakeResource({ name: "beta", list: async () => [{ id: 2 }, { id: 3 }] });
-    const state = await fetchCurrentState(FAKE_CONFIG, {}, [alpha, beta]);
+    const state = await fetchCurrentState(FAKE_CONFIG, { prune: true }, [alpha, beta]);
     expect(state.get("alpha")).toEqual([{ id: 1 }]);
     expect(state.get("beta")).toEqual([{ id: 2 }, { id: 3 }]);
   });
@@ -233,7 +233,47 @@ describe("fetchCurrentState", () => {
         return [];
       },
     });
-    await fetchCurrentState(FAKE_CONFIG, { verbose: true }, [alpha]);
+    await fetchCurrentState(FAKE_CONFIG, { verbose: true, prune: true }, [alpha]);
     expect(seen).toEqual([true]);
+  });
+
+  it("skips list for collections with no declared specs and prune off (avoids unnecessary API calls)", async () => {
+    let alphaCalls = 0;
+    let betaCalls = 0;
+    const alpha = makeFakeResource({
+      name: "alpha",
+      list: async () => {
+        alphaCalls++;
+        return [{ id: 1 }];
+      },
+    });
+    const beta = makeFakeResource({
+      name: "beta",
+      list: async () => {
+        betaCalls++;
+        return [{ id: 99 }];
+      },
+    });
+    const desired = new Map<string, Array<{ spec: unknown }>>([["alpha", [{ spec: {} }]]]);
+    const state = await fetchCurrentState(FAKE_CONFIG, {}, [alpha, beta], desired);
+    expect(alphaCalls).toBe(1);
+    expect(betaCalls).toBe(0);
+    expect(state.get("alpha")).toEqual([{ id: 1 }]);
+    expect(state.get("beta")).toEqual([]);
+  });
+
+  it("still lists everything when prune is on, regardless of declared specs", async () => {
+    let betaCalls = 0;
+    const alpha = makeFakeResource({ name: "alpha", list: async () => [] });
+    const beta = makeFakeResource({
+      name: "beta",
+      list: async () => {
+        betaCalls++;
+        return [{ id: 99 }];
+      },
+    });
+    const desired = new Map<string, Array<{ spec: unknown }>>([["alpha", [{ spec: {} }]]]);
+    await fetchCurrentState(FAKE_CONFIG, { prune: true }, [alpha, beta], desired);
+    expect(betaCalls).toBe(1);
   });
 });

@@ -82,6 +82,15 @@ export async function fetchCurrentState(
         const row = await r.fetchOne(config, { verbose: options.verbose });
         return [r.name, [row] as unknown[]] as const;
       }
+      // Same shortcut for collections: when no specs declared for this kind
+      // and prune is off, the kind contributes no ops either way (no creates
+      // because nothing's declared; no orphans because we're not pruning).
+      // Listing the rows would only burn an API call and risk throttling on
+      // projects with lots of leftover data.
+      if (!options.prune) {
+        const declared = desired?.get(r.name) ?? [];
+        if (declared.length === 0) return [r.name, [] as unknown[]] as const;
+      }
       const rows = await r.list(config, { verbose: options.verbose });
       return [r.name, rows] as const;
     }),
