@@ -182,6 +182,20 @@ export interface CollectionResourceModule<TSpec = unknown, TServer = unknown>
   ): Promise<TServer>;
 
   /**
+   * Re-fetch a selected row in case `listAll` returned a trimmed shape that
+   * omits fields the puller needs. Dashboards are the canonical case: the
+   * list endpoint returns `DashboardBasic` (no `tiles`), so without
+   * hydration `pullDependencies` and `renderToFile` see no tiles and skip
+   * the dashboard. Runs after selection, before the cascade — so
+   * `pullDependencies` sees the fully-populated row.
+   */
+  hydrateForPull?(
+    config: ClientConfig,
+    server: TServer,
+    options?: { verbose?: boolean },
+  ): Promise<TServer>;
+
+  /**
    * Decide whether a server row is worth offering to the user for pull. Used
    * to drop auto-generated, deleted, or system rows that the user can't
    * usefully declare as code.

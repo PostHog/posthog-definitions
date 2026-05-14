@@ -125,6 +125,10 @@ export async function runPull(
     });
   }
 
+  // Hydrate selected rows whose listAll shape is trimmed (e.g. DashboardBasic
+  // omits tiles). Done before cascade so pullDependencies sees full rows.
+  await hydrateSelectedRows(config, collectionEntries, options.verbose);
+
   // Cascade: walk pullDependencies BFS-style, fetching missing rows via
   // resource.getById and adding them to the dependency's selection.
   if (!options.noCascade) {
@@ -213,6 +217,29 @@ export async function runPull(
   }
 
   return { byResource: reportByResource, dryRunSkipped };
+}
+
+// ---------------------------------------------------------------------------
+// Hydration
+// ---------------------------------------------------------------------------
+
+async function hydrateSelectedRows(
+  config: ClientConfig,
+  entries: Map<string, CollectionEntry>,
+  verbose: boolean | undefined,
+): Promise<void> {
+  for (const entry of entries.values()) {
+    const hydrate = entry.resource.hydrateForPull;
+    if (!hydrate) continue;
+    const idOf =
+      entry.resource.serverIdOf ??
+      ((r: unknown) => (r as { id: number | string }).id);
+    const hydrated = await Promise.all(
+      entry.selected.map((row) => hydrate(config, row, { verbose })),
+    );
+    entry.selected = hydrated;
+    for (const row of hydrated) entry.byId.set(String(idOf(row)), row);
+  }
 }
 
 // ---------------------------------------------------------------------------

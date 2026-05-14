@@ -54,6 +54,7 @@ export const dashboardResource: CollectionResourceModule<Dashboard, ServerDashbo
   listAll: listDashboards,
   getById: (config, id, options) =>
     getDashboard(config, typeof id === "string" ? Number(id) : id, options),
+  hydrateForPull: (config, server, options) => getDashboard(config, server.id, options),
   pullFilter,
   pullLabel,
   serverIdOf,
