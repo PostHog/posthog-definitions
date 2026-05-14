@@ -17,7 +17,11 @@ export function loadAcceptanceConfig(): ClientConfig {
 }
 
 export function uniqueKey(prefix: string): string {
-  return `${prefix}-${Date.now()}-${randomBytes(3).toString("hex")}`;
+  // 8 bytes / 16 hex chars of randomness — enough that two test runs in the
+  // same millisecond essentially never collide. The earlier 3-byte version
+  // was tight (~5/16M per-test) and bit us on the event-definition integration
+  // suite when a previous run's residue had the same suffix.
+  return `${prefix}-${Date.now()}-${randomBytes(8).toString("hex")}`;
 }
 
 export async function purgeStale<T extends { id: number; tags?: string[] }>(
@@ -35,6 +39,33 @@ export async function purgeStale<T extends { id: number; tags?: string[] }>(
       await remove(config, row.id);
     } catch (err) {
       console.error(`Failed to purge stale row ${row.id} (key=${key}):`, err);
+    }
+  }
+}
+
+/**
+ * Variant of `purgeStale` that takes a key-from-row function instead of
+ * key-from-tags, and parameterises the id type. Use for resources whose
+ * identity sits in a description marker (no `tags` field) or whose server
+ * id isn't a `number`.
+ */
+export async function purgeStaleByRow<T, TId extends number | string>(
+  config: ClientConfig,
+  list: (config: ClientConfig) => Promise<T[]>,
+  remove: (config: ClientConfig, id: TId) => Promise<void>,
+  idOf: (row: T) => TId,
+  keyFromRow: (row: T) => string | undefined,
+  keyPrefix: string,
+): Promise<void> {
+  const rows = await list(config);
+  for (const row of rows) {
+    const key = keyFromRow(row);
+    if (!key || !key.startsWith(keyPrefix)) continue;
+    const id = idOf(row);
+    try {
+      await remove(config, id);
+    } catch (err) {
+      console.error(`Failed to purge stale row ${String(id)} (key=${key}):`, err);
     }
   }
 }
