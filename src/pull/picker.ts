@@ -56,6 +56,10 @@ export async function pickServerIds(
       choices,
       initial: choices.map((c) => c.name),
       footer: "type to search · space to toggle · a to toggle all · enter to confirm",
+      format(value: unknown) {
+        const n = Array.isArray(value) ? value.length : 0;
+        return `${n} of ${choices.length} selected`;
+      },
     } as Parameters<typeof enquirer.prompt>[0]);
   } catch {
     throw new PickAbortedError();
