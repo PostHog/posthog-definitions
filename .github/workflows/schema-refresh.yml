@@ -86,19 +86,29 @@ jobs:
             --arg repository "PostHog/posthog-definitions" \
             '{title: $title, description: $description, repository: $repository, origin_product: "user_created"}')
 
-          task=$(curl --fail-with-body -sS -X POST \
+          http_code=$(curl -sS -o /tmp/task.json -w '%{http_code}' -X POST \
             "https://us.posthog.com/api/projects/2/tasks/" \
             -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
             -H "Content-Type: application/json" \
             -d "$create_payload")
-          task_id=$(echo "$task" | jq -r '.id')
+          if [ "$http_code" -ge 400 ]; then
+            echo "Task create failed with HTTP $http_code:" >&2
+            cat /tmp/task.json >&2
+            exit 1
+          fi
+          task_id=$(jq -r '.id' /tmp/task.json)
 
-          run=$(curl --fail-with-body -sS -X POST \
+          http_code=$(curl -sS -o /tmp/run.json -w '%{http_code}' -X POST \
             "https://us.posthog.com/api/projects/2/tasks/${task_id}/run/" \
             -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
             -H "Content-Type: application/json" \
             -d '{"mode": "background"}')
-          run_id=$(echo "$run" | jq -r '.id')
+          if [ "$http_code" -ge 400 ]; then
+            echo "Task run failed with HTTP $http_code:" >&2
+            cat /tmp/run.json >&2
+            exit 1
+          fi
+          run_id=$(jq -r '.id' /tmp/run.json)
 
           {
             echo ""
