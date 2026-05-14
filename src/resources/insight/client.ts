@@ -1,5 +1,5 @@
 import type { ClientConfig } from "../../client/config.js";
-import { paginate, request } from "../../client/http.js";
+import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
 
 export type ServerInsight = {
   id: number;
@@ -19,18 +19,19 @@ export type InsightCreate = {
 
 export type InsightUpdate = Partial<InsightCreate>;
 
-function insightsPath(projectId: string, suffix = ""): string {
-  return `/api/projects/${projectId}/insights/${suffix}`;
-}
-
 export async function listManagedInsights(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerInsight[]> {
-  const all = await paginate<ServerInsight>(config, insightsPath(config.projectId), {
-    query: { limit: 100 },
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/projects/{project_id}/insights/", {
+    params: {
+      path: { project_id: config.projectId },
+      query: { limit: 100 },
+    },
   });
+  const firstPage = data as unknown as Paginated<ServerInsight>;
+  const all = await followPagination(config, firstPage, { verbose: options.verbose });
   return all.filter((i) => i.tags?.some((tag) => tag.startsWith("iac:insights:")));
 }
 
@@ -39,9 +40,11 @@ export async function getInsight(
   id: number,
   options: { verbose?: boolean } = {},
 ): Promise<ServerInsight> {
-  return request<ServerInsight>(config, insightsPath(config.projectId, `${id}/`), {
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/projects/{project_id}/insights/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
   });
+  return data as unknown as ServerInsight;
 }
 
 export async function createInsight(
@@ -49,11 +52,12 @@ export async function createInsight(
   payload: InsightCreate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerInsight> {
-  return request<ServerInsight>(config, insightsPath(config.projectId), {
-    method: "POST",
-    body: payload,
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.POST("/api/projects/{project_id}/insights/", {
+    params: { path: { project_id: config.projectId } },
+    body: payload as never,
   });
+  return data as unknown as ServerInsight;
 }
 
 export async function updateInsight(
@@ -62,11 +66,12 @@ export async function updateInsight(
   payload: InsightUpdate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerInsight> {
-  return request<ServerInsight>(config, insightsPath(config.projectId, `${id}/`), {
-    method: "PATCH",
-    body: payload,
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.PATCH("/api/projects/{project_id}/insights/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+    body: payload as never,
   });
+  return data as unknown as ServerInsight;
 }
 
 export async function deleteInsight(
@@ -74,9 +79,9 @@ export async function deleteInsight(
   id: number,
   options: { verbose?: boolean } = {},
 ): Promise<void> {
-  await request<void>(config, insightsPath(config.projectId, `${id}/`), {
-    method: "PATCH",
-    body: { deleted: true },
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.PATCH("/api/projects/{project_id}/insights/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+    body: { deleted: true } as never,
   });
 }
