@@ -8,7 +8,7 @@ import { execute, fetchCurrentState, SafetyViolationError } from "./execute.js";
 const FAKE_CONFIG: ClientConfig = {
   host: "https://test.example",
   projectId: "1",
-  apiKey: "test",
+  auth: { getHeader: () => "Bearer test" },
 };
 
 function diffOf(byResource: Record<string, ResourceDiff<unknown, unknown>>): DiffResult {

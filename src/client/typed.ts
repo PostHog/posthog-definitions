@@ -1,6 +1,6 @@
 import createClient, { type Client } from "openapi-fetch";
 import type { paths } from "../generated/api.js";
-import type { ClientConfig } from "./config.js";
+import type { AuthHandler, ClientConfig } from "./config.js";
 
 export type ApiClient = Client<paths>;
 
@@ -36,8 +36,7 @@ export type ApiClientOptions = {
 export function createApiClient(config: ClientConfig, options: ApiClientOptions = {}): ApiClient {
   const client = createClient<paths>({
     baseUrl: config.host,
-    headers: { Authorization: `Bearer ${config.apiKey}` },
-    fetch: makeRetriedFetch({ verbose: options.verbose }),
+    fetch: makeRetriedFetch({ verbose: options.verbose, auth: config.auth }),
   });
 
   // openapi-fetch returns { data, error, response }. We escalate non-ok responses
@@ -80,13 +79,10 @@ export async function followPagination<T>(
   options: ApiClientOptions = {},
 ): Promise<T[]> {
   const all = [...firstPage.results];
-  const fetchImpl = makeRetriedFetch({ verbose: options.verbose });
+  const fetchImpl = makeRetriedFetch({ verbose: options.verbose, auth: config.auth });
   let next = firstPage.next;
   while (next) {
-    const response = await fetchImpl(next, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${config.apiKey}` },
-    });
+    const response = await fetchImpl(next, { method: "GET" });
     if (!response.ok) {
       const text = await response.text();
       throw new ApiError(
@@ -115,13 +111,14 @@ const POST_RETRYABLE_STATUSES = new Set([408, 425, 429]);
 type FetchInput = Parameters<typeof fetch>[0];
 type FetchInit = Parameters<typeof fetch>[1];
 
-function makeRetriedFetch(opts: { verbose?: boolean }): typeof fetch {
+function makeRetriedFetch(opts: { verbose?: boolean; auth: AuthHandler }): typeof fetch {
   return async function retriedFetch(input: FetchInput, init?: FetchInit) {
     const method = (init?.method ?? "GET").toUpperCase();
     const url =
       typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const debug = opts.verbose || isDebugEnv();
     const deadlineMs = Date.now() + overallTimeoutMs();
+    let triedReauth = false;
 
     for (let attempt = 1; ; attempt++) {
       const remaining = Math.max(0, deadlineMs - Date.now());
@@ -131,9 +128,18 @@ function makeRetriedFetch(opts: { verbose?: boolean }): typeof fetch {
       const startedAt = Date.now();
       if (debug) console.error(`[http] → ${method} ${url} (timeout ${timeoutMs}ms)`);
 
+      // Inject Authorization per attempt so OAuth refreshes are picked up.
+      const authHeader = await opts.auth.getHeader();
+      const mergedHeaders = new Headers(init?.headers);
+      mergedHeaders.set("Authorization", authHeader);
+
       let response: Response;
       try {
-        response = await fetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+        response = await fetch(input, {
+          ...init,
+          headers: mergedHeaders,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
       } catch (err) {
         const verdict = classifyNetworkError(err, method);
         if (verdict.kind === "fatal") throw err;
@@ -160,6 +166,23 @@ function makeRetriedFetch(opts: { verbose?: boolean }): typeof fetch {
         );
       }
 
+      // 401 → ask the auth handler to refresh once, then retry without consuming
+      // a normal retry slot. Falls through to the regular path if refresh fails
+      // or the handler doesn't support refresh.
+      if (response.status === 401 && !triedReauth && opts.auth.refreshOnUnauthorized) {
+        triedReauth = true;
+        await response.arrayBuffer().catch(() => undefined);
+        try {
+          const refreshed = await opts.auth.refreshOnUnauthorized();
+          if (refreshed) {
+            if (debug) console.error(`[http] retry after auth refresh — HTTP 401`);
+            continue;
+          }
+        } catch (refreshErr) {
+          if (debug) console.error(`[http] auth refresh failed: ${reason(refreshErr)}`);
+        }
+      }
+
       const verdict = classifyHttpStatus(response.status, method);
       if (verdict.kind === "ok") return response;
 
@@ -175,7 +198,8 @@ function makeRetriedFetch(opts: { verbose?: boolean }): typeof fetch {
       }
       // Drain body to release the connection before retrying.
       await response.arrayBuffer().catch(() => undefined);
-      if (debug) console.error(`[http] retry ${attempt + 1} in ${delayMs}ms — HTTP ${response.status}`);
+      if (debug)
+        console.error(`[http] retry ${attempt + 1} in ${delayMs}ms — HTTP ${response.status}`);
       await sleep(delayMs);
     }
   };

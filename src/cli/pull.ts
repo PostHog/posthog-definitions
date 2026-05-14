@@ -14,7 +14,7 @@ export async function runPull(args: PullArgs): Promise<number> {
 
   let config;
   try {
-    config = loadConfig(overrides);
+    config = await loadConfig(overrides);
   } catch (err) {
     if (err instanceof ConfigError) {
       console.error(`error: ${err.message}`);

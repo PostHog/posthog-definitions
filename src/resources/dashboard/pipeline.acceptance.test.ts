@@ -59,7 +59,7 @@ function desiredFor(insights: Insight[], dashboards: Dashboard[]): DesiredState 
 
 describe("dashboard pipeline (acceptance)", () => {
   it("creates, updates, re-diffs unchanged, then prunes a real dashboard", async () => {
-    const config = loadAcceptanceConfig();
+    const config = await loadAcceptanceConfig();
     await purgeStale(
       config,
       listManagedDashboards,

@@ -39,7 +39,7 @@ function desiredFor(insights: Insight[]): DesiredState {
 
 describe("insight pipeline (acceptance)", () => {
   it("creates, updates, re-diffs unchanged, then prunes a real insight", async () => {
-    const config = loadAcceptanceConfig();
+    const config = await loadAcceptanceConfig();
     await purgeStale(
       config,
       listManagedInsights,

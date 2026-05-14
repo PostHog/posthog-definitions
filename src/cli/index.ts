@@ -3,6 +3,7 @@ import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { runApply } from "./apply.js";
 import { ArgError, HELP_TEXT, parseArgs } from "./args.js";
+import { runLogin, runLogout } from "./login.js";
 import { runPull } from "./pull.js";
 
 export async function main(argv: string[]): Promise<void> {
@@ -22,8 +23,23 @@ export async function main(argv: string[]): Promise<void> {
     process.exit(0);
   }
 
-  const code = parsed.command === "apply" ? await runApply(parsed) : await runPull(parsed);
+  const code = await dispatch(parsed);
   process.exit(code);
+}
+
+async function dispatch(
+  parsed: Exclude<ReturnType<typeof parseArgs>, { command: "help" }>,
+): Promise<number> {
+  switch (parsed.command) {
+    case "apply":
+      return runApply(parsed);
+    case "pull":
+      return runPull(parsed);
+    case "login":
+      return runLogin(parsed);
+    case "logout":
+      return runLogout(parsed);
+  }
 }
 
 // Resolve both sides through realpath so symlinked invocations (pnpm workspace,

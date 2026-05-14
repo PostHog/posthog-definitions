@@ -34,7 +34,7 @@ describe("dashboard client (integration)", () => {
   let config: ClientConfig;
 
   beforeAll(async () => {
-    config = loadAcceptanceConfig();
+    config = await loadAcceptanceConfig();
     await purgeStale(
       config,
       listManagedDashboards,
