@@ -1,5 +1,5 @@
 import type { ClientConfig } from "../../client/config.js";
-import { paginate, request } from "../../client/http.js";
+import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
 
 /**
  * Server-side filter for managed endpoints. Mirrored from the description
@@ -32,18 +32,19 @@ export type EndpointCreate = {
 
 export type EndpointUpdate = Partial<EndpointCreate>;
 
-function endpointsPath(projectId: string, suffix = ""): string {
-  return `/api/environments/${projectId}/endpoints/${suffix}`;
-}
-
 export async function listManagedEndpoints(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint[]> {
-  const all = await paginate<ServerEndpoint>(config, endpointsPath(config.projectId), {
-    query: { limit: 100 },
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/environments/{environment_id}/endpoints/", {
+    params: {
+      path: { environment_id: config.projectId },
+      query: { limit: 100 },
+    },
   });
+  const firstPage = data as unknown as Paginated<ServerEndpoint>;
+  const all = await followPagination(config, firstPage, { verbose: options.verbose });
   return all.filter((e) => (e.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
 }
 
@@ -52,13 +53,11 @@ export async function getEndpoint(
   name: string,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
-  return request<ServerEndpoint>(
-    config,
-    endpointsPath(config.projectId, `${encodeURIComponent(name)}/`),
-    {
-      verbose: options.verbose,
-    },
-  );
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/environments/{environment_id}/endpoints/{name}/", {
+    params: { path: { environment_id: config.projectId, name } },
+  });
+  return data as unknown as ServerEndpoint;
 }
 
 export async function createEndpoint(
@@ -66,11 +65,12 @@ export async function createEndpoint(
   payload: EndpointCreate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
-  return request<ServerEndpoint>(config, endpointsPath(config.projectId), {
-    method: "POST",
-    body: payload,
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.POST("/api/environments/{environment_id}/endpoints/", {
+    params: { path: { environment_id: config.projectId } },
+    body: payload as never,
   });
+  return data as unknown as ServerEndpoint;
 }
 
 export async function updateEndpoint(
@@ -79,15 +79,12 @@ export async function updateEndpoint(
   payload: EndpointUpdate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
-  return request<ServerEndpoint>(
-    config,
-    endpointsPath(config.projectId, `${encodeURIComponent(name)}/`),
-    {
-      method: "PATCH",
-      body: payload,
-      verbose: options.verbose,
-    },
-  );
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.PATCH("/api/environments/{environment_id}/endpoints/{name}/", {
+    params: { path: { environment_id: config.projectId, name } },
+    body: payload as never,
+  });
+  return data as unknown as ServerEndpoint;
 }
 
 export async function deleteEndpoint(
@@ -95,8 +92,8 @@ export async function deleteEndpoint(
   name: string,
   options: { verbose?: boolean } = {},
 ): Promise<void> {
-  await request<void>(config, endpointsPath(config.projectId, `${encodeURIComponent(name)}/`), {
-    method: "DELETE",
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.DELETE("/api/environments/{environment_id}/endpoints/{name}/", {
+    params: { path: { environment_id: config.projectId, name } },
   });
 }
