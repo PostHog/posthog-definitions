@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ClientConfig } from "../../client/config.js";
 import type { components } from "../../generated/api.js";
-import { createApiClient } from "../../client/typed.js";
+import { ApiError } from "../../client/typed.js";
 
 /**
  * Server-shape for the environment-settings singleton. `.loose()` because
@@ -29,15 +29,44 @@ function envId(config: ClientConfig): number {
   return Number(config.projectId);
 }
 
+/**
+ * The nested `/api/projects/{project_id}/environments/{id}/` path was
+ * restricted server-side ("Multiple environments per project are no longer
+ * available"). The flat `/api/environments/{id}/` endpoint returns the same
+ * Team row and is what we use here. It's not in the generated OpenAPI types
+ * yet, so we call it via plain fetch and mirror the typed client's error
+ * shape (`ApiError`) so callers up the stack are unaffected.
+ */
+async function callEnvironment(
+  config: ClientConfig,
+  method: "GET" | "PATCH",
+  body?: unknown,
+  options: { verbose?: boolean } = {},
+): Promise<ServerProjectSettings> {
+  const url = `${config.host}/api/environments/${envId(config)}/`;
+  const init: RequestInit = {
+    method,
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  };
+  if (options.verbose) console.error(`[http] → ${method} ${url}`);
+  const response = await fetch(url, init);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new ApiError(response.status, method, response.url, text, undefined);
+  }
+  const data = await response.json();
+  return ServerProjectSettingsSchema.parse(data);
+}
+
 export async function getProjectSettings(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerProjectSettings> {
-  const api = createApiClient(config, { verbose: options.verbose });
-  const { data } = await api.GET("/api/projects/{project_id}/environments/{id}/", {
-    params: { path: { project_id: config.projectId, id: envId(config) } },
-  });
-  return ServerProjectSettingsSchema.parse(data);
+  return callEnvironment(config, "GET", undefined, options);
 }
 
 export async function patchProjectSettings(
@@ -45,10 +74,5 @@ export async function patchProjectSettings(
   payload: ProjectSettingsPayload,
   options: { verbose?: boolean } = {},
 ): Promise<ServerProjectSettings> {
-  const api = createApiClient(config, { verbose: options.verbose });
-  const { data } = await api.PATCH("/api/projects/{project_id}/environments/{id}/", {
-    params: { path: { project_id: config.projectId, id: envId(config) } },
-    body: payload as unknown as components["schemas"]["PatchedTeam"],
-  });
-  return ServerProjectSettingsSchema.parse(data);
+  return callEnvironment(config, "PATCH", payload, options);
 }
