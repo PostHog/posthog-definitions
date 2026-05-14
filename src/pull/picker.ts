@@ -55,7 +55,8 @@ export async function pickServerIds(
       limit: 15,
       choices,
       initial: choices.map((c) => c.name),
-      footer: "type to search · space to toggle · a to toggle all · enter to confirm",
+      actions: { ctrl: { a: "a" } },
+      footer: "type to search · space to toggle · ctrl+a to toggle all · enter to confirm",
       format(value: unknown) {
         const n = Array.isArray(value) ? value.length : 0;
         return `${n} of ${choices.length} selected`;
