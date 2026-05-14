@@ -41,3 +41,6 @@ export type {
 
 export { eventDefinition } from "./resources/event-definition/index.js";
 export type { EventDefinition, EnforcementMode } from "./resources/event-definition/index.js";
+
+export { createTypedPostHog } from "./client/typed-posthog.js";
+export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";
