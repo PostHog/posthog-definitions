@@ -21,6 +21,12 @@ dist/
 # Smoke test scratch dir
 .smoke-work/
 
+# Integration test scratch dirs (need to live inside the repo so
+# `@posthog/definitions` self-imports resolve via the package's exports)
+.apply-int-*/
+.pull-int-*/
+.dump-int-*/
+
 # Editor / OS
 .DS_Store
 .vscode/
