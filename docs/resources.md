@@ -95,7 +95,8 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 ## Summary
 
-Currently shipped: **4 resource types** (Dashboards, Insights, Feature flags, Endpoints).
-Reasonable IaC targets across the API surface: **~25–30** (flags, cohorts, actions, surveys, experiments, annotations, alerts, hog functions/flows, error-tracking rules, warehouse queries, batch exports, …).
+Currently shipped: **6 resource types** — Dashboards, Insights, Feature flags, Endpoints, Schema property groups, Event definitions. Event definitions and property groups together feed `createTypedPostHog`, which wraps any `posthog-js`-shaped client and type-checks `.capture(name, properties)` at compile time against the same specs synced via `apply`.
 
-Next likely candidates per `implementation/mvp-roadmap.md`: feature flags, then actions and cohorts.
+Reasonable IaC targets across the API surface: **~25–30** (cohorts, actions, surveys, experiments, annotations, alerts, hog functions/flows, error-tracking rules, warehouse queries, batch exports, …).
+
+Likely next candidates: actions and cohorts (referenced from feature flag conditions and a frequent need in declarative setups).
