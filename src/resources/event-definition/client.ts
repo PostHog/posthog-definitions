@@ -54,6 +54,15 @@ export async function listManagedEventDefinitions(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEventDefinition[]> {
+  const all = await listEventDefinitions(config, options);
+  return all.filter((row) => eventDefinitionsHasManagedTag(row.tags));
+}
+
+/** Unfiltered list of every event definition in the project; used by pull. */
+export async function listEventDefinitions(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerEventDefinition[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/event_definitions/", {
     params: { path: { project_id: config.projectId } },
@@ -62,9 +71,7 @@ export async function listManagedEventDefinitions(
   const allRaw = await followPagination<unknown>(config, firstPage, {
     verbose: options.verbose,
   });
-  return allRaw
-    .map((row) => ServerEventDefinitionSchema.parse(row))
-    .filter((row) => eventDefinitionsHasManagedTag(row.tags));
+  return allRaw.map((row) => ServerEventDefinitionSchema.parse(row));
 }
 
 export async function getEventDefinition(

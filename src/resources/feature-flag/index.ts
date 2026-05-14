@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import type { FeatureFlag } from "./sdk.js";
 import {
   displayFeatureFlag,
@@ -12,7 +12,19 @@ import {
   runFeatureFlagOp,
   validateFeatureFlags,
 } from "./pipeline.js";
-import { listManagedFeatureFlags, type ServerFeatureFlag } from "./client.js";
+import {
+  getFeatureFlag,
+  listFeatureFlags,
+  listManagedFeatureFlags,
+  type ServerFeatureFlag,
+} from "./client.js";
+import {
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { featureFlag } from "./sdk.js";
 export type {
@@ -23,7 +35,7 @@ export type {
   PropertyFilter,
 } from "./sdk.js";
 
-export const featureFlagResource: ResourceModule<FeatureFlag, ServerFeatureFlag> = {
+export const featureFlagResource: CollectionResourceModule<FeatureFlag, ServerFeatureFlag> = {
   kind: "collection",
   name: "feature-flags",
   displayName: "feature flag",
@@ -43,4 +55,13 @@ export const featureFlagResource: ResourceModule<FeatureFlag, ServerFeatureFlag>
 
   displaySpec: (spec, _ctx: ApplyContext) => displayFeatureFlag(spec),
   displayServer: (server, _ctx: ApplyContext) => displayFeatureFlagFromServer(server),
+
+  listAll: listFeatureFlags,
+  getById: (config, id, options) =>
+    getFeatureFlag(config, typeof id === "string" ? Number(id) : id, options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };

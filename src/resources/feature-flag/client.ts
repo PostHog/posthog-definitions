@@ -81,6 +81,15 @@ export async function listManagedFeatureFlags(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag[]> {
+  const all = await listFeatureFlags(config, options);
+  return all.filter((row) => row.tags?.some((tag) => tag.startsWith("iac:feature-flags:")));
+}
+
+/** Unfiltered list of every feature flag in the project; used by pull. */
+export async function listFeatureFlags(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerFeatureFlag[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/feature_flags/", {
     params: {
@@ -92,9 +101,7 @@ export async function listManagedFeatureFlags(
   const allRaw = await followPagination<unknown>(config, firstPage, {
     verbose: options.verbose,
   });
-  return allRaw
-    .map((row) => ServerFeatureFlagSchema.parse(row))
-    .filter((row) => row.tags?.some((tag) => tag.startsWith("iac:feature-flags:")));
+  return allRaw.map((row) => ServerFeatureFlagSchema.parse(row));
 }
 
 export async function getFeatureFlag(

@@ -12,7 +12,14 @@ import {
   runCohortOp,
   validateCohorts,
 } from "./pipeline.js";
-import { listManagedCohorts, type ServerCohort } from "./client.js";
+import { getCohort, listCohorts, listManagedCohorts, type ServerCohort } from "./client.js";
+import {
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { cohort } from "./sdk.js";
 export type { Cohort, CohortFilters, CohortType } from "./sdk.js";
@@ -37,4 +44,13 @@ export const cohortResource: CollectionResourceModule<Cohort, ServerCohort> = {
 
   displaySpec: (spec, _ctx: ApplyContext) => displayCohort(spec),
   displayServer: (server, _ctx: ApplyContext) => displayCohortFromServer(server),
+
+  listAll: listCohorts,
+  getById: (config, id, options) =>
+    getCohort(config, typeof id === "string" ? Number(id) : id, options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };

@@ -59,6 +59,15 @@ export async function listManagedEndpoints(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint[]> {
+  const all = await listEndpoints(config, options);
+  return all.filter((e) => (e.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+}
+
+/** Unfiltered list of every endpoint in the project; used by pull. */
+export async function listEndpoints(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerEndpoint[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/environments/{environment_id}/endpoints/", {
     params: {
@@ -70,9 +79,7 @@ export async function listManagedEndpoints(
   const all = await followPagination<GeneratedEndpoint>(config, firstPage, {
     verbose: options.verbose,
   });
-  return all
-    .map(toServerEndpoint)
-    .filter((e) => (e.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  return all.map(toServerEndpoint);
 }
 
 export async function getEndpoint(

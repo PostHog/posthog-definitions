@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import { propertyGroupResource } from "../property-group/index.js";
 import type { EventDefinition } from "./sdk.js";
 import {
@@ -13,12 +13,25 @@ import {
   runEventDefinitionOp,
   validateEventDefinitions,
 } from "./pipeline.js";
-import { listManagedEventDefinitions, type ServerEventDefinition } from "./client.js";
+import {
+  getEventDefinition,
+  listEventDefinitions,
+  listManagedEventDefinitions,
+  type ServerEventDefinition,
+} from "./client.js";
+import {
+  pullDependencies,
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { eventDefinition } from "./sdk.js";
 export type { EventDefinition, EnforcementMode } from "./sdk.js";
 
-export const eventDefinitionResource: ResourceModule<EventDefinition, ServerEventDefinition> = {
+export const eventDefinitionResource: CollectionResourceModule<EventDefinition, ServerEventDefinition> = {
   kind: "collection",
   name: "event-definitions",
   displayName: "event definition",
@@ -39,4 +52,13 @@ export const eventDefinitionResource: ResourceModule<EventDefinition, ServerEven
 
   displaySpec: (spec, _ctx: ApplyContext) => displayEventDefinition(spec),
   displayServer: (server, _ctx: ApplyContext) => displayEventDefinitionFromServer(server),
+
+  listAll: listEventDefinitions,
+  getById: (config, id, options) => getEventDefinition(config, String(id), options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  pullDependencies,
+  renderToFile,
+  tagOnServer,
 };

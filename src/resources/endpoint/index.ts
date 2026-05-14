@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import type { Endpoint } from "./sdk.js";
 import {
   displayEndpoint,
@@ -12,12 +12,24 @@ import {
   runEndpointOp,
   validateEndpoints,
 } from "./pipeline.js";
-import { listManagedEndpoints, type ServerEndpoint } from "./client.js";
+import {
+  getEndpoint,
+  listEndpoints,
+  listManagedEndpoints,
+  type ServerEndpoint,
+} from "./client.js";
+import {
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { endpoint } from "./sdk.js";
 export type { Endpoint } from "./sdk.js";
 
-export const endpointResource: ResourceModule<Endpoint, ServerEndpoint> = {
+export const endpointResource: CollectionResourceModule<Endpoint, ServerEndpoint> = {
   kind: "collection",
   name: "endpoints",
   displayName: "endpoint",
@@ -37,4 +49,12 @@ export const endpointResource: ResourceModule<Endpoint, ServerEndpoint> = {
 
   displaySpec: (spec, _ctx: ApplyContext) => displayEndpoint(spec),
   displayServer: (server, _ctx: ApplyContext) => displayEndpointFromServer(server),
+
+  listAll: listEndpoints,
+  getById: (config, id, options) => getEndpoint(config, String(id), options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };
