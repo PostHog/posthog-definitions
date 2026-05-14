@@ -87,7 +87,7 @@ jobs:
             '{title: $title, description: $description, repository: $repository, origin_product: "user_created"}')
 
           http_code=$(curl -sS -o /tmp/task.json -w '%{http_code}' -X POST \
-            "https://us.posthog.com/api/projects/2/tasks/" \
+            "https://us.posthog.com/api/projects/423401/tasks/" \
             -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
             -H "Content-Type: application/json" \
             -d "$create_payload")
@@ -99,7 +99,7 @@ jobs:
           task_id=$(jq -r '.id' /tmp/task.json)
 
           http_code=$(curl -sS -o /tmp/run.json -w '%{http_code}' -X POST \
-            "https://us.posthog.com/api/projects/2/tasks/${task_id}/run/" \
+            "https://us.posthog.com/api/projects/423401/tasks/${task_id}/run/" \
             -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
             -H "Content-Type: application/json" \
             -d '{"mode": "background"}')
@@ -115,5 +115,5 @@ jobs:
             echo "**Task:** \`${task_id}\`"
             echo "**TaskRun:** \`${run_id}\`"
             echo ""
-            echo "https://us.posthog.com/project/2/tasks/${task_id}"
+            echo "https://us.posthog.com/project/423401/tasks/${task_id}"
           } >> "$GITHUB_STEP_SUMMARY"
