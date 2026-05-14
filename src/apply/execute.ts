@@ -35,11 +35,12 @@ export async function execute(
   config: ClientConfig,
   diffResult: DiffResult,
   options: ExecuteOptions = {},
+  resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
 ): Promise<ExecuteSummary> {
   const summary: ExecuteSummary = new Map();
   const ctx = newApplyContext();
 
-  for (const resource of RESOURCES) {
+  for (const resource of resources) {
     const counts: ResourceCounts = { created: 0, updated: 0, unchanged: 0, pruned: 0 };
     const slice = diffResult.get(resource.name);
     if (slice) {
@@ -70,9 +71,10 @@ function bumpCount(counts: ResourceCounts, op: ResourceOp<unknown, unknown>): vo
 export async function fetchCurrentState(
   config: ClientConfig,
   options: ExecuteOptions = {},
+  resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
 ): Promise<Map<string, unknown[]>> {
   const entries = await Promise.all(
-    RESOURCES.map(
+    resources.map(
       async (r) => [r.name, await r.list(config, { verbose: options.verbose })] as const,
     ),
   );
