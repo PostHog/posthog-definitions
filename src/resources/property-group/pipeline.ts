@@ -164,21 +164,21 @@ export async function runPropertyGroupOp(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   if (op.kind === "unchanged") {
-    ctx.propertyGroupIdByKey.set(op.key, op.serverId as string);
+    ctx.propertyGroupIdByKey.set(op.spec.key, op.server.id);
     return;
   }
 
-  const payload = propertyGroupPayload(op.spec, op.hash);
+  const payload = propertyGroupPayload(op.spec, propertyGroupHash(op.spec));
 
   if (op.kind === "create") {
     const created = await createPropertyGroup(config, payload, options);
-    ctx.propertyGroupIdByKey.set(op.key, created.id);
+    ctx.propertyGroupIdByKey.set(op.spec.key, created.id);
     return;
   }
 
-  await assertManagedPropertyGroup(config, op.serverId as string, op.key, options);
-  const updated = await updatePropertyGroup(config, op.serverId as string, payload, options);
-  ctx.propertyGroupIdByKey.set(op.key, updated.id);
+  await assertManagedPropertyGroup(config, op.server.id, op.spec.key, options);
+  const updated = await updatePropertyGroup(config, op.server.id, payload, options);
+  ctx.propertyGroupIdByKey.set(op.spec.key, updated.id);
 }
 
 export async function prunePropertyGroup(

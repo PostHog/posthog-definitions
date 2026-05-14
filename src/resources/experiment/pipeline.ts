@@ -366,11 +366,12 @@ export async function runExperimentOp(
   const desiredLc = desiredLifecycle(op.spec);
   const desiredArchived = op.spec.archived ?? false;
 
+  const hash = experimentHash(op.spec);
   if (op.kind === "create") {
     // Always create as draft. Lifecycle transitions happen afterwards.
     const created = await createExperiment(
       config,
-      buildCreatePayload(op.spec, op.hash, ctx),
+      buildCreatePayload(op.spec, hash, ctx),
       options,
     );
     await applyLifecycleTransition(
@@ -386,11 +387,11 @@ export async function runExperimentOp(
   }
 
   // Update path.
-  await assertManaged(config, op.serverId as number, op.key, options);
+  await assertManaged(config, op.server.id, op.spec.key, options);
   const updated = await updateExperiment(
     config,
-    op.serverId as number,
-    buildUpdatePayload(op.spec, op.hash, ctx),
+    op.server.id,
+    buildUpdatePayload(op.spec, hash, ctx),
     options,
   );
   await applyLifecycleTransition(

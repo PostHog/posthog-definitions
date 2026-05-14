@@ -18,6 +18,7 @@ export { propertyGroup } from "./sdk.js";
 export type { PropertyGroup, PropertyDef, PropertyMap, PropertyType } from "./sdk.js";
 
 export const propertyGroupResource: ResourceModule<PropertyGroup, ServerPropertyGroup> = {
+  kind: "collection",
   name: "property-groups",
   displayName: "property group",
   identityPrefix: PROPERTY_GROUP_IDENTITY_PREFIX,

@@ -139,21 +139,21 @@ export async function runInsightOp(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   if (op.kind === "unchanged") {
-    ctx.insightIdByKey.set(op.key, op.serverId as number);
+    ctx.insightIdByKey.set(op.spec.key, op.server.id);
     return;
   }
 
-  const payload = insightPayload(op.spec, op.hash);
+  const payload = insightPayload(op.spec, insightHash(op.spec));
 
   if (op.kind === "create") {
     const created = await createInsight(config, payload, options);
-    ctx.insightIdByKey.set(op.key, created.id);
+    ctx.insightIdByKey.set(op.spec.key, created.id);
     return;
   }
 
-  await assertManagedInsight(config, op.serverId as number, op.key, options);
-  const updated = await updateInsight(config, op.serverId as number, payload, options);
-  ctx.insightIdByKey.set(op.key, updated.id);
+  await assertManagedInsight(config, op.server.id, op.spec.key, options);
+  const updated = await updateInsight(config, op.server.id, payload, options);
+  ctx.insightIdByKey.set(op.spec.key, updated.id);
 }
 
 export async function pruneInsight(

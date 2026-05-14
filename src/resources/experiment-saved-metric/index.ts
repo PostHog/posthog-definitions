@@ -24,6 +24,7 @@ export const experimentSavedMetricResource: ResourceModule<
   ExperimentSavedMetric,
   ServerExperimentSavedMetric
 > = {
+  kind: "collection",
   name: "experiment-saved-metrics",
   displayName: "experiment saved metric",
   identityPrefix: EXPERIMENT_SAVED_METRIC_IDENTITY_PREFIX,

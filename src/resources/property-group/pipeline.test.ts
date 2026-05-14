@@ -71,7 +71,7 @@ describe("property group pipeline", () => {
     const slice = result.get("property-groups")!;
     expect(slice.ops.length).toBe(1);
     expect(slice.ops[0]!.kind).toBe("create");
-    expect(slice.ops[0]!.key).toBe("billing");
+    expect((slice.ops[0]!.spec as { key: string }).key).toBe("billing");
   });
 
   it("emits unchanged when server hash matches the desired spec's hash", () => {
@@ -80,7 +80,7 @@ describe("property group pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("property-groups")!.ops[0]!;
     expect(op.kind).toBe("unchanged");
-    if (op.kind === "unchanged") expect(op.serverId).toBe("uuid-1");
+    if (op.kind === "unchanged") expect((op.server as { id: number | string }).id).toBe("uuid-1");
   });
 
   it("emits update when server hash differs", () => {
@@ -89,7 +89,7 @@ describe("property group pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("property-groups")!.ops[0]!;
     expect(op.kind).toBe("update");
-    if (op.kind === "update") expect(op.serverId).toBe("uuid-1");
+    if (op.kind === "update") expect((op.server as { id: number | string }).id).toBe("uuid-1");
   });
 
   it("classifies a server-only managed group as an orphan", () => {

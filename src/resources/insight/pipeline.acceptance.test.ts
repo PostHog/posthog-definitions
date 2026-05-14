@@ -54,12 +54,7 @@ describe("insight pipeline (acceptance)", () => {
     await withCleanup(async (registerCleanup) => {
       const ctx = newApplyContext();
 
-      const createOp: ResourceOp<Insight, never> = {
-        kind: "create",
-        key,
-        spec: initial,
-        hash: insightHash(initial),
-      };
+      const createOp: ResourceOp<Insight, never> = { kind: "create", spec: initial };
       await runInsightOp(config, createOp, ctx);
 
       const serverId = ctx.insightIdByKey.get(key);
@@ -81,10 +76,7 @@ describe("insight pipeline (acceptance)", () => {
       const updated = buildInsight(key, "user logged in");
       const updateOp: ResourceOp<Insight, typeof afterCreate> = {
         kind: "update",
-        key,
         spec: updated,
-        hash: insightHash(updated),
-        serverId: serverId!,
         server: afterCreate,
       };
       await runInsightOp(config, updateOp, ctx);
@@ -101,7 +93,7 @@ describe("insight pipeline (acceptance)", () => {
           ["dashboards", []],
         ]),
       );
-      const reDiffOp = result.get("insights")!.ops.find((o) => o.key === key);
+      const reDiffOp = result.get("insights")!.ops.find((o) => (o.spec as Insight).key === key);
       expect(reDiffOp).toBeDefined();
       expect(reDiffOp!.kind).toBe("unchanged");
 

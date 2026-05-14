@@ -19,6 +19,7 @@ export { dashboard, text, button } from "./sdk.js";
 export type { Dashboard, Tile, InsightTile, TextTile, ButtonTile, Layout, Filters } from "./sdk.js";
 
 export const dashboardResource: ResourceModule<Dashboard, ServerDashboard> = {
+  kind: "collection",
   name: "dashboards",
   displayName: "dashboard",
   identityPrefix: DASHBOARD_TAG_PREFIX,

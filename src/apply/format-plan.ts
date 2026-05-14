@@ -1,5 +1,10 @@
 import { RESOURCES } from "../resources/index.js";
-import type { ApplyContext, ResourceModule, ResourceOp } from "../resources/types.js";
+import type {
+  ApplyContext,
+  ResourceModule,
+  ResourceOp,
+  SingletonResourceModule,
+} from "../resources/types.js";
 import { newApplyContext } from "../resources/types.js";
 import { renderLines, type DisplayValue } from "./display.js";
 import type { DiffResult } from "./diff.js";
@@ -102,6 +107,7 @@ export function formatPlan(
 
   const orphanMarker = options.prune ? p.red("-") : p.blue("·");
   for (const resource of resources) {
+    if (resource.kind !== "collection") continue;
     const orphans = result.get(resource.name)?.orphans ?? [];
     for (const orphan of orphans) {
       const key = resource.keyFromServer(orphan) ?? `id:${(orphan as { id: number }).id}`;
@@ -125,7 +131,7 @@ function buildDisplayContext(
   // Populate the reverse map (insight server id → key) so dashboard tile diffs
   // render insight keys rather than opaque ids.
   const insightResource = resources.find((r) => r.name === "insights");
-  if (insightResource) {
+  if (insightResource && insightResource.kind === "collection") {
     for (const row of serverState.get("insights") ?? []) {
       const key = insightResource.keyFromServer(row);
       if (!key) continue;
@@ -164,15 +170,39 @@ function renderOp(
 ): string | null {
   if (op.kind === "unchanged") return null;
   const labelPadded = resource.displayName.padEnd(9);
+  // Resolve the display label per resource kind. Collection ops carry a key
+  // derivable from the spec; singletons have no key (the project IS the key).
+  const idLabel =
+    resource.kind === "collection"
+      ? ` ${resource.specKey(op.spec)}`
+      : "";
   if (op.kind === "create") {
-    const header = `${p.green("+")} ${p.bold(labelPadded)} ${op.key}`;
+    const header = `${p.green("+")} ${p.bold(labelPadded)}${idLabel}`;
     const desired = renderLines(resource.displaySpec(op.spec, ctx));
     return [header, ...desired.map((line) => `    ${p.green(`+ ${line}`)}`)].join("\n");
   }
-  const header = `${p.yellow("~")} ${p.bold(labelPadded)} ${op.key}`;
+  // update
+  const header = `${p.yellow("~")} ${p.bold(labelPadded)}${idLabel}`;
+  if (resource.kind === "singleton") {
+    return [header, ...renderSingletonFieldDiff(resource, op.spec, op.server, p)].join("\n");
+  }
   const before = renderLines(resource.displayServer(op.server, ctx));
   const after = renderLines(resource.displaySpec(op.spec, ctx));
   return [header, ...renderDiff(before, after, p)].join("\n");
+}
+
+function renderSingletonFieldDiff(
+  resource: SingletonResourceModule<unknown, unknown>,
+  spec: unknown,
+  server: unknown,
+  p: Palette,
+): string[] {
+  const changes = resource.diffFields(spec, server);
+  return changes.map(({ field, before, after }) => {
+    const b = JSON.stringify(before);
+    const a = JSON.stringify(after);
+    return `    ${p.dim(field)}: ${p.red(b)} ${p.dim("→")} ${p.green(a)}`;
+  });
 }
 
 function renderDiff(before: string[], after: string[], p: Palette): string[] {

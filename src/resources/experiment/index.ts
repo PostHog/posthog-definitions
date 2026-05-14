@@ -27,6 +27,7 @@ export type {
 } from "./sdk.js";
 
 export const experimentResource: ResourceModule<Experiment, ServerExperiment> = {
+  kind: "collection",
   name: "experiments",
   displayName: "experiment",
   identityPrefix: EXPERIMENT_IDENTITY_PREFIX,

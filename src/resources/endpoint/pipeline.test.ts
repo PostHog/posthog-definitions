@@ -65,7 +65,7 @@ describe("endpoint pipeline", () => {
     const slice = result.get("endpoints")!;
     expect(slice.ops.length).toBe(1);
     expect(slice.ops[0]!.kind).toBe("create");
-    expect(slice.ops[0]!.key).toBe("weekly_signups");
+    expect((slice.ops[0]!.spec as { key: string }).key).toBe("weekly_signups");
   });
 
   it("emits unchanged when server hash matches the desired spec's hash", () => {
@@ -74,7 +74,7 @@ describe("endpoint pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("endpoints")!.ops[0]!;
     expect(op.kind).toBe("unchanged");
-    if (op.kind === "unchanged") expect(op.serverId).toBe("uuid-1");
+    if (op.kind === "unchanged") expect((op.server as { id: number | string }).id).toBe("uuid-1");
   });
 
   it("emits update when server hash differs", () => {
@@ -83,7 +83,7 @@ describe("endpoint pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("endpoints")!.ops[0]!;
     expect(op.kind).toBe("update");
-    if (op.kind === "update") expect(op.serverId).toBe("uuid-1");
+    if (op.kind === "update") expect((op.server as { id: number | string }).id).toBe("uuid-1");
   });
 
   it("classifies a server-only managed endpoint as an orphan", () => {

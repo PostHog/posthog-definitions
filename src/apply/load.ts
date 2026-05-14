@@ -22,6 +22,12 @@ export type LoadFailure =
       key: string;
       firstPath: string;
       secondPath: string;
+    }
+  | {
+      kind: "singleton-collision";
+      resourceDisplayName: string;
+      firstPath: string;
+      secondPath: string;
     };
 
 export async function loadDefinitions(
@@ -67,11 +73,13 @@ export function mergeInlineSpecs(
   resources: ReadonlyArray<ResourceModule<unknown, unknown>>,
 ): Result<DesiredState, LoadFailure> {
   for (const resource of resources) {
-    if (!resource.extractInlineSpecs) continue;
+    // Inline-spec extraction only exists on collection resources (only they
+    // have nested specs like dashboard tiles → insights).
+    if (resource.kind !== "collection" || !resource.extractInlineSpecs) continue;
     for (const loaded of state.get(resource.name) ?? []) {
       for (const dep of resource.extractInlineSpecs(loaded.spec)) {
         const target = resources.find((r) => r.name === dep.resourceName);
-        if (!target) continue;
+        if (!target || target.kind !== "collection") continue;
         const bucket = state.get(target.name) ?? [];
         if (!state.has(target.name)) state.set(target.name, bucket);
         const depKey = target.specKey(dep.spec);
@@ -90,6 +98,21 @@ export function mergeInlineSpecs(
         }
         bucket.push({ path: "<inline>", spec: dep.spec });
       }
+    }
+  }
+  // Singleton resources may only be declared once across all files. The
+  // loader globs every .ts and routes by isSpec; if two files default-export
+  // the same singleton, we refuse rather than silently picking one.
+  for (const resource of resources) {
+    if (resource.kind !== "singleton") continue;
+    const declared = state.get(resource.name) ?? [];
+    if (declared.length > 1) {
+      return err({
+        kind: "singleton-collision",
+        resourceDisplayName: resource.displayName,
+        firstPath: declared[0]!.path,
+        secondPath: declared[1]!.path,
+      });
     }
   }
   return ok(state);

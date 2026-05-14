@@ -163,14 +163,14 @@ export async function runEndpointOp(
 ): Promise<void> {
   if (op.kind === "unchanged") return;
 
-  const payload = endpointPayload(op.spec, op.hash);
+  const payload = endpointPayload(op.spec, endpointHash(op.spec));
 
   if (op.kind === "create") {
     await createEndpoint(config, payload, options);
     return;
   }
 
-  await assertManagedEndpoint(config, op.server.name, op.key, options);
+  await assertManagedEndpoint(config, op.server.name, op.spec.key, options);
   await updateEndpoint(config, op.server.name, payload, options);
 }
 

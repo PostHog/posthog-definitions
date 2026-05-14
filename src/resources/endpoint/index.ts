@@ -18,6 +18,7 @@ export { endpoint } from "./sdk.js";
 export type { Endpoint } from "./sdk.js";
 
 export const endpointResource: ResourceModule<Endpoint, ServerEndpoint> = {
+  kind: "collection",
   name: "endpoints",
   displayName: "endpoint",
   identityPrefix: ENDPOINT_IDENTITY_PREFIX,

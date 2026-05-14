@@ -138,21 +138,21 @@ export async function runExperimentHoldoutOp(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   if (op.kind === "unchanged") {
-    ctx.experimentHoldoutIdByKey.set(op.key, op.serverId as number);
+    ctx.experimentHoldoutIdByKey.set(op.spec.key, op.server.id);
     return;
   }
 
-  const payload = experimentHoldoutPayload(op.spec, op.hash);
+  const payload = experimentHoldoutPayload(op.spec, experimentHoldoutHash(op.spec));
 
   if (op.kind === "create") {
     const created = await createExperimentHoldout(config, payload, options);
-    ctx.experimentHoldoutIdByKey.set(op.key, created.id);
+    ctx.experimentHoldoutIdByKey.set(op.spec.key, created.id);
     return;
   }
 
-  await assertManaged(config, op.serverId as number, op.key, options);
-  const updated = await updateExperimentHoldout(config, op.serverId as number, payload, options);
-  ctx.experimentHoldoutIdByKey.set(op.key, updated.id);
+  await assertManaged(config, op.server.id, op.spec.key, options);
+  const updated = await updateExperimentHoldout(config, op.server.id, payload, options);
+  ctx.experimentHoldoutIdByKey.set(op.spec.key, updated.id);
 }
 
 export async function pruneExperimentHoldout(

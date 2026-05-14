@@ -47,7 +47,7 @@ describe("insight pipeline", () => {
     const slice = result.get("insights")!;
     expect(slice.ops.length).toBe(1);
     expect(slice.ops[0]!.kind).toBe("create");
-    expect(slice.ops[0]!.key).toBe("weekly-signups");
+    expect((slice.ops[0]!.spec as { key: string }).key).toBe("weekly-signups");
   });
 
   it("emits unchanged when server hash matches the desired spec's hash", () => {
@@ -56,7 +56,7 @@ describe("insight pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("insights")!.ops[0]!;
     expect(op.kind).toBe("unchanged");
-    if (op.kind === "unchanged") expect(op.serverId).toBe(42);
+    if (op.kind === "unchanged") expect((op.server as { id: number | string }).id).toBe(42);
   });
 
   it("emits update when server hash differs", () => {
@@ -65,7 +65,7 @@ describe("insight pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("insights")!.ops[0]!;
     expect(op.kind).toBe("update");
-    if (op.kind === "update") expect(op.serverId).toBe(42);
+    if (op.kind === "update") expect((op.server as { id: number | string }).id).toBe(42);
   });
 
   it("classifies a server-only managed insight as an orphan", () => {

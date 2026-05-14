@@ -16,9 +16,14 @@ function diffOf(byResource: Record<string, ResourceDiff<unknown, unknown>>): Dif
 }
 
 function op(kind: "create" | "update" | "unchanged", key: string): ResourceOp<unknown, unknown> {
-  if (kind === "create") return { kind, key, spec: { key }, hash: "h" };
-  if (kind === "unchanged") return { kind, key, spec: { key }, serverId: 1 };
-  return { kind, key, spec: { key }, hash: "h", serverId: 1, server: { key } };
+  const spec = { key };
+  const server = { id: 1, key };
+  if (kind === "create") return { kind, spec };
+  return { kind, spec, server };
+}
+
+function specKeyOf(op: ResourceOp<unknown, unknown>): string {
+  return (op.spec as { key: string }).key;
 }
 
 describe("execute", () => {
@@ -43,13 +48,13 @@ describe("execute", () => {
     const alpha = makeFakeResource({
       name: "alpha",
       executeOp: async (_c, o) => {
-        seen.push(`alpha:${o.key}`);
+        seen.push(`alpha:${specKeyOf(o)}`);
       },
     });
     const beta = makeFakeResource({
       name: "beta",
       executeOp: async (_c, o) => {
-        seen.push(`beta:${o.key}`);
+        seen.push(`beta:${specKeyOf(o)}`);
       },
     });
     await execute(
@@ -161,8 +166,9 @@ describe("execute", () => {
     const alpha = makeFakeResource({
       name: "alpha",
       executeOp: async (_c, o) => {
-        seen.push(o.key);
-        if (o.key === "b") throw new Error("boom");
+        const k = specKeyOf(o);
+        seen.push(k);
+        if (k === "b") throw new Error("boom");
       },
     });
     await expect(

@@ -120,7 +120,10 @@ function describeLoadFailure(failure: LoadFailure): string {
   if (failure.kind === "unknown-shape") {
     return `${failure.file}: default export does not match any known resource shape. Got: ${failure.sample}`;
   }
-  return `${failure.resourceDisplayName} key "${failure.key}" is defined in multiple places (${failure.firstPath} and inline in ${failure.secondPath}). Keys must be unique.`;
+  if (failure.kind === "inline-collision") {
+    return `${failure.resourceDisplayName} key "${failure.key}" is defined in multiple places (${failure.firstPath} and inline in ${failure.secondPath}). Keys must be unique.`;
+  }
+  return `${failure.resourceDisplayName} is a singleton but was declared in multiple files (${failure.firstPath} and ${failure.secondPath}). Declare it in exactly one place.`;
 }
 
 function summaryToObject(summary: Map<string, unknown>): Record<string, unknown> {

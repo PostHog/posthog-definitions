@@ -40,7 +40,8 @@ export async function execute(
         await resource.executeOp(config, op, ctx, { verbose: options.verbose });
         bumpCount(counts, op);
       }
-      if (options.prune) {
+      // Prune only applies to collections: singletons have no orphan concept.
+      if (options.prune && resource.kind === "collection") {
         for (const orphan of slice.orphans) {
           if (await resource.prune(config, orphan, { verbose: options.verbose })) {
             counts.pruned++;
@@ -66,9 +67,16 @@ export async function fetchCurrentState(
   resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
 ): Promise<Map<string, unknown[]>> {
   const entries = await Promise.all(
-    resources.map(
-      async (r) => [r.name, await r.list(config, { verbose: options.verbose })] as const,
-    ),
+    resources.map(async (r) => {
+      // Singletons fetch one object and wrap it; collections list the
+      // tag-filtered rows. Both end up as `unknown[]` in current state so the
+      // diff layer can treat them uniformly.
+      const rows =
+        r.kind === "singleton"
+          ? [await r.fetchOne(config, { verbose: options.verbose })]
+          : await r.list(config, { verbose: options.verbose });
+      return [r.name, rows] as const;
+    }),
   );
   return new Map(entries);
 }

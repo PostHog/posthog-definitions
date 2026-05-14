@@ -83,12 +83,7 @@ describe("dashboard pipeline (acceptance)", () => {
     await withCleanup(async (registerCleanup) => {
       const ctx = newApplyContext();
 
-      const insightOp: ResourceOp<Insight, never> = {
-        kind: "create",
-        key: insightKey,
-        spec: insightSpec,
-        hash: insightHash(insightSpec),
-      };
+      const insightOp: ResourceOp<Insight, never> = { kind: "create", spec: insightSpec };
       await runInsightOp(config, insightOp, ctx);
       const insightId = ctx.insightIdByKey.get(insightKey);
       expect(insightId).toBeDefined();
@@ -96,12 +91,7 @@ describe("dashboard pipeline (acceptance)", () => {
         await deleteInsight(config, insightId!).catch(() => undefined);
       });
 
-      const createOp: ResourceOp<Dashboard, never> = {
-        kind: "create",
-        key: dashboardKey,
-        spec: initial,
-        hash: dashboardHash(initial),
-      };
+      const createOp: ResourceOp<Dashboard, never> = { kind: "create", spec: initial };
       await runDashboardOp(config, createOp, ctx);
 
       const managed = await listManagedDashboards(config);
@@ -123,10 +113,7 @@ describe("dashboard pipeline (acceptance)", () => {
       const updated = buildDashboard(dashboardKey, "Acceptance dashboard v2", insightSpec);
       const updateOp: ResourceOp<Dashboard, typeof listed> = {
         kind: "update",
-        key: dashboardKey,
         spec: updated,
-        hash: dashboardHash(updated),
-        serverId: dashboardId,
         server: listed,
       };
       await runDashboardOp(config, updateOp, ctx);
@@ -143,7 +130,9 @@ describe("dashboard pipeline (acceptance)", () => {
           ["dashboards", managedAgain],
         ]),
       );
-      const reDiffOp = result.get("dashboards")!.ops.find((o) => o.key === dashboardKey);
+      const reDiffOp = result
+        .get("dashboards")!
+        .ops.find((o) => (o.spec as Dashboard).key === dashboardKey);
       expect(reDiffOp).toBeDefined();
       expect(reDiffOp!.kind).toBe("unchanged");
 

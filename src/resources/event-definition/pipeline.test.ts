@@ -67,7 +67,7 @@ describe("event definition pipeline", () => {
     const slice = result.get("event-definitions")!;
     expect(slice.ops.length).toBe(1);
     expect(slice.ops[0]!.kind).toBe("create");
-    expect(slice.ops[0]!.key).toBe("signup");
+    expect((slice.ops[0]!.spec as { key: string }).key).toBe("signup");
   });
 
   it("emits unchanged when server hash matches", () => {
@@ -76,7 +76,7 @@ describe("event definition pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("event-definitions")!.ops[0]!;
     expect(op.kind).toBe("unchanged");
-    if (op.kind === "unchanged") expect(op.serverId).toBe("uuid-1");
+    if (op.kind === "unchanged") expect((op.server as { id: number | string }).id).toBe("uuid-1");
   });
 
   it("emits update when server hash differs", () => {
@@ -85,7 +85,7 @@ describe("event definition pipeline", () => {
     const result = diff(desiredFor([desired]), currentFor([server]));
     const op = result.get("event-definitions")!.ops[0]!;
     expect(op.kind).toBe("update");
-    if (op.kind === "update") expect(op.serverId).toBe("uuid-1");
+    if (op.kind === "update") expect((op.server as { id: number | string }).id).toBe("uuid-1");
   });
 
   it("emits update when propertyGroups change (so links get reconciled)", () => {

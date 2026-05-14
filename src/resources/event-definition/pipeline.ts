@@ -229,7 +229,7 @@ export async function runEventDefinitionOp(
 ): Promise<void> {
   if (op.kind === "unchanged") return;
 
-  const payload = eventDefinitionPayload(op.spec, op.hash);
+  const payload = eventDefinitionPayload(op.spec, eventDefinitionHash(op.spec));
   const desiredGroupIds = resolveDesiredGroupIds(op.spec, ctx);
 
   let serverId: string;
@@ -237,13 +237,8 @@ export async function runEventDefinitionOp(
     const created = await createEventDefinition(config, payload, options);
     serverId = created.id;
   } else {
-    await assertManagedEventDefinition(config, op.serverId as string, op.key, options);
-    const updated = await updateEventDefinition(
-      config,
-      op.serverId as string,
-      payload,
-      options,
-    );
+    await assertManagedEventDefinition(config, op.server.id, op.spec.key, options);
+    const updated = await updateEventDefinition(config, op.server.id, payload, options);
     serverId = updated.id;
   }
 

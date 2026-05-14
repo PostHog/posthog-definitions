@@ -24,6 +24,7 @@ export const experimentHoldoutResource: ResourceModule<
   ExperimentHoldout,
   ServerExperimentHoldout
 > = {
+  kind: "collection",
   name: "experiment-holdouts",
   displayName: "experiment holdout",
   identityPrefix: EXPERIMENT_HOLDOUT_IDENTITY_PREFIX,

@@ -136,26 +136,21 @@ export async function runExperimentSavedMetricOp(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   if (op.kind === "unchanged") {
-    ctx.experimentSavedMetricIdByKey.set(op.key, op.serverId as number);
+    ctx.experimentSavedMetricIdByKey.set(op.spec.key, op.server.id);
     return;
   }
 
-  const payload = experimentSavedMetricPayload(op.spec, op.hash);
+  const payload = experimentSavedMetricPayload(op.spec, experimentSavedMetricHash(op.spec));
 
   if (op.kind === "create") {
     const created = await createExperimentSavedMetric(config, payload, options);
-    ctx.experimentSavedMetricIdByKey.set(op.key, created.id);
+    ctx.experimentSavedMetricIdByKey.set(op.spec.key, created.id);
     return;
   }
 
-  await assertManaged(config, op.serverId as number, op.key, options);
-  const updated = await updateExperimentSavedMetric(
-    config,
-    op.serverId as number,
-    payload,
-    options,
-  );
-  ctx.experimentSavedMetricIdByKey.set(op.key, updated.id);
+  await assertManaged(config, op.server.id, op.spec.key, options);
+  const updated = await updateExperimentSavedMetric(config, op.server.id, payload, options);
+  ctx.experimentSavedMetricIdByKey.set(op.spec.key, updated.id);
 }
 
 export async function pruneExperimentSavedMetric(

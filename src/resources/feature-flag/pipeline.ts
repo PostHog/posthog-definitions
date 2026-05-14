@@ -199,15 +199,15 @@ export async function runFeatureFlagOp(
 ): Promise<void> {
   if (op.kind === "unchanged") return;
 
-  const payload = featureFlagPayload(op.spec, op.hash);
+  const payload = featureFlagPayload(op.spec, featureFlagHash(op.spec));
 
   if (op.kind === "create") {
     await createFeatureFlag(config, payload, options);
     return;
   }
 
-  await assertManagedFeatureFlag(config, op.serverId as number, op.key, options);
-  await updateFeatureFlag(config, op.serverId as number, payload, options);
+  await assertManagedFeatureFlag(config, op.server.id, op.spec.key, options);
+  await updateFeatureFlag(config, op.server.id, payload, options);
 }
 
 export async function pruneFeatureFlag(

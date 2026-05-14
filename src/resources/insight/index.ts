@@ -18,6 +18,7 @@ export { insight, trends, hogql } from "./sdk.js";
 export type { Insight, Query, TrendsQuery, HogQLQuery, EventsNode, InsightVizNode } from "./sdk.js";
 
 export const insightResource: ResourceModule<Insight, ServerInsight> = {
+  kind: "collection",
   name: "insights",
   displayName: "insight",
   identityPrefix: INSIGHT_TAG_PREFIX,

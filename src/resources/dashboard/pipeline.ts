@@ -275,15 +275,15 @@ export async function runDashboardOp(
 ): Promise<void> {
   if (op.kind === "unchanged") return;
 
-  const payload = dashboardPayload(op.spec, op.hash, ctx.insightIdByKey);
+  const payload = dashboardPayload(op.spec, dashboardHash(op.spec), ctx.insightIdByKey);
 
   if (op.kind === "create") {
     await createDashboard(config, payload, options);
     return;
   }
 
-  await assertManagedDashboard(config, op.serverId as number, op.key, options);
-  await updateDashboard(config, op.serverId as number, payload, options);
+  await assertManagedDashboard(config, op.server.id, op.spec.key, options);
+  await updateDashboard(config, op.server.id, payload, options);
 }
 
 export async function pruneDashboard(

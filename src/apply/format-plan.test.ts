@@ -14,9 +14,10 @@ function diffOf(byResource: Record<string, ResourceDiff<unknown, unknown>>): Dif
 }
 
 function op(kind: "create" | "update" | "unchanged", key: string): ResourceOp<unknown, unknown> {
-  if (kind === "create") return { kind, key, spec: { key }, hash: "h" };
-  if (kind === "unchanged") return { kind, key, spec: { key }, serverId: 1 };
-  return { kind, key, spec: { key }, hash: "h", serverId: 1, server: { key } };
+  const spec: Spec = { key };
+  const server: Server = { id: 1, key };
+  if (kind === "create") return { kind, spec };
+  return { kind, spec, server };
 }
 
 const alpha = makeFakeResource<Spec, Server>({ name: "alpha", displayName: "alpha" });

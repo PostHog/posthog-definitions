@@ -18,6 +18,7 @@ export { eventDefinition } from "./sdk.js";
 export type { EventDefinition, EnforcementMode } from "./sdk.js";
 
 export const eventDefinitionResource: ResourceModule<EventDefinition, ServerEventDefinition> = {
+  kind: "collection",
   name: "event-definitions",
   displayName: "event definition",
   identityPrefix: EVENT_DEFINITION_TAG_PREFIX,

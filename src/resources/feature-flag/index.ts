@@ -24,6 +24,7 @@ export type {
 } from "./sdk.js";
 
 export const featureFlagResource: ResourceModule<FeatureFlag, ServerFeatureFlag> = {
+  kind: "collection",
   name: "feature-flags",
   displayName: "feature flag",
   identityPrefix: FEATURE_FLAG_TAG_PREFIX,

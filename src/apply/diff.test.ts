@@ -27,18 +27,19 @@ describe("diff", () => {
       [fakeAlpha],
     );
     expect(result.get("alpha")?.ops).toEqual([
-      { kind: "create", key: "a", spec: { key: "a", hash: "h1" }, hash: "h1" },
+      { kind: "create", spec: { key: "a", hash: "h1" } },
     ]);
   });
 
   it("classifies a spec whose server hash matches as unchanged", () => {
+    const server: Server = { id: 7, key: "a", hash: "h1" };
     const result = diff(
       desiredState({ alpha: [{ key: "a", hash: "h1" }] }),
-      new Map([["alpha", [{ id: 7, key: "a", hash: "h1" }]]]),
+      new Map([["alpha", [server]]]),
       [fakeAlpha],
     );
     expect(result.get("alpha")?.ops).toEqual([
-      { kind: "unchanged", key: "a", spec: { key: "a", hash: "h1" }, serverId: 7 },
+      { kind: "unchanged", spec: { key: "a", hash: "h1" }, server },
     ]);
   });
 
@@ -50,14 +51,7 @@ describe("diff", () => {
       [fakeAlpha],
     );
     expect(result.get("alpha")?.ops).toEqual([
-      {
-        kind: "update",
-        key: "a",
-        spec: { key: "a", hash: "h-new" },
-        hash: "h-new",
-        serverId: 7,
-        server,
-      },
+      { kind: "update", spec: { key: "a", hash: "h-new" }, server },
     ]);
   });
 
@@ -103,7 +97,7 @@ describe("diff", () => {
       ]),
       [fakeAlpha],
     );
-    expect(result.get("alpha")?.ops.map((op) => op.key)).toEqual(["a", "b", "c"]);
+    expect(result.get("alpha")?.ops.map((op) => (op.spec as Spec).key)).toEqual(["a", "b", "c"]);
   });
 
   it("returns a slice per resource in the order resources are passed", () => {

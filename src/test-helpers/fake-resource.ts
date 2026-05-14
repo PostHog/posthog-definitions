@@ -1,19 +1,25 @@
 import type { ClientConfig } from "../client/config.js";
 import type { DisplayValue } from "../apply/display.js";
 import { obj, scalar } from "../apply/display.js";
-import type { ApplyContext, ResourceModule, ResourceOp } from "../resources/types.js";
+import type {
+  ApplyContext,
+  CollectionResourceModule,
+  ResourceOp,
+} from "../resources/types.js";
 
 /**
- * Build a minimal `ResourceModule` with sensible defaults and per-test overrides.
+ * Build a minimal `CollectionResourceModule` with sensible defaults and
+ * per-test overrides.
  *
  * Only intended for unit tests inside `src/apply/` that orchestrate resources
  * generically and don't care about a specific resource's payload shape.
  */
 export function makeFakeResource<TSpec = unknown, TServer = unknown>(
-  overrides: Partial<ResourceModule<TSpec, TServer>> & { name: string },
-): ResourceModule<TSpec, TServer> {
+  overrides: Partial<CollectionResourceModule<TSpec, TServer>> & { name: string },
+): CollectionResourceModule<TSpec, TServer> {
   const name = overrides.name;
   return {
+    kind: "collection",
     name,
     displayName: overrides.displayName ?? name,
     identityPrefix: overrides.identityPrefix ?? `iac:${name}:`,
@@ -58,11 +64,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 export function recordCalls(): {
   calls: Array<{ resource: string; kind: string; op?: ResourceOp<unknown, unknown> }>;
-  executeOp: ResourceModule["executeOp"];
-  prune: ResourceModule["prune"];
+  executeOp: CollectionResourceModule["executeOp"];
+  prune: CollectionResourceModule["prune"];
   forResource: (name: string) => {
-    executeOp: ResourceModule["executeOp"];
-    prune: ResourceModule["prune"];
+    executeOp: CollectionResourceModule["executeOp"];
+    prune: CollectionResourceModule["prune"];
   };
 } {
   const calls: Array<{ resource: string; kind: string; op?: ResourceOp<unknown, unknown> }> = [];
@@ -87,3 +93,4 @@ export function recordCalls(): {
     forResource: make,
   };
 }
+
