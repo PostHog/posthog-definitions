@@ -48,7 +48,7 @@ describe("experiment-holdout client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentHoldout(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentHoldout(config, created.id).catch(() => undefined);
+        await deleteExperimentHoldout(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(typeof created.id).toBe("number");
@@ -62,7 +62,7 @@ describe("experiment-holdout client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentHoldout(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentHoldout(config, created.id).catch(() => undefined);
+        await deleteExperimentHoldout(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getExperimentHoldout(config, created.id);
@@ -76,7 +76,7 @@ describe("experiment-holdout client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentHoldout(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentHoldout(config, created.id).catch(() => undefined);
+        await deleteExperimentHoldout(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedExperimentHoldouts(config);
@@ -89,7 +89,7 @@ describe("experiment-holdout client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentHoldout(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentHoldout(config, created.id).catch(() => undefined);
+        await deleteExperimentHoldout(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const updated = await updateExperimentHoldout(config, created.id, {

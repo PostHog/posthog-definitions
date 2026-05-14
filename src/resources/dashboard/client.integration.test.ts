@@ -54,7 +54,7 @@ describe("dashboard client (integration)", () => {
       };
       const created = await createDashboard(config, payload);
       registerCleanup(async () => {
-        await deleteDashboard(config, created.id).catch(() => undefined);
+        await deleteDashboard(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(typeof created.id === "number" && created.id > 0).toBeTruthy();
@@ -71,7 +71,7 @@ describe("dashboard client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createDashboard(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteDashboard(config, created.id).catch(() => undefined);
+        await deleteDashboard(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getDashboard(config, created.id);
@@ -89,7 +89,7 @@ describe("dashboard client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createDashboard(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteDashboard(config, created.id).catch(() => undefined);
+        await deleteDashboard(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedDashboards(config);
@@ -106,7 +106,7 @@ describe("dashboard client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createDashboard(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteDashboard(config, created.id).catch(() => undefined);
+        await deleteDashboard(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const newName = `${created.name} (renamed)`;
@@ -131,7 +131,7 @@ describe("dashboard client (integration)", () => {
         restriction_level: RESTRICTION_EVERYONE,
       });
       registerCleanup(async () => {
-        await deleteDashboard(config, created.id).catch(() => undefined);
+        await deleteDashboard(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(created.pinned).toBe(false);

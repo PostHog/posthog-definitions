@@ -50,7 +50,7 @@ describe("feature-flag client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createFeatureFlag(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, created.id).catch(() => undefined);
+        await deleteFeatureFlag(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(typeof created.id === "number" && created.id > 0).toBeTruthy();
@@ -65,7 +65,7 @@ describe("feature-flag client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createFeatureFlag(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, created.id).catch(() => undefined);
+        await deleteFeatureFlag(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getFeatureFlag(config, created.id);
@@ -80,7 +80,7 @@ describe("feature-flag client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createFeatureFlag(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, created.id).catch(() => undefined);
+        await deleteFeatureFlag(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedFeatureFlags(config);
@@ -95,7 +95,7 @@ describe("feature-flag client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createFeatureFlag(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, created.id).catch(() => undefined);
+        await deleteFeatureFlag(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const newName = `${created.name} (renamed)`;
@@ -111,7 +111,7 @@ describe("feature-flag client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createFeatureFlag(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, created.id).catch(() => undefined);
+        await deleteFeatureFlag(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const off = await updateFeatureFlag(config, created.id, { active: false });

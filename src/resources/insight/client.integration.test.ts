@@ -58,7 +58,7 @@ describe("insight client (integration)", () => {
       const payload = basePayload(key, "user signed up");
       const created = await createInsight(config, payload);
       registerCleanup(async () => {
-        await deleteInsight(config, created.id).catch(() => undefined);
+        await deleteInsight(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(typeof created.id === "number" && created.id > 0).toBeTruthy();
@@ -75,7 +75,7 @@ describe("insight client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createInsight(config, basePayload(key, "user logged in"));
       registerCleanup(async () => {
-        await deleteInsight(config, created.id).catch(() => undefined);
+        await deleteInsight(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getInsight(config, created.id);
@@ -93,7 +93,7 @@ describe("insight client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createInsight(config, basePayload(key, "$pageview"));
       registerCleanup(async () => {
-        await deleteInsight(config, created.id).catch(() => undefined);
+        await deleteInsight(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedInsights(config);
@@ -110,7 +110,7 @@ describe("insight client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createInsight(config, basePayload(key, "user signed up"));
       registerCleanup(async () => {
-        await deleteInsight(config, created.id).catch(() => undefined);
+        await deleteInsight(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const newName = `${created.name} (renamed)`;
@@ -132,7 +132,7 @@ describe("insight client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createInsight(config, basePayload(key, "user signed up"));
       registerCleanup(async () => {
-        await deleteInsight(config, created.id).catch(() => undefined);
+        await deleteInsight(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const updated = await updateInsight(config, created.id, {

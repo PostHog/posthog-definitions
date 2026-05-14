@@ -68,7 +68,7 @@ describe("property-group pipeline (acceptance)", () => {
       const serverId = ctx.propertyGroupIdByKey.get(key);
       expect(serverId).toBeDefined();
       registerCleanup(async () => {
-        await deletePropertyGroup(config, serverId!).catch(() => undefined);
+        await deletePropertyGroup(config, serverId!).catch((err) => console.error("cleanup failed:", err));
       });
 
       const afterCreate = await getPropertyGroup(config, serverId!);

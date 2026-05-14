@@ -53,7 +53,7 @@ describe("endpoint client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEndpoint(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEndpoint(config, created.name).catch(() => undefined);
+        await deleteEndpoint(config, created.name).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(created.name).toBe(key);
@@ -67,7 +67,7 @@ describe("endpoint client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEndpoint(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEndpoint(config, created.name).catch(() => undefined);
+        await deleteEndpoint(config, created.name).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getEndpoint(config, created.name);
@@ -81,7 +81,7 @@ describe("endpoint client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEndpoint(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEndpoint(config, created.name).catch(() => undefined);
+        await deleteEndpoint(config, created.name).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedEndpoints(config);
@@ -95,7 +95,7 @@ describe("endpoint client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEndpoint(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEndpoint(config, created.name).catch(() => undefined);
+        await deleteEndpoint(config, created.name).catch((err) => console.error("cleanup failed:", err));
       });
 
       const newQuery = { kind: "HogQLQuery", query: "SELECT 2" };

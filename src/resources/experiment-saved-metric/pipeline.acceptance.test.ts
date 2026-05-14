@@ -77,7 +77,7 @@ describe("experiment-saved-metric pipeline (acceptance)", () => {
       const serverId = ctx.experimentSavedMetricIdByKey.get(key);
       expect(serverId).toBeDefined();
       registerCleanup(async () => {
-        await deleteExperimentSavedMetric(config, serverId!).catch(() => undefined);
+        await deleteExperimentSavedMetric(config, serverId!).catch((err) => console.error("cleanup failed:", err));
       });
 
       const afterCreate = await getExperimentSavedMetric(config, serverId!);

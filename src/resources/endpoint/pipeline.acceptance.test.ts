@@ -67,7 +67,7 @@ describe("endpoint pipeline (acceptance)", () => {
 
       await runEndpointOp(config, { kind: "create", spec: initial }, ctx);
       registerCleanup(async () => {
-        await deleteEndpoint(config, key).catch(() => undefined);
+        await deleteEndpoint(config, key).catch((err) => console.error("cleanup failed:", err));
       });
 
       const afterCreate = await getEndpoint(config, key);

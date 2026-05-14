@@ -72,7 +72,7 @@ describe("experiment-holdout pipeline (acceptance)", () => {
       const serverId = ctx.experimentHoldoutIdByKey.get(key);
       expect(serverId).toBeDefined();
       registerCleanup(async () => {
-        await deleteExperimentHoldout(config, serverId!).catch(() => undefined);
+        await deleteExperimentHoldout(config, serverId!).catch((err) => console.error("cleanup failed:", err));
       });
 
       const afterCreate = await getExperimentHoldout(config, serverId!);

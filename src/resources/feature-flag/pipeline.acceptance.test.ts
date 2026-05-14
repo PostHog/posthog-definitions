@@ -66,7 +66,7 @@ describe("feature-flag pipeline (acceptance)", () => {
       const created = managed.find((row) => featureFlagKeyFromTags(row.tags) === key);
       if (!created) throw new Error(`flag ${key} not visible after create`);
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, created.id).catch(() => undefined);
+        await deleteFeatureFlag(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(created.tags?.includes(featureFlagTag(key))).toBeTruthy();

@@ -52,7 +52,7 @@ describe("experiment-saved-metric client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentSavedMetric(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentSavedMetric(config, created.id).catch(() => undefined);
+        await deleteExperimentSavedMetric(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(typeof created.id).toBe("number");
@@ -66,7 +66,7 @@ describe("experiment-saved-metric client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentSavedMetric(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentSavedMetric(config, created.id).catch(() => undefined);
+        await deleteExperimentSavedMetric(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getExperimentSavedMetric(config, created.id);
@@ -80,7 +80,7 @@ describe("experiment-saved-metric client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentSavedMetric(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentSavedMetric(config, created.id).catch(() => undefined);
+        await deleteExperimentSavedMetric(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedExperimentSavedMetrics(config);
@@ -93,7 +93,7 @@ describe("experiment-saved-metric client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createExperimentSavedMetric(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteExperimentSavedMetric(config, created.id).catch(() => undefined);
+        await deleteExperimentSavedMetric(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const newQuery = {

@@ -63,7 +63,7 @@ describe("cohort client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createCohort(config, behavioralPayload(key));
       registerCleanup(async () => {
-        await deleteCohort(config, created.id).catch(() => undefined);
+        await deleteCohort(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(typeof created.id).toBe("number");
@@ -78,7 +78,7 @@ describe("cohort client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createCohort(config, staticPayload(key));
       registerCleanup(async () => {
-        await deleteCohort(config, created.id).catch(() => undefined);
+        await deleteCohort(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(created.is_static).toBe(true);
@@ -90,7 +90,7 @@ describe("cohort client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createCohort(config, behavioralPayload(key));
       registerCleanup(async () => {
-        await deleteCohort(config, created.id).catch(() => undefined);
+        await deleteCohort(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getCohort(config, created.id);
@@ -104,7 +104,7 @@ describe("cohort client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createCohort(config, behavioralPayload(key));
       registerCleanup(async () => {
-        await deleteCohort(config, created.id).catch(() => undefined);
+        await deleteCohort(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedCohorts(config);
@@ -117,7 +117,7 @@ describe("cohort client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createCohort(config, behavioralPayload(key));
       registerCleanup(async () => {
-        await deleteCohort(config, created.id).catch(() => undefined);
+        await deleteCohort(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const newFilters = {

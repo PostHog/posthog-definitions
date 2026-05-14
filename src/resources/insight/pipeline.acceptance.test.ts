@@ -60,7 +60,7 @@ describe("insight pipeline (acceptance)", () => {
       const serverId = ctx.insightIdByKey.get(key);
       expect(serverId).toBeDefined();
       registerCleanup(async () => {
-        await deleteInsight(config, serverId!).catch(() => undefined);
+        await deleteInsight(config, serverId!).catch((err) => console.error("cleanup failed:", err));
       });
 
       const afterCreate = await getInsight(config, serverId!);

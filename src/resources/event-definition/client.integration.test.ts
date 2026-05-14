@@ -52,7 +52,7 @@ describe("event-definition client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEventDefinition(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEventDefinition(config, created.id).catch(() => undefined);
+        await deleteEventDefinition(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       expect(typeof created.id).toBe("string");
@@ -66,7 +66,7 @@ describe("event-definition client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEventDefinition(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEventDefinition(config, created.id).catch(() => undefined);
+        await deleteEventDefinition(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const fetched = await getEventDefinition(config, created.id);
@@ -80,7 +80,7 @@ describe("event-definition client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEventDefinition(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEventDefinition(config, created.id).catch(() => undefined);
+        await deleteEventDefinition(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const managed = await listManagedEventDefinitions(config);
@@ -93,7 +93,7 @@ describe("event-definition client (integration)", () => {
       const key = uniqueName(KEY_PREFIX);
       const created = await createEventDefinition(config, basePayload(key));
       registerCleanup(async () => {
-        await deleteEventDefinition(config, created.id).catch(() => undefined);
+        await deleteEventDefinition(config, created.id).catch((err) => console.error("cleanup failed:", err));
       });
 
       const newDesc = "Rewritten description";
