@@ -1,3 +1,4 @@
+import type { ClientConfig } from "../client/config.js";
 import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/typed.js";
 import { RESOURCES } from "../resources/index.js";
@@ -8,7 +9,17 @@ import { type LoadFailure, loadDefinitions } from "../apply/load.js";
 import { validate } from "../apply/validate.js";
 import type { ApplyArgs } from "./args.js";
 import { createDebug, debugEnabled } from "./debug.js";
+import {
+  type ApplyErr,
+  type ApplyResult,
+  exitCodeForError,
+} from "./result.js";
 
+/**
+ * Top-level CLI entry: build the result, then emit either prose (default)
+ * or JSON. Tests call `buildApplyResult` directly so they can assert on
+ * the typed object without going through stdout.
+ */
 export async function runApply(args: ApplyArgs): Promise<number> {
   const debug = createDebug(debugEnabled(args.verbose));
 
@@ -16,60 +27,81 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   if (args.host !== undefined) overrides.host = args.host;
   if (args.project !== undefined) overrides.projectId = args.project;
 
-  debug("loading config", { host: overrides.host, project: overrides.projectId });
-  let config;
+  let config: ClientConfig;
   try {
     config = loadConfig(overrides);
   } catch (err) {
     if (err instanceof ConfigError) {
-      return reportError(args, err.message, 3);
+      return emitAndExit(args, { ok: false, stage: "config", error: err.message });
     }
     throw err;
   }
-  debug("config loaded", { host: config.host, projectId: config.projectId });
+
+  const result = await buildApplyResult(config, args, { debug });
+
+  if (!result.ok) {
+    return emitAndExit(args, result);
+  }
+
+  if (args.json) {
+    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    return 0;
+  }
+  emitApplyProse(args, result);
+  return 0;
+}
+
+export type BuildApplyOptions = {
+  /** Optional debug logger; defaults to a no-op. */
+  debug?: (msg: string, ctx?: Record<string, unknown>) => void;
+};
+
+/**
+ * Pure pipeline: load → validate → fetch → diff → (optionally execute).
+ * Returns a typed result regardless of `args.json`. Throws only on
+ * unexpected errors (programmer bugs); operational failures land in the
+ * `ApplyErr` branch.
+ */
+export async function buildApplyResult(
+  config: ClientConfig,
+  args: ApplyArgs,
+  options: BuildApplyOptions = {},
+): Promise<ApplyResult> {
+  const debug = options.debug ?? (() => {});
 
   debug("loading definitions", { dir: args.dir });
   const loaded = await loadDefinitions(args.dir);
   if (!loaded.ok) {
-    return reportError(args, describeLoadFailure(loaded.error), 1);
+    return { ok: false, stage: "load", error: describeLoadFailure(loaded.error) };
   }
   const desired = loaded.value;
-  const loadedCounts = describeCounts(desired);
-  debug("definitions loaded", Object.fromEntries(loadedCounts));
+  debug(
+    "definitions loaded",
+    Object.fromEntries(Array.from(desired.entries()).map(([k, v]) => [k, v.length])),
+  );
 
   debug("validating definitions");
   const validation = validate(desired);
   if (!validation.ok) {
-    const lines = validation.error.issues.map((i) => `${i.resource}: ${i.message}`);
-    if (args.json) {
-      emitJson({ ok: false, stage: "validate", issues: validation.error.issues });
-    } else {
-      console.error(`error: Validation failed:\n - ${lines.join("\n - ")}`);
-    }
-    return 1;
+    return {
+      ok: false,
+      stage: "validate",
+      error: `Validation failed: ${validation.error.issues
+        .map((i) => `${i.resource}: ${i.message}`)
+        .join("; ")}`,
+      issues: validation.error.issues,
+    };
   }
   debug("validation passed");
 
-  if (!args.json) {
-    const summarySegments = RESOURCES.map(
-      (r) => `${desired.get(r.name)?.length ?? 0} ${r.displayName}(s)`,
-    );
-    console.error(`Loaded ${summarySegments.join(" and ")} from ${args.dir}/`);
-  }
-
   const totalDesired = RESOURCES.reduce((sum, r) => sum + (desired.get(r.name)?.length ?? 0), 0);
   if (args.dryRun && totalDesired === 0) {
-    if (args.json) {
-      emitJson({
-        ok: true,
-        dryRun: true,
-        applied: false,
-        plan: { totalOps: 0, byResource: [] },
-      });
-    } else {
-      console.log("Nothing to do.");
-    }
-    return 0;
+    return {
+      ok: true,
+      dryRun: true,
+      applied: false,
+      plan: { totalOps: 0, byResource: [] },
+    };
   }
 
   debug("fetching current server state");
@@ -82,7 +114,14 @@ export async function runApply(args: ApplyArgs): Promise<number> {
       desired,
     );
   } catch (err) {
-    return reportApiError(args, err, "while fetching current state");
+    if (err instanceof ApiError) {
+      return {
+        ok: false,
+        stage: "fetch",
+        error: `PostHog API while fetching current state: ${err.message}`,
+      };
+    }
+    throw err;
   }
   debug(
     "current state fetched",
@@ -92,22 +131,13 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("diffing");
   const diffResult = diff(desired, current);
 
-  if (!args.json) {
-    console.log(formatPlan(diffResult, { serverState: current, prune: args.prune }));
-  }
-
   if (args.dryRun) {
-    if (args.json) {
-      emitJson({
-        ok: true,
-        dryRun: true,
-        applied: false,
-        plan: planToJson(diffResult, args.prune),
-      });
-    } else {
-      console.log("\nDry run — no changes applied.");
-    }
-    return 0;
+    return {
+      ok: true,
+      dryRun: true,
+      applied: false,
+      plan: planToJson(diffResult, args.prune),
+    };
   }
 
   debug("executing apply", { prune: args.prune });
@@ -116,57 +146,94 @@ export async function runApply(args: ApplyArgs): Promise<number> {
       verbose: args.verbose,
       prune: args.prune,
     });
-    debug("apply complete", summaryToObject(summary));
     let totalCreated = 0;
     let totalUpdated = 0;
     let totalUnchanged = 0;
     let totalPruned = 0;
-    for (const counts of summary.values()) {
+    const byResource: Record<
+      string,
+      { created: number; updated: number; unchanged: number; pruned: number }
+    > = {};
+    for (const [name, counts] of summary) {
       totalCreated += counts.created;
       totalUpdated += counts.updated;
       totalUnchanged += counts.unchanged;
       totalPruned += counts.pruned;
+      byResource[name] = { ...counts };
     }
-    if (args.json) {
-      emitJson({
-        ok: true,
-        dryRun: false,
-        applied: true,
-        totals: {
-          created: totalCreated,
-          updated: totalUpdated,
-          unchanged: totalUnchanged,
-          pruned: totalPruned,
-        },
-        byResource: Object.fromEntries(summary.entries()),
-      });
-    } else {
-      const prunedSegment = args.prune ? `, ${totalPruned} deleted` : "";
-      console.log(
-        `\nApplied: ${totalCreated} created, ${totalUpdated} updated, ${totalUnchanged} unchanged${prunedSegment}.`,
-      );
-    }
-    return 0;
+    return {
+      ok: true,
+      dryRun: false,
+      applied: true,
+      totals: {
+        created: totalCreated,
+        updated: totalUpdated,
+        unchanged: totalUnchanged,
+        pruned: totalPruned,
+      },
+      byResource,
+    };
   } catch (err) {
     if (err instanceof SafetyViolationError) {
-      return reportError(args, err.message, 2);
+      return { ok: false, stage: "apply", error: err.message };
     }
-    return reportApiError(args, err, "during apply");
+    if (err instanceof ApiError) {
+      return { ok: false, stage: "apply", error: `PostHog API during apply: ${err.message}` };
+    }
+    throw err;
   }
 }
 
-function emitJson(payload: unknown): void {
-  process.stdout.write(JSON.stringify(payload, null, 2) + "\n");
-}
+// ---------------------------------------------------------------------------
+// Output rendering
+// ---------------------------------------------------------------------------
 
-function reportError(args: ApplyArgs, message: string, code: number): number {
+function emitAndExit(args: ApplyArgs, result: ApplyErr): number {
   if (args.json) {
-    emitJson({ ok: false, error: message });
+    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   } else {
-    console.error(`error: ${message}`);
+    if (result.stage === "validate" && result.issues) {
+      const lines = result.issues.map((i) => `${i.resource}: ${i.message}`);
+      console.error(`error: Validation failed:\n - ${lines.join("\n - ")}`);
+    } else {
+      console.error(`error: ${result.error}`);
+    }
   }
-  return code;
+  return exitCodeForError(result);
 }
+
+function emitApplyProse(
+  args: ApplyArgs,
+  result: Extract<ApplyResult, { ok: true }>,
+): void {
+  // Load summary header is built fresh from RESOURCES — it's a UX nicety
+  // for the prose path, not part of the structured contract.
+  if (result.dryRun) {
+    if (result.plan.totalOps === 0) {
+      console.log("Nothing to do.");
+      return;
+    }
+    // Re-fetch/diff to reuse formatPlan would double the API work; the
+    // structured plan is enough to summarize here.
+    for (const r of result.plan.byResource) {
+      const segs: string[] = [];
+      if (r.create) segs.push(`${r.create} create`);
+      if (r.update) segs.push(`${r.update} update`);
+      if (r.orphans) segs.push(`${r.orphans} delete`);
+      if (segs.length > 0) console.log(`${r.resource}: ${segs.join(", ")}`);
+    }
+    console.log(`\nDry run — ${result.plan.totalOps} change(s) planned.`);
+    return;
+  }
+  const prunedSegment = args.prune ? `, ${result.totals.pruned} deleted` : "";
+  console.log(
+    `Applied: ${result.totals.created} created, ${result.totals.updated} updated, ${result.totals.unchanged} unchanged${prunedSegment}.`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function planToJson(
   diffResult: DiffResult,
@@ -196,10 +263,6 @@ function planToJson(
   return { totalOps, byResource };
 }
 
-function describeCounts(desired: Map<string, Array<unknown>>): Array<[string, number]> {
-  return Array.from(desired.entries()).map(([k, v]) => [k, v.length]);
-}
-
 function describeLoadFailure(failure: LoadFailure): string {
   if (failure.kind === "unknown-shape") {
     return `${failure.file}: default export does not match any known resource shape. Got: ${failure.sample}`;
@@ -210,13 +273,6 @@ function describeLoadFailure(failure: LoadFailure): string {
   return `${failure.resourceDisplayName} is a singleton but was declared in multiple files (${failure.firstPath} and ${failure.secondPath}). Declare it in exactly one place.`;
 }
 
-function summaryToObject(summary: Map<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(summary.entries());
-}
-
-function reportApiError(args: ApplyArgs, err: unknown, context: string): number {
-  if (err instanceof ApiError) {
-    return reportError(args, `PostHog API ${context}: ${err.message}`, 2);
-  }
-  throw err;
-}
+// Exported for the smoke-cleanup script and other callers that want the
+// rich plan formatter (used to be the default for non-JSON apply).
+export { formatPlan };
