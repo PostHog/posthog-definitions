@@ -55,6 +55,39 @@ export interface paths {
         patch: operations["environments_endpoints_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/actions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["actions_list"];
+        put?: never;
+        post: operations["actions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/actions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["actions_retrieve"];
+        put: operations["actions_update"];
+        post?: never;
+        /** @description Hard delete of this model is not allowed. Use a patch API call to set "deleted" to true */
+        delete: operations["actions_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["actions_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/cohorts/": {
         parameters: {
             query?: never;
@@ -640,11 +673,96 @@ export interface components {
          * @enum {string}
          */
         AIEventType: "$ai_generation" | "$ai_embedding" | "$ai_span" | "$ai_trace" | "$ai_metric" | "$ai_feedback" | "$ai_evaluation" | "$ai_tag" | "$ai_trace_summary" | "$ai_generation_summary" | "$ai_trace_clusters" | "$ai_generation_clusters";
+        /** @description Serializer mixin that handles tags for objects. */
+        Action: {
+            readonly id: number;
+            /** @description Name of the action (must be unique within the project). */
+            name?: string | null;
+            /** @description Human-readable description of what this action represents. */
+            description?: string;
+            tags?: unknown[];
+            /** @description Whether to post a notification to Slack when this action is triggered. */
+            post_to_slack?: boolean;
+            /** @description Custom Slack message format. Supports templates with event properties. */
+            slack_message_format?: string;
+            /** @description Action steps defining trigger conditions. Each step matches events by name, properties, URL, or element attributes. Multiple steps are OR-ed together. */
+            steps?: components["schemas"]["ActionStepJSON"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            deleted?: boolean;
+            readonly is_calculating: boolean;
+            /** Format: date-time */
+            last_calculated_at?: string;
+            readonly team_id: number;
+            /** @default true */
+            readonly is_action: boolean;
+            readonly bytecode_error: string | null;
+            /**
+             * Format: date-time
+             * @description ISO 8601 timestamp when the action was pinned, or null if not pinned. Set any value to pin, null to unpin.
+             */
+            pinned_at?: string | null;
+            readonly creation_context: string | null;
+            /** create in folder */
+            _create_in_folder?: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+        };
         /** ActionConversionGoal */
         ActionConversionGoal: {
             /** Actionid */
             actionId: number;
         };
+        ActionStepJSON: {
+            /** @description Event name to match (e.g. '$pageview', '$autocapture', or a custom event name). */
+            event?: string | null;
+            /** @description Event or person property filters. Each item should have 'key' (string), 'value' (string, number, boolean, or array), optional 'operator' (exact, is_not, is_set, is_not_set, icontains, not_icontains, regex, not_regex, gt, gte, lt, lte), and optional 'type' (event, person). */
+            properties?: components["schemas"]["ActionStepPropertyFilter"][] | null;
+            /** @description CSS selector to match the target element (e.g. 'div > button.cta'). */
+            selector?: string | null;
+            readonly selector_regex: string | null;
+            /** @description HTML tag name to match (e.g. "button", "a", "input"). */
+            tag_name?: string | null;
+            /** @description Element text content to match. */
+            text?: string | null;
+            /**
+             * @description How to match the text value. Defaults to exact.
+             *
+             *     * `contains` - contains
+             *     * `regex` - regex
+             *     * `exact` - exact
+             */
+            text_matching?: components["schemas"]["ActionStepMatchingEnum"] | components["schemas"]["NullEnum"];
+            /** @description Link href attribute to match. */
+            href?: string | null;
+            /**
+             * @description How to match the href value. Defaults to exact.
+             *
+             *     * `contains` - contains
+             *     * `regex` - regex
+             *     * `exact` - exact
+             */
+            href_matching?: components["schemas"]["ActionStepMatchingEnum"] | components["schemas"]["NullEnum"];
+            /** @description Page URL to match. */
+            url?: string | null;
+            /**
+             * @description How to match the URL value. Defaults to contains.
+             *
+             *     * `contains` - contains
+             *     * `regex` - regex
+             *     * `exact` - exact
+             */
+            url_matching?: components["schemas"]["ActionStepMatchingEnum"] | components["schemas"]["NullEnum"];
+        };
+        /**
+         * @description * `contains` - contains
+         *     * `regex` - regex
+         *     * `exact` - exact
+         * @enum {string}
+         */
+        ActionStepMatchingEnum: "contains" | "regex" | "exact";
+        ActionStepPropertyFilter: components["schemas"]["StringPropertyFilter"] | components["schemas"]["NumericPropertyFilter"] | components["schemas"]["ArrayPropertyFilter"] | components["schemas"]["DatePropertyFilter"] | components["schemas"]["ExistencePropertyFilter"];
         /** ActionsNode */
         ActionsNode: {
             /**
@@ -877,6 +995,64 @@ export interface components {
          * @enum {string}
          */
         AggregationType: "count" | "sum" | "avg";
+        /** @description Matches against a list of values (OR semantics for exact/is_not, set membership for in/not_in). */
+        ArrayPropertyFilter: {
+            /** @description Key of the property you're filtering on. For example `email` or `$current_url`. */
+            key: string;
+            /**
+             * @description Property type (event, person, session, etc.).
+             *
+             *     * `event` - event
+             *     * `event_metadata` - event_metadata
+             *     * `feature` - feature
+             *     * `person` - person
+             *     * `cohort` - cohort
+             *     * `element` - element
+             *     * `static-cohort` - static-cohort
+             *     * `dynamic-cohort` - dynamic-cohort
+             *     * `precalculated-cohort` - precalculated-cohort
+             *     * `group` - group
+             *     * `recording` - recording
+             *     * `log_entry` - log_entry
+             *     * `behavioral` - behavioral
+             *     * `session` - session
+             *     * `hogql` - hogql
+             *     * `data_warehouse` - data_warehouse
+             *     * `data_warehouse_person_property` - data_warehouse_person_property
+             *     * `error_tracking_issue` - error_tracking_issue
+             *     * `log` - log
+             *     * `log_attribute` - log_attribute
+             *     * `log_resource_attribute` - log_resource_attribute
+             *     * `span` - span
+             *     * `span_attribute` - span_attribute
+             *     * `span_resource_attribute` - span_resource_attribute
+             *     * `revenue_analytics` - revenue_analytics
+             *     * `flag` - flag
+             *     * `workflow_variable` - workflow_variable
+             * @default event
+             */
+            type: components["schemas"]["PropertyFilterTypeEnum"];
+            /** @description List of values to match. For example `["test@example.com", "ok@example.com"]`. */
+            value: string[];
+            /**
+             * @description Array comparison operator.
+             *
+             *     * `exact` - exact
+             *     * `is_not` - is_not
+             *     * `in` - in
+             *     * `not_in` - not_in
+             * @default exact
+             */
+            operator: components["schemas"]["ArrayPropertyFilterOperatorEnum"];
+        };
+        /**
+         * @description * `exact` - exact
+         *     * `is_not` - is_not
+         *     * `in` - in
+         *     * `not_in` - not_in
+         * @enum {string}
+         */
+        ArrayPropertyFilterOperatorEnum: "exact" | "is_not" | "in" | "not_in";
         /**
          * @description * `first_touch` - First Touch
          *     * `last_touch` - Last Touch
@@ -2561,6 +2737,55 @@ export interface components {
          * @enum {string}
          */
         DateOperatorEnum: "is_date_exact" | "is_date_before" | "is_date_after";
+        /** @description Matches date/datetime values with date-specific operators. */
+        DatePropertyFilter: {
+            /** @description Key of the property you're filtering on. For example `email` or `$current_url`. */
+            key: string;
+            /**
+             * @description Property type (event, person, session, etc.).
+             *
+             *     * `event` - event
+             *     * `event_metadata` - event_metadata
+             *     * `feature` - feature
+             *     * `person` - person
+             *     * `cohort` - cohort
+             *     * `element` - element
+             *     * `static-cohort` - static-cohort
+             *     * `dynamic-cohort` - dynamic-cohort
+             *     * `precalculated-cohort` - precalculated-cohort
+             *     * `group` - group
+             *     * `recording` - recording
+             *     * `log_entry` - log_entry
+             *     * `behavioral` - behavioral
+             *     * `session` - session
+             *     * `hogql` - hogql
+             *     * `data_warehouse` - data_warehouse
+             *     * `data_warehouse_person_property` - data_warehouse_person_property
+             *     * `error_tracking_issue` - error_tracking_issue
+             *     * `log` - log
+             *     * `log_attribute` - log_attribute
+             *     * `log_resource_attribute` - log_resource_attribute
+             *     * `span` - span
+             *     * `span_attribute` - span_attribute
+             *     * `span_resource_attribute` - span_resource_attribute
+             *     * `revenue_analytics` - revenue_analytics
+             *     * `flag` - flag
+             *     * `workflow_variable` - workflow_variable
+             * @default event
+             */
+            type: components["schemas"]["PropertyFilterTypeEnum"];
+            /** @description Date or datetime string in ISO 8601 format (e.g. '2024-01-15' or '2024-01-15T10:30:00Z'). */
+            value: string;
+            /**
+             * @description Date comparison operator.
+             *
+             *     * `is_date_exact` - is_date_exact
+             *     * `is_date_before` - is_date_before
+             *     * `is_date_after` - is_date_after
+             * @default is_date_exact
+             */
+            operator: components["schemas"]["DateOperatorEnum"];
+        };
         /** DateRange */
         DateRange: {
             /**
@@ -3936,6 +4161,51 @@ export interface components {
          * @enum {string}
          */
         ExistenceOperatorEnum: "is_set" | "is_not_set";
+        /** @description Checks whether a property is set or not, without comparing values. */
+        ExistencePropertyFilter: {
+            /** @description Key of the property you're filtering on. For example `email` or `$current_url`. */
+            key: string;
+            /**
+             * @description Property type (event, person, session, etc.).
+             *
+             *     * `event` - event
+             *     * `event_metadata` - event_metadata
+             *     * `feature` - feature
+             *     * `person` - person
+             *     * `cohort` - cohort
+             *     * `element` - element
+             *     * `static-cohort` - static-cohort
+             *     * `dynamic-cohort` - dynamic-cohort
+             *     * `precalculated-cohort` - precalculated-cohort
+             *     * `group` - group
+             *     * `recording` - recording
+             *     * `log_entry` - log_entry
+             *     * `behavioral` - behavioral
+             *     * `session` - session
+             *     * `hogql` - hogql
+             *     * `data_warehouse` - data_warehouse
+             *     * `data_warehouse_person_property` - data_warehouse_person_property
+             *     * `error_tracking_issue` - error_tracking_issue
+             *     * `log` - log
+             *     * `log_attribute` - log_attribute
+             *     * `log_resource_attribute` - log_resource_attribute
+             *     * `span` - span
+             *     * `span_attribute` - span_attribute
+             *     * `span_resource_attribute` - span_resource_attribute
+             *     * `revenue_analytics` - revenue_analytics
+             *     * `flag` - flag
+             *     * `workflow_variable` - workflow_variable
+             * @default event
+             */
+            type: components["schemas"]["PropertyFilterTypeEnum"];
+            /**
+             * @description Existence check operator.
+             *
+             *     * `is_set` - is_set
+             *     * `is_not_set` - is_not_set
+             */
+            operator: components["schemas"]["ExistenceOperatorEnum"];
+        };
         /** @description Mixin for serializers to add user access control fields */
         Experiment: {
             readonly id: number;
@@ -4362,9 +4632,8 @@ export interface components {
              */
             kind: "ExperimentMetric";
             /**
-             * Metric Type
-             * @default funnel
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "funnel";
             /**
@@ -4528,9 +4797,8 @@ export interface components {
              */
             lower_bound_percentile: number | null;
             /**
-             * Metric Type
-             * @default mean
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "mean";
             /**
@@ -4693,7 +4961,7 @@ export interface components {
              * Metric
              * @default null
              */
-            metric: components["schemas"]["ExperimentMeanMetric"] | components["schemas"]["ExperimentFunnelMetric"] | components["schemas"]["ExperimentRatioMetric"] | components["schemas"]["ExperimentRetentionMetric"] | null;
+            metric: (components["schemas"]["ExperimentMeanMetric"] | components["schemas"]["ExperimentFunnelMetric"] | components["schemas"]["ExperimentRatioMetric"] | components["schemas"]["ExperimentRetentionMetric"]) | null;
             /**
              * P Value
              * @default null
@@ -4761,9 +5029,8 @@ export interface components {
              */
             kind: "ExperimentMetric";
             /**
-             * Metric Type
-             * @default ratio
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "ratio";
             /**
@@ -4829,9 +5096,8 @@ export interface components {
              */
             kind: "ExperimentMetric";
             /**
-             * Metric Type
-             * @default retention
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             metric_type: "retention";
             /**
@@ -8503,11 +8769,91 @@ export interface components {
             types: unknown[] | null;
         };
         NullEnum: null;
+        /** @description Matches numeric values with comparison operators. */
+        NumericPropertyFilter: {
+            /** @description Key of the property you're filtering on. For example `email` or `$current_url`. */
+            key: string;
+            /**
+             * @description Property type (event, person, session, etc.).
+             *
+             *     * `event` - event
+             *     * `event_metadata` - event_metadata
+             *     * `feature` - feature
+             *     * `person` - person
+             *     * `cohort` - cohort
+             *     * `element` - element
+             *     * `static-cohort` - static-cohort
+             *     * `dynamic-cohort` - dynamic-cohort
+             *     * `precalculated-cohort` - precalculated-cohort
+             *     * `group` - group
+             *     * `recording` - recording
+             *     * `log_entry` - log_entry
+             *     * `behavioral` - behavioral
+             *     * `session` - session
+             *     * `hogql` - hogql
+             *     * `data_warehouse` - data_warehouse
+             *     * `data_warehouse_person_property` - data_warehouse_person_property
+             *     * `error_tracking_issue` - error_tracking_issue
+             *     * `log` - log
+             *     * `log_attribute` - log_attribute
+             *     * `log_resource_attribute` - log_resource_attribute
+             *     * `span` - span
+             *     * `span_attribute` - span_attribute
+             *     * `span_resource_attribute` - span_resource_attribute
+             *     * `revenue_analytics` - revenue_analytics
+             *     * `flag` - flag
+             *     * `workflow_variable` - workflow_variable
+             * @default event
+             */
+            type: components["schemas"]["PropertyFilterTypeEnum"];
+            /**
+             * Format: double
+             * @description Numeric value to compare against.
+             */
+            value: number;
+            /**
+             * @description Numeric comparison operator.
+             *
+             *     * `exact` - exact
+             *     * `is_not` - is_not
+             *     * `gt` - gt
+             *     * `lt` - lt
+             *     * `gte` - gte
+             *     * `lte` - lte
+             * @default exact
+             */
+            operator: components["schemas"]["NumericPropertyFilterOperatorEnum"];
+        };
+        /**
+         * @description * `exact` - exact
+         *     * `is_not` - is_not
+         *     * `gt` - gt
+         *     * `lt` - lt
+         *     * `gte` - gte
+         *     * `lte` - lte
+         * @enum {string}
+         */
+        NumericPropertyFilterOperatorEnum: "exact" | "is_not" | "gt" | "lt" | "gte" | "lte";
         /**
          * OrderDirection2
          * @enum {string}
          */
         OrderDirection2: "ASC" | "DESC";
+        PaginatedActionList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Action"][];
+        };
         PaginatedCohortList: {
             /** @example 123 */
             count: number;
@@ -8672,6 +9018,42 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
+        };
+        /** @description Serializer mixin that handles tags for objects. */
+        PatchedAction: {
+            readonly id?: number;
+            /** @description Name of the action (must be unique within the project). */
+            name?: string | null;
+            /** @description Human-readable description of what this action represents. */
+            description?: string;
+            tags?: unknown[];
+            /** @description Whether to post a notification to Slack when this action is triggered. */
+            post_to_slack?: boolean;
+            /** @description Custom Slack message format. Supports templates with event properties. */
+            slack_message_format?: string;
+            /** @description Action steps defining trigger conditions. Each step matches events by name, properties, URL, or element attributes. Multiple steps are OR-ed together. */
+            steps?: components["schemas"]["ActionStepJSON"][];
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            deleted?: boolean;
+            readonly is_calculating?: boolean;
+            /** Format: date-time */
+            last_calculated_at?: string;
+            readonly team_id?: number;
+            /** @default true */
+            readonly is_action: boolean;
+            readonly bytecode_error?: string | null;
+            /**
+             * Format: date-time
+             * @description ISO 8601 timestamp when the action was pinned, or null if not pinned. Set any value to pin, null to unpin.
+             */
+            pinned_at?: string | null;
+            readonly creation_context?: string | null;
+            /** create in folder */
+            _create_in_folder?: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level?: string | null;
         };
         PatchedCohort: {
             readonly id?: number;
@@ -9521,6 +9903,37 @@ export interface components {
          * @enum {string}
          */
         PrecomputationMode: "precomputed" | "direct";
+        /**
+         * @description * `event` - event
+         *     * `event_metadata` - event_metadata
+         *     * `feature` - feature
+         *     * `person` - person
+         *     * `cohort` - cohort
+         *     * `element` - element
+         *     * `static-cohort` - static-cohort
+         *     * `dynamic-cohort` - dynamic-cohort
+         *     * `precalculated-cohort` - precalculated-cohort
+         *     * `group` - group
+         *     * `recording` - recording
+         *     * `log_entry` - log_entry
+         *     * `behavioral` - behavioral
+         *     * `session` - session
+         *     * `hogql` - hogql
+         *     * `data_warehouse` - data_warehouse
+         *     * `data_warehouse_person_property` - data_warehouse_person_property
+         *     * `error_tracking_issue` - error_tracking_issue
+         *     * `log` - log
+         *     * `log_attribute` - log_attribute
+         *     * `log_resource_attribute` - log_resource_attribute
+         *     * `span` - span
+         *     * `span_attribute` - span_attribute
+         *     * `span_resource_attribute` - span_resource_attribute
+         *     * `revenue_analytics` - revenue_analytics
+         *     * `flag` - flag
+         *     * `workflow_variable` - workflow_variable
+         * @enum {string}
+         */
+        PropertyFilterTypeEnum: "event" | "event_metadata" | "feature" | "person" | "cohort" | "element" | "static-cohort" | "dynamic-cohort" | "precalculated-cohort" | "group" | "recording" | "log_entry" | "behavioral" | "session" | "hogql" | "data_warehouse" | "data_warehouse_person_property" | "error_tracking_issue" | "log" | "log_attribute" | "log_resource_attribute" | "span" | "span_attribute" | "span_resource_attribute" | "revenue_analytics" | "flag" | "workflow_variable";
         /** PropertyGroupFilter */
         PropertyGroupFilter: {
             type: components["schemas"]["FilterLogicalOperator"];
@@ -12725,6 +13138,68 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
         };
         /**
+         * @description * `exact` - exact
+         *     * `is_not` - is_not
+         *     * `icontains` - icontains
+         *     * `not_icontains` - not_icontains
+         *     * `regex` - regex
+         *     * `not_regex` - not_regex
+         * @enum {string}
+         */
+        StringMatchOperatorEnum: "exact" | "is_not" | "icontains" | "not_icontains" | "regex" | "not_regex";
+        /** @description Matches string values with text-oriented operators. */
+        StringPropertyFilter: {
+            /** @description Key of the property you're filtering on. For example `email` or `$current_url`. */
+            key: string;
+            /**
+             * @description Property type (event, person, session, etc.).
+             *
+             *     * `event` - event
+             *     * `event_metadata` - event_metadata
+             *     * `feature` - feature
+             *     * `person` - person
+             *     * `cohort` - cohort
+             *     * `element` - element
+             *     * `static-cohort` - static-cohort
+             *     * `dynamic-cohort` - dynamic-cohort
+             *     * `precalculated-cohort` - precalculated-cohort
+             *     * `group` - group
+             *     * `recording` - recording
+             *     * `log_entry` - log_entry
+             *     * `behavioral` - behavioral
+             *     * `session` - session
+             *     * `hogql` - hogql
+             *     * `data_warehouse` - data_warehouse
+             *     * `data_warehouse_person_property` - data_warehouse_person_property
+             *     * `error_tracking_issue` - error_tracking_issue
+             *     * `log` - log
+             *     * `log_attribute` - log_attribute
+             *     * `log_resource_attribute` - log_resource_attribute
+             *     * `span` - span
+             *     * `span_attribute` - span_attribute
+             *     * `span_resource_attribute` - span_resource_attribute
+             *     * `revenue_analytics` - revenue_analytics
+             *     * `flag` - flag
+             *     * `workflow_variable` - workflow_variable
+             * @default event
+             */
+            type: components["schemas"]["PropertyFilterTypeEnum"];
+            /** @description String value to match against. */
+            value: string;
+            /**
+             * @description String comparison operator.
+             *
+             *     * `exact` - exact
+             *     * `is_not` - is_not
+             *     * `icontains` - icontains
+             *     * `not_icontains` - not_icontains
+             *     * `regex` - regex
+             *     * `not_regex` - not_regex
+             * @default exact
+             */
+            operator: components["schemas"]["StringMatchOperatorEnum"];
+        };
+        /**
          * Style
          * @enum {string}
          */
@@ -15231,6 +15706,184 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EndpointResponse"];
+                };
+            };
+        };
+    };
+    actions_list: {
+        parameters: {
+            query?: {
+                format?: "csv" | "json";
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedActionList"];
+                    "text/csv": components["schemas"]["PaginatedActionList"];
+                };
+            };
+        };
+    };
+    actions_create: {
+        parameters: {
+            query?: {
+                format?: "csv" | "json";
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Action"];
+                "application/x-www-form-urlencoded": components["schemas"]["Action"];
+                "multipart/form-data": components["schemas"]["Action"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Action"];
+                    "text/csv": components["schemas"]["Action"];
+                };
+            };
+        };
+    };
+    actions_retrieve: {
+        parameters: {
+            query?: {
+                format?: "csv" | "json";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this action. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Action"];
+                    "text/csv": components["schemas"]["Action"];
+                };
+            };
+        };
+    };
+    actions_update: {
+        parameters: {
+            query?: {
+                format?: "csv" | "json";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this action. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Action"];
+                "application/x-www-form-urlencoded": components["schemas"]["Action"];
+                "multipart/form-data": components["schemas"]["Action"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Action"];
+                    "text/csv": components["schemas"]["Action"];
+                };
+            };
+        };
+    };
+    actions_destroy: {
+        parameters: {
+            query?: {
+                format?: "csv" | "json";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this action. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    actions_partial_update: {
+        parameters: {
+            query?: {
+                format?: "csv" | "json";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this action. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAction"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedAction"];
+                "multipart/form-data": components["schemas"]["PatchedAction"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Action"];
+                    "text/csv": components["schemas"]["Action"];
                 };
             };
         };

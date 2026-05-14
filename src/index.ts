@@ -22,6 +22,14 @@ export type {
 export { cohort } from "./resources/cohort/index.js";
 export type { Cohort, CohortFilters, CohortType } from "./resources/cohort/index.js";
 
+export { action } from "./resources/action/index.js";
+export type {
+  Action,
+  ActionStep,
+  ActionStepMatching,
+  ActionStepProperty,
+} from "./resources/action/index.js";
+
 export { featureFlag } from "./resources/feature-flag/index.js";
 export type {
   FeatureFlag,

@@ -4,7 +4,7 @@
 > **Alpha — do not use in production.**
 > This is pre-MVP software (`0.1.0-alpha.0`). The CLI, the on-disk file format, the SDK surface, and the tag-based identity model are all subject to breaking changes without notice. Use it on throwaway projects or in a sandbox while we stabilize.
 
-Infrastructure-as-code for PostHog. Define dashboards, insights, feature flags, endpoints, event definitions, property groups, experiments, experiment holdouts, and experiment saved metrics in TypeScript, then sync them to a PostHog project with one command.
+Infrastructure-as-code for PostHog. Define dashboards, insights, feature flags, actions, endpoints, event definitions, property groups, experiments, experiment holdouts, and experiment saved metrics in TypeScript, then sync them to a PostHog project with one command.
 
 ## Why
 
@@ -46,6 +46,7 @@ export default dashboard({
    - `insight:read`, `insight:write`
    - `dashboard:read`, `dashboard:write`
    - `feature_flag:read`, `feature_flag:write`
+   - `action:read`, `action:write`
    - `endpoint:read`, `endpoint:write`
    - `event_definition:read`, `event_definition:write` (also covers property groups)
    - `experiment:read`, `experiment:write` (also covers experiment holdouts)

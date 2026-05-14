@@ -79,6 +79,13 @@ inverseOperationIds:
   - cohorts_partial_update
   - cohorts_destroy
 
+  - actions_list
+  - actions_create
+  - actions_retrieve
+  - actions_update
+  - actions_partial_update
+  - actions_destroy
+
 unusedComponents:
   - schemas
   - parameters

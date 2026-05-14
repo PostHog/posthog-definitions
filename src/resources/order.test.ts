@@ -5,6 +5,7 @@ import { execute } from "../apply/execute.js";
 import { makeFakeResource } from "../test-helpers/fake-resource.js";
 import { topoOrder } from "./order.js";
 import { RESOURCES } from "./index.js";
+import { actionResource } from "./action/index.js";
 import { cohortResource } from "./cohort/index.js";
 import { dashboardResource } from "./dashboard/index.js";
 import { endpointResource } from "./endpoint/index.js";
@@ -172,6 +173,7 @@ describe("RESOURCES (real registry)", () => {
   it("includes every imported module exactly once", () => {
     const expected = new Set(
       [
+        actionResource,
         cohortResource,
         dashboardResource,
         endpointResource,
