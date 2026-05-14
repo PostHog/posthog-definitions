@@ -86,14 +86,14 @@ jobs:
             --arg repository "PostHog/posthog-definitions" \
             '{title: $title, description: $description, repository: $repository, origin_product: "user_created"}')
 
-          task=$(curl -fsS -X POST \
+          task=$(curl --fail-with-body -sS -X POST \
             "https://us.posthog.com/api/projects/2/tasks/" \
             -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
             -H "Content-Type: application/json" \
             -d "$create_payload")
           task_id=$(echo "$task" | jq -r '.id')
 
-          run=$(curl -fsS -X POST \
+          run=$(curl --fail-with-body -sS -X POST \
             "https://us.posthog.com/api/projects/2/tasks/${task_id}/run/" \
             -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
             -H "Content-Type: application/json" \
