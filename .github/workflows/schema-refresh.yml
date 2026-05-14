@@ -1,0 +1,109 @@
+name: Daily OpenAPI schema refresh
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Regenerate API types
+        run: pnpm codegen
+
+      - name: Detect drift
+        id: drift
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- src/generated/api.d.ts; then
+            api_changed=false
+          else
+            api_changed=true
+          fi
+
+          curl -fsS "https://us.posthog.com/api/schema/?format=json" -o /tmp/spec.json
+          live_ops=$(jq -r '.paths | to_entries[] | .value | to_entries[] | .value.operationId // empty' /tmp/spec.json | sort -u)
+          filter_ops=$(yq -r '.inverseOperationIds[]' openapi-filter.yaml | sort -u)
+          new_ops=$(comm -23 <(echo "$live_ops") <(echo "$filter_ops") || true)
+
+          if [ -n "$new_ops" ]; then
+            new_ops_present=true
+          else
+            new_ops_present=false
+          fi
+
+          echo "api_changed=$api_changed" >> "$GITHUB_OUTPUT"
+          echo "new_ops_present=$new_ops_present" >> "$GITHUB_OUTPUT"
+          {
+            echo "new_ops<<EOF"
+            echo "$new_ops"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "**api.d.ts changed:** $api_changed"
+            echo ""
+            echo "**New operationIds in live spec, missing from filter:**"
+            echo '```'
+            echo "${new_ops:-(none)}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Trigger PostHog Code cloud run
+        if: steps.drift.outputs.api_changed == 'true' || steps.drift.outputs.new_ops_present == 'true'
+        env:
+          POSTHOG_API_KEY: ${{ secrets.DEFINITIONS_POSTHOG_API_KEY }}
+          NEW_OPS: ${{ steps.drift.outputs.new_ops }}
+          API_CHANGED: ${{ steps.drift.outputs.api_changed }}
+        run: |
+          set -euo pipefail
+
+          date_tag=$(date -u +%Y-%m-%d)
+
+          drift_summary=$(printf 'Drift detected on %s.\n\napi.d.ts changed: %s\n\nNew operationIds in live spec, missing from openapi-filter.yaml:\n%s\n' \
+            "$date_tag" "$API_CHANGED" "${NEW_OPS:-(none)}")
+
+          description=$(printf '%s\n\n---\n\n%s' "$drift_summary" "$(cat .github/workflows/schema-refresh-prompt.md)")
+
+          create_payload=$(jq -n \
+            --arg title "Daily OpenAPI schema refresh ($date_tag)" \
+            --arg description "$description" \
+            --arg repository "PostHog/posthog-definitions" \
+            '{title: $title, description: $description, repository: $repository, origin_product: "user_created"}')
+
+          task=$(curl -fsS -X POST \
+            "https://us.posthog.com/api/projects/2/tasks/" \
+            -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "$create_payload")
+          task_id=$(echo "$task" | jq -r '.id')
+
+          run=$(curl -fsS -X POST \
+            "https://us.posthog.com/api/projects/2/tasks/${task_id}/run/" \
+            -H "Authorization: Bearer ${POSTHOG_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"mode": "background"}')
+          run_id=$(echo "$run" | jq -r '.id')
+
+          {
+            echo ""
+            echo "**Task:** \`${task_id}\`"
+            echo "**TaskRun:** \`${run_id}\`"
+            echo ""
+            echo "https://us.posthog.com/project/2/tasks/${task_id}"
+          } >> "$GITHUB_STEP_SUMMARY"
