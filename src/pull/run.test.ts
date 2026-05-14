@@ -107,7 +107,7 @@ describe("runPull orchestrator", () => {
         pullFilter: () => ({ kept: true }) as const,
         pullLabel: (row) => ({ primary: row.name }),
         serverIdOf: (row) => row.id,
-        pullDependencies: (row: Row) =>
+        pullDependencies: async (_c, row: Row) =>
           (row.deps ?? []).map((id) => ({ resourceName: "insights", serverId: id })),
         renderToFile: (row: Row, ctx: PullRenderContext): RenderedFile => {
           const refs = (row.deps ?? []).map((id) =>
@@ -166,7 +166,7 @@ describe("runPull orchestrator", () => {
         pullFilter: () => ({ kept: true }) as const,
         pullLabel: (row) => ({ primary: row.name }),
         serverIdOf: (row) => row.id,
-        pullDependencies: (row: Row) =>
+        pullDependencies: async (_c, row: Row) =>
           (row.deps ?? []).map((id) => ({ resourceName: "insights", serverId: id })),
         renderToFile: (row: Row): RenderedFile => ({
           filename: `${row.name}.ts`,

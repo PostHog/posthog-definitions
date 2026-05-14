@@ -52,7 +52,10 @@ export function serverIdOf(server: ServerDashboard): number {
 }
 
 /** Every tile.insight.id this dashboard references, for the cross-resource cascade. */
-export function pullDependencies(server: ServerDashboard): PullDependency[] {
+export async function pullDependencies(
+  _config: ClientConfig,
+  server: ServerDashboard,
+): Promise<PullDependency[]> {
   const deps: PullDependency[] = [];
   for (const tile of server.tiles ?? []) {
     if (tile.insight) deps.push({ resourceName: "insights", serverId: tile.insight.id });

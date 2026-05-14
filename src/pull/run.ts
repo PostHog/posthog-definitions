@@ -231,7 +231,9 @@ async function cascadeDependencies(
   }
   while (frontier.length > 0) {
     const { resource, row } = frontier.shift()!;
-    const deps = resource.pullDependencies?.(row) ?? [];
+    const deps = resource.pullDependencies
+      ? await resource.pullDependencies(config, row, { verbose })
+      : [];
     for (const dep of deps) {
       const depEntry = entries.get(dep.resourceName);
       if (!depEntry) continue;

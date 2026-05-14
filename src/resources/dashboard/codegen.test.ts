@@ -61,7 +61,7 @@ describe("dashboard codegen", () => {
     expect(label.secondary).toBe("[team:growth]");
   });
 
-  it("pullDependencies lists each tile-insight id", () => {
+  it("pullDependencies lists each tile-insight id", async () => {
     const d = dashboard({
       tiles: [
         { insight: { id: 100 }, layouts: { lg: { x: 0, y: 0, w: 6, h: 4 } } },
@@ -69,7 +69,9 @@ describe("dashboard codegen", () => {
         { text: { body: "note" } },
       ],
     });
-    expect(pullDependencies(d)).toEqual([
+    expect(
+      await pullDependencies({ host: "h", projectId: "1", apiKey: "k" }, d),
+    ).toEqual([
       { resourceName: "insights", serverId: 100 },
       { resourceName: "insights", serverId: 101 },
     ]);
