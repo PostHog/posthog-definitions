@@ -41,15 +41,22 @@ export async function listManagedExperimentSavedMetrics(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerExperimentSavedMetric[]> {
+  const all = await listExperimentSavedMetrics(config, options);
+  return all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+}
+
+/** Unfiltered list of every experiment saved metric in the project; used by pull. */
+export async function listExperimentSavedMetrics(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerExperimentSavedMetric[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/experiment_saved_metrics/", {
     params: { path: { project_id: config.projectId } },
   });
   const firstPage = paginatedFrom(data!);
   const allRaw = await followPagination<unknown>(config, firstPage, { verbose: options.verbose });
-  return allRaw
-    .map((row) => ServerExperimentSavedMetricSchema.parse(row))
-    .filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  return allRaw.map((row) => ServerExperimentSavedMetricSchema.parse(row));
 }
 
 export async function getExperimentSavedMetric(

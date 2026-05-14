@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import type { ExperimentSavedMetric } from "./sdk.js";
 import {
   displayExperimentSavedMetric,
@@ -13,14 +13,23 @@ import {
   validateExperimentSavedMetrics,
 } from "./pipeline.js";
 import {
+  getExperimentSavedMetric,
+  listExperimentSavedMetrics,
   listManagedExperimentSavedMetrics,
   type ServerExperimentSavedMetric,
 } from "./client.js";
+import {
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { experimentSavedMetric } from "./sdk.js";
 export type { ExperimentSavedMetric } from "./sdk.js";
 
-export const experimentSavedMetricResource: ResourceModule<
+export const experimentSavedMetricResource: CollectionResourceModule<
   ExperimentSavedMetric,
   ServerExperimentSavedMetric
 > = {
@@ -43,4 +52,12 @@ export const experimentSavedMetricResource: ResourceModule<
 
   displaySpec: (spec, _ctx: ApplyContext) => displayExperimentSavedMetric(spec),
   displayServer: (server, _ctx: ApplyContext) => displayExperimentSavedMetricFromServer(server),
+
+  listAll: listExperimentSavedMetrics,
+  getById: (config, id, options) => getExperimentSavedMetric(config, Number(id), options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };

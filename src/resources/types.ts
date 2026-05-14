@@ -199,11 +199,21 @@ export interface CollectionResourceModule<TSpec = unknown, TServer = unknown>
    * row Y by server id, the orchestrator follows the edge so Y gets a file
    * too and X's codegen can resolve the import. Edges typically mirror the
    * apply-time `dependsOn` graph.
+   *
+   * Async because some resources (event-definitions ↔ EventSchema)
+   * discover their dependencies via a separate API call rather than from
+   * the listAll response itself.
    */
-  pullDependencies?(server: TServer): Array<{
-    resourceName: string;
-    serverId: number | string;
-  }>;
+  pullDependencies?(
+    config: ClientConfig,
+    server: TServer,
+    options?: { verbose?: boolean },
+  ): Promise<
+    Array<{
+      resourceName: string;
+      serverId: number | string;
+    }>
+  >;
 
   /**
    * Render a server row to a TS source file. `ctx` provides cross-resource

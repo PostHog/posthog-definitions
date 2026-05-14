@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import { experimentHoldoutResource } from "../experiment-holdout/index.js";
 import { experimentSavedMetricResource } from "../experiment-saved-metric/index.js";
 import { featureFlagResource } from "../feature-flag/index.js";
@@ -15,7 +15,20 @@ import {
   runExperimentOp,
   validateExperiments,
 } from "./pipeline.js";
-import { listManagedExperiments, type ServerExperiment } from "./client.js";
+import {
+  getExperiment,
+  listExperiments,
+  listManagedExperiments,
+  type ServerExperiment,
+} from "./client.js";
+import {
+  pullDependencies,
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { experiment } from "./sdk.js";
 export type {
@@ -29,7 +42,7 @@ export type {
   ExperimentExposureCriteria,
 } from "./sdk.js";
 
-export const experimentResource: ResourceModule<Experiment, ServerExperiment> = {
+export const experimentResource: CollectionResourceModule<Experiment, ServerExperiment> = {
   kind: "collection",
   name: "experiments",
   displayName: "experiment",
@@ -50,4 +63,13 @@ export const experimentResource: ResourceModule<Experiment, ServerExperiment> = 
 
   displaySpec: (spec, _ctx: ApplyContext) => displayExperiment(spec),
   displayServer: (server, _ctx: ApplyContext) => displayExperimentFromServer(server),
+
+  listAll: listExperiments,
+  getById: (config, id, options) => getExperiment(config, Number(id), options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  pullDependencies,
+  renderToFile,
+  tagOnServer,
 };

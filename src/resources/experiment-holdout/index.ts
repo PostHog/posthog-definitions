@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import type { ExperimentHoldout } from "./sdk.js";
 import {
   displayExperimentHoldout,
@@ -13,14 +13,23 @@ import {
   validateExperimentHoldouts,
 } from "./pipeline.js";
 import {
+  getExperimentHoldout,
+  listExperimentHoldouts,
   listManagedExperimentHoldouts,
   type ServerExperimentHoldout,
 } from "./client.js";
+import {
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { experimentHoldout } from "./sdk.js";
 export type { ExperimentHoldout } from "./sdk.js";
 
-export const experimentHoldoutResource: ResourceModule<
+export const experimentHoldoutResource: CollectionResourceModule<
   ExperimentHoldout,
   ServerExperimentHoldout
 > = {
@@ -43,4 +52,12 @@ export const experimentHoldoutResource: ResourceModule<
 
   displaySpec: (spec, _ctx: ApplyContext) => displayExperimentHoldout(spec),
   displayServer: (server, _ctx: ApplyContext) => displayExperimentHoldoutFromServer(server),
+
+  listAll: listExperimentHoldouts,
+  getById: (config, id, options) => getExperimentHoldout(config, Number(id), options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };

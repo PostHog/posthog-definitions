@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import type { PropertyGroup } from "./sdk.js";
 import {
   displayPropertyGroup,
@@ -12,12 +12,24 @@ import {
   runPropertyGroupOp,
   validatePropertyGroups,
 } from "./pipeline.js";
-import { listManagedPropertyGroups, type ServerPropertyGroup } from "./client.js";
+import {
+  listManagedPropertyGroups,
+  listPropertyGroups,
+  getPropertyGroup,
+  type ServerPropertyGroup,
+} from "./client.js";
+import {
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { propertyGroup } from "./sdk.js";
 export type { PropertyGroup, PropertyDef, PropertyMap, PropertyType } from "./sdk.js";
 
-export const propertyGroupResource: ResourceModule<PropertyGroup, ServerPropertyGroup> = {
+export const propertyGroupResource: CollectionResourceModule<PropertyGroup, ServerPropertyGroup> = {
   kind: "collection",
   name: "property-groups",
   displayName: "property group",
@@ -37,4 +49,12 @@ export const propertyGroupResource: ResourceModule<PropertyGroup, ServerProperty
 
   displaySpec: (spec, _ctx: ApplyContext) => displayPropertyGroup(spec),
   displayServer: (server, _ctx: ApplyContext) => displayPropertyGroupFromServer(server),
+
+  listAll: listPropertyGroups,
+  getById: (config, id, options) => getPropertyGroup(config, String(id), options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };

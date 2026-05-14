@@ -41,15 +41,22 @@ export async function listManagedExperimentHoldouts(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerExperimentHoldout[]> {
+  const all = await listExperimentHoldouts(config, options);
+  return all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+}
+
+/** Unfiltered list of every experiment holdout in the project; used by pull. */
+export async function listExperimentHoldouts(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerExperimentHoldout[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/experiment_holdouts/", {
     params: { path: { project_id: config.projectId } },
   });
   const firstPage = paginatedFrom(data!);
   const allRaw = await followPagination<unknown>(config, firstPage, { verbose: options.verbose });
-  return allRaw
-    .map((row) => ServerExperimentHoldoutSchema.parse(row))
-    .filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  return allRaw.map((row) => ServerExperimentHoldoutSchema.parse(row));
 }
 
 export async function getExperimentHoldout(

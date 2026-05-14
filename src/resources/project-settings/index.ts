@@ -9,6 +9,7 @@ import {
   validateProjectSettings,
 } from "./pipeline.js";
 import { getProjectSettings, type ServerProjectSettings } from "./client.js";
+import { renderToFile } from "./codegen.js";
 
 export { projectSettings } from "./sdk.js";
 export type { ProjectSettings } from "./sdk.js";
@@ -28,4 +29,6 @@ export const projectSettingsResource: SingletonResourceModule<ProjectSettings, S
 
   displaySpec: (spec, _ctx: ApplyContext) => displayProjectSettings(spec),
   displayServer: (server, _ctx: ApplyContext) => displayProjectSettingsFromServer(server),
+
+  renderToFile,
 };

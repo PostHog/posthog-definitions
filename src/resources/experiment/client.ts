@@ -71,15 +71,22 @@ export async function listManagedExperiments(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerExperiment[]> {
+  const all = await listExperiments(config, options);
+  return all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+}
+
+/** Unfiltered list of every experiment in the project; used by pull. */
+export async function listExperiments(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerExperiment[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/experiments/", {
     params: { path: { project_id: config.projectId } },
   });
   const firstPage = paginatedFrom(data!);
   const allRaw = await followPagination<unknown>(config, firstPage, { verbose: options.verbose });
-  return allRaw
-    .map((row) => ServerExperimentSchema.parse(row))
-    .filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  return allRaw.map((row) => ServerExperimentSchema.parse(row));
 }
 
 export async function getExperiment(

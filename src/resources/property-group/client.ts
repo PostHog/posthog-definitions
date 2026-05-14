@@ -66,6 +66,15 @@ export async function listManagedPropertyGroups(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerPropertyGroup[]> {
+  const all = await listPropertyGroups(config, options);
+  return all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+}
+
+/** Unfiltered list of every property group in the project; used by pull. */
+export async function listPropertyGroups(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerPropertyGroup[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/schema_property_groups/", {
     params: { path: { project_id: config.projectId } },
@@ -74,9 +83,7 @@ export async function listManagedPropertyGroups(
   const allRaw = await followPagination<unknown>(config, firstPage, {
     verbose: options.verbose,
   });
-  return allRaw
-    .map((row) => ServerPropertyGroupSchema.parse(row))
-    .filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  return allRaw.map((row) => ServerPropertyGroupSchema.parse(row));
 }
 
 export async function getPropertyGroup(
