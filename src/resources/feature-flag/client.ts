@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ClientConfig } from "../../client/config.js";
+import type { components } from "../../generated/api.js";
 import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
 
 export const ServerFeatureFlagSchema = z
@@ -37,6 +38,19 @@ export type FeatureFlagCreate = {
 
 export type FeatureFlagUpdate = Partial<FeatureFlagCreate> & { version?: number };
 
+type FeatureFlagBody = components["schemas"]["FeatureFlagCreateRequestSchema"];
+type PatchedFeatureFlagBody = components["schemas"]["PatchedFeatureFlagPartialUpdateRequestSchema"];
+type GeneratedPaginatedFeatureFlagList = components["schemas"]["PaginatedFeatureFlagList"];
+
+function paginatedFrom(raw: GeneratedPaginatedFeatureFlagList): Paginated<unknown> {
+  return {
+    count: raw.count,
+    next: raw.next ?? null,
+    previous: raw.previous ?? null,
+    results: raw.results ?? [],
+  };
+}
+
 export async function listManagedFeatureFlags(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
@@ -48,7 +62,7 @@ export async function listManagedFeatureFlags(
       query: { limit: 100 },
     },
   });
-  const firstPage = data as unknown as Paginated<unknown>;
+  const firstPage = paginatedFrom(data!);
   const allRaw = await followPagination<unknown>(config, firstPage, {
     verbose: options.verbose,
   });
@@ -75,9 +89,13 @@ export async function createFeatureFlag(
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag> {
   const api = createApiClient(config, { verbose: options.verbose });
+  // FeatureFlagCreateRequestSchema only lists 6 fields; the API accepts more
+  // (ensure_experience_continuity, is_remote_configuration, evaluation_runtime,
+  // bucketing_identifier, has_encrypted_payloads). Cast to bypass the schema
+  // gap — known upstream issue.
   const { data } = await api.POST("/api/projects/{project_id}/feature_flags/", {
     params: { path: { project_id: config.projectId } },
-    body: payload as never,
+    body: payload as unknown as FeatureFlagBody,
   });
   return ServerFeatureFlagSchema.parse(data);
 }
@@ -89,9 +107,12 @@ export async function updateFeatureFlag(
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag> {
   const api = createApiClient(config, { verbose: options.verbose });
+  // PatchedFeatureFlagPartialUpdateRequestSchema doesn't list `version`,
+  // `deleted`, or several optional config fields the API accepts. Cast to
+  // bypass the schema gap.
   const { data } = await api.PATCH("/api/projects/{project_id}/feature_flags/{id}/", {
     params: { path: { project_id: config.projectId, id } },
-    body: { ...payload, version: -1 } as never,
+    body: { ...payload, version: -1 } as unknown as PatchedFeatureFlagBody,
   });
   return ServerFeatureFlagSchema.parse(data);
 }
@@ -104,6 +125,7 @@ export async function deleteFeatureFlag(
   const api = createApiClient(config, { verbose: options.verbose });
   await api.PATCH("/api/projects/{project_id}/feature_flags/{id}/", {
     params: { path: { project_id: config.projectId, id } },
-    body: { deleted: true, version: -1 } as never,
+    // Same body-schema gap as updateFeatureFlag.
+    body: { deleted: true, version: -1 } as unknown as PatchedFeatureFlagBody,
   });
 }

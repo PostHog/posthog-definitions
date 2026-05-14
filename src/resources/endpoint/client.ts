@@ -1,10 +1,7 @@
 import type { ClientConfig } from "../../client/config.js";
+import type { components } from "../../generated/api.js";
 import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
 
-/**
- * Server-side filter for managed endpoints. Mirrored from the description
- * marker emitted by `pipeline.ts`; if you change one, change the other.
- */
 const MANAGED_DESCRIPTION_PREFIX = "<!-- iac:endpoints:";
 
 export type ServerEndpoint = {
@@ -32,6 +29,32 @@ export type EndpointCreate = {
 
 export type EndpointUpdate = Partial<EndpointCreate>;
 
+type GeneratedEndpoint = components["schemas"]["EndpointResponse"];
+type GeneratedPaginatedEndpointList = components["schemas"]["PaginatedEndpointResponseList"];
+
+function toServerEndpoint(raw: GeneratedEndpoint): ServerEndpoint {
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description,
+    query: raw.query,
+    is_active: raw.is_active,
+    is_materialized: raw.is_materialized,
+    derived_from_insight: raw.derived_from_insight,
+    data_freshness_seconds: raw.data_freshness_seconds,
+    bucket_overrides: raw.bucket_overrides ?? null,
+  };
+}
+
+function paginatedFrom(raw: GeneratedPaginatedEndpointList): Paginated<GeneratedEndpoint> {
+  return {
+    count: raw.count,
+    next: raw.next ?? null,
+    previous: raw.previous ?? null,
+    results: raw.results ?? [],
+  };
+}
+
 export async function listManagedEndpoints(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
@@ -43,9 +66,13 @@ export async function listManagedEndpoints(
       query: { limit: 100 },
     },
   });
-  const firstPage = data as unknown as Paginated<ServerEndpoint>;
-  const all = await followPagination(config, firstPage, { verbose: options.verbose });
-  return all.filter((e) => (e.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  const firstPage = paginatedFrom(data!);
+  const all = await followPagination<GeneratedEndpoint>(config, firstPage, {
+    verbose: options.verbose,
+  });
+  return all
+    .map(toServerEndpoint)
+    .filter((e) => (e.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
 }
 
 export async function getEndpoint(
@@ -57,7 +84,7 @@ export async function getEndpoint(
   const { data } = await api.GET("/api/environments/{environment_id}/endpoints/{name}/", {
     params: { path: { environment_id: config.projectId, name } },
   });
-  return data as unknown as ServerEndpoint;
+  return toServerEndpoint(data!);
 }
 
 export async function createEndpoint(
@@ -68,9 +95,9 @@ export async function createEndpoint(
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.POST("/api/environments/{environment_id}/endpoints/", {
     params: { path: { environment_id: config.projectId } },
-    body: payload as never,
+    body: payload,
   });
-  return data as unknown as ServerEndpoint;
+  return toServerEndpoint(data!);
 }
 
 export async function updateEndpoint(
@@ -82,9 +109,9 @@ export async function updateEndpoint(
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.PATCH("/api/environments/{environment_id}/endpoints/{name}/", {
     params: { path: { environment_id: config.projectId, name } },
-    body: payload as never,
+    body: payload,
   });
-  return data as unknown as ServerEndpoint;
+  return toServerEndpoint(data!);
 }
 
 export async function deleteEndpoint(

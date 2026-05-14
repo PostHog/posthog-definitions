@@ -1,4 +1,5 @@
 import type { ClientConfig } from "../../client/config.js";
+import type { components } from "../../generated/api.js";
 import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
 
 export type ServerInsight = {
@@ -19,6 +20,36 @@ export type InsightCreate = {
 
 export type InsightUpdate = Partial<InsightCreate>;
 
+type GeneratedInsight = components["schemas"]["Insight"];
+type InsightBody = components["schemas"]["Insight"];
+type PatchedInsightBody = components["schemas"]["PatchedInsight"];
+
+/**
+ * Narrow PostHog's wide `Insight` response shape down to the fields we use.
+ * Acts as the runtime/type boundary — beyond this, code uses `ServerInsight`.
+ */
+function toServerInsight(raw: GeneratedInsight): ServerInsight {
+  return {
+    id: raw.id,
+    short_id: raw.short_id,
+    name: raw.name ?? "",
+    description: raw.description ?? null,
+    query: raw.query ?? undefined,
+    tags: (raw.tags ?? []).filter((t): t is string => typeof t === "string"),
+  };
+}
+
+type GeneratedPaginatedInsightList = components["schemas"]["PaginatedInsightList"];
+
+function paginatedFrom(raw: GeneratedPaginatedInsightList): Paginated<GeneratedInsight> {
+  return {
+    count: raw.count,
+    next: raw.next ?? null,
+    previous: raw.previous ?? null,
+    results: raw.results ?? [],
+  };
+}
+
 export async function listManagedInsights(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
@@ -30,9 +61,13 @@ export async function listManagedInsights(
       query: { limit: 100 },
     },
   });
-  const firstPage = data as unknown as Paginated<ServerInsight>;
-  const all = await followPagination(config, firstPage, { verbose: options.verbose });
-  return all.filter((i) => i.tags?.some((tag) => tag.startsWith("iac:insights:")));
+  const firstPage = paginatedFrom(data!);
+  const all = await followPagination<GeneratedInsight>(config, firstPage, {
+    verbose: options.verbose,
+  });
+  return all
+    .map(toServerInsight)
+    .filter((i) => i.tags.some((tag) => tag.startsWith("iac:insights:")));
 }
 
 export async function getInsight(
@@ -44,7 +79,7 @@ export async function getInsight(
   const { data } = await api.GET("/api/projects/{project_id}/insights/{id}/", {
     params: { path: { project_id: config.projectId, id } },
   });
-  return data as unknown as ServerInsight;
+  return toServerInsight(data!);
 }
 
 export async function createInsight(
@@ -53,11 +88,16 @@ export async function createInsight(
   options: { verbose?: boolean } = {},
 ): Promise<ServerInsight> {
   const api = createApiClient(config, { verbose: options.verbose });
+  // PostHog's OpenAPI schema marks ~25 readonly response fields (id, short_id,
+  // dashboard_tiles, last_refresh, …) as required on `Insight` — the server
+  // generates them and ignores them on input. So a strict body type rejects
+  // anything a client could realistically POST. Cast to InsightBody to
+  // bypass the schema overreach; this is a known upstream issue.
   const { data } = await api.POST("/api/projects/{project_id}/insights/", {
     params: { path: { project_id: config.projectId } },
-    body: payload as never,
+    body: payload as unknown as InsightBody,
   });
-  return data as unknown as ServerInsight;
+  return toServerInsight(data!);
 }
 
 export async function updateInsight(
@@ -69,9 +109,12 @@ export async function updateInsight(
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.PATCH("/api/projects/{project_id}/insights/{id}/", {
     params: { path: { project_id: config.projectId, id } },
-    body: payload as never,
+    body: {
+      ...payload,
+      query: payload.query as PatchedInsightBody["query"],
+    },
   });
-  return data as unknown as ServerInsight;
+  return toServerInsight(data!);
 }
 
 export async function deleteInsight(
@@ -82,6 +125,6 @@ export async function deleteInsight(
   const api = createApiClient(config, { verbose: options.verbose });
   await api.PATCH("/api/projects/{project_id}/insights/{id}/", {
     params: { path: { project_id: config.projectId, id } },
-    body: { deleted: true } as never,
+    body: { deleted: true },
   });
 }
