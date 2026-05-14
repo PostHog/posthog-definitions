@@ -52,9 +52,23 @@ docs/
 
 Pre-MVP. The MVP scope is **dashboard synchronization via `npx posthog-definitions apply`** — see [`implementation/mvp-roadmap.md`](implementation/mvp-roadmap.md).
 
+## Authentication
+
+```
+$ npx posthog-definitions login
+```
+
+Opens a browser, completes a PKCE OAuth flow against `https://us.posthog.com` (or `--host https://eu.posthog.com`), and prompts you to pick a project. Credentials are saved to `$XDG_CONFIG_HOME/posthog-definitions/config.json` (default `~/.config/posthog-definitions/config.json`) with mode `0600`. Subsequent `apply` / `pull` runs read from that file and auto-refresh the access token.
+
+The CLI uses the CIMD (Client ID Metadata Document) pattern — the same one `posthog/wizard` uses. The `client_id` is `${host}/api/oauth/posthog-definitions/client-metadata`. No DB row needs to be created up-front on the PostHog backend; the OAuth server fetches the metadata document on first authorize and auto-creates the application record.
+
+To switch projects without re-authenticating: `npx posthog-definitions login --switch-project`. To clear credentials: `npx posthog-definitions logout`.
+
+For CI and automation, set `POSTHOG_PERSONAL_API_KEY` and `POSTHOG_PROJECT_ID` in the environment — they take precedence over the stored OAuth token, so existing setups keep working.
+
 ## Local development
 
-This repo uses [direnv](https://direnv.net/) to load PostHog credentials for testing `apply` against a dev project:
+For testing `apply` against a dev project, you can either run `posthog-definitions login` or use [direnv](https://direnv.net/) to load a personal API key:
 
 ```
 cp .envrc.example .envrc
@@ -62,4 +76,4 @@ cp .envrc.example .envrc
 direnv allow
 ```
 
-`.envrc` is gitignored. The CLI reads `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, and optionally `POSTHOG_HOST` from the environment — direnv just keeps them out of your shell history and out of git.
+`.envrc` is gitignored. Resolution order for each setting: `--project` / `--host` CLI flag → `POSTHOG_*` env var → stored OAuth config.

@@ -21,9 +21,17 @@ export type PullArgs = {
   project?: string;
 };
 
+export type LoginArgs = {
+  command: "login";
+  switchProject: boolean;
+  host?: string;
+};
+
+export type LogoutArgs = { command: "logout" };
+
 export type HelpArgs = { command: "help" };
 
-export type ParsedArgs = ApplyArgs | PullArgs | HelpArgs;
+export type ParsedArgs = ApplyArgs | PullArgs | LoginArgs | LogoutArgs | HelpArgs;
 
 const SUPPORTED_PULL_KINDS: readonly PullKind[] = ["dashboards"];
 
@@ -42,7 +50,41 @@ export function parseArgs(argv: string[]): ParsedArgs {
   const command = argv[0];
   if (command === "apply") return parseApply(argv);
   if (command === "pull") return parsePull(argv);
+  if (command === "login") return parseLogin(argv);
+  if (command === "logout") return parseLogout(argv);
   throw new ArgError(`Unknown command "${command}". Run "posthog-definitions help" for usage.`);
+}
+
+function parseLogin(argv: string[]): LoginArgs {
+  const args: LoginArgs = { command: "login", switchProject: false };
+  for (let i = 1; i < argv.length; i++) {
+    const flag = argv[i];
+    switch (flag) {
+      case "--switch-project":
+        args.switchProject = true;
+        break;
+      case "--host":
+        args.host = expectValue(argv, ++i, flag);
+        break;
+      case "--help":
+      case "-h":
+        throw new ArgError("Run 'posthog-definitions help' for usage.");
+      default:
+        throw new ArgError(`Unknown flag: ${flag}`);
+    }
+  }
+  return args;
+}
+
+function parseLogout(argv: string[]): LogoutArgs {
+  for (let i = 1; i < argv.length; i++) {
+    const flag = argv[i];
+    if (flag === "--help" || flag === "-h") {
+      throw new ArgError("Run 'posthog-definitions help' for usage.");
+    }
+    throw new ArgError(`Unknown flag: ${flag}`);
+  }
+  return { command: "logout" };
 }
 
 function parseApply(argv: string[]): ApplyArgs {
@@ -157,16 +199,22 @@ function expectValue(argv: string[], index: number, flag: string): string {
 export const HELP_TEXT = `posthog-definitions — IaC for PostHog dashboards and insights
 
 Usage:
-  posthog-definitions apply [flags]
-  posthog-definitions pull  [flags]
+  posthog-definitions login  [flags]
+  posthog-definitions logout
+  posthog-definitions apply  [flags]
+  posthog-definitions pull   [flags]
 
 Common flags:
   --dry-run            Compute the plan but make no changes.
   --verbose, -v        Log each HTTP call.
   --dir <path>         Definitions directory (default: posthog).
-  --project <id>       Override POSTHOG_PROJECT_ID.
-  --host <url>         Override POSTHOG_HOST (default: https://us.posthog.com).
+  --project <id>       Override the stored project (or POSTHOG_PROJECT_ID).
+  --host <url>         Override the stored host (or POSTHOG_HOST).
   --help, -h           Show this help.
+
+Login flags:
+  --host <url>         Skip the host picker and use this host.
+  --switch-project     Re-run the project picker against the existing token.
 
 Apply flags:
   --prune              Delete IaC-tagged resources that no longer have a
@@ -181,9 +229,18 @@ Pull flags:
   --all                Skip the interactive picker and import everything.
                        (Required when stdin is not a TTY.)
 
+Authentication:
+  Run \`posthog-definitions login\` once to authenticate via OAuth in your
+  browser and pick a project. Credentials are saved to
+  $XDG_CONFIG_HOME/posthog-definitions/config.json (default
+  ~/.config/posthog-definitions/config.json) with mode 0600.
+
+  For CI/automation, set POSTHOG_PERSONAL_API_KEY and POSTHOG_PROJECT_ID;
+  env vars take precedence over the stored OAuth token.
+
 Environment:
-  POSTHOG_PERSONAL_API_KEY   Required. Personal API key with dashboard:read/write
-                             and insight:read/write scopes.
-  POSTHOG_PROJECT_ID         Required. Numeric project id.
-  POSTHOG_HOST               Optional. Defaults to https://us.posthog.com.
+  POSTHOG_PERSONAL_API_KEY   Optional. Personal API key (used by CI).
+  POSTHOG_PROJECT_ID         Optional. Numeric project id (overrides store).
+  POSTHOG_HOST               Optional. Overrides host (default: https://us.posthog.com).
+  POSTHOG_OAUTH_CLIENT_ID    Optional. Override the OAuth client ID (testing).
 `;

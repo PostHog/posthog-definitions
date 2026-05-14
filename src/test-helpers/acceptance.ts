@@ -1,9 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { type ClientConfig, ConfigError, loadConfig } from "../client/config.js";
 
-export function loadAcceptanceConfig(): ClientConfig {
+export async function loadAcceptanceConfig(): Promise<ClientConfig> {
   try {
-    return loadConfig();
+    return await loadConfig();
   } catch (err) {
     if (err instanceof ConfigError) {
       throw new Error(

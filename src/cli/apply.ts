@@ -19,7 +19,7 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("loading config", { host: overrides.host, project: overrides.projectId });
   let config;
   try {
-    config = loadConfig(overrides);
+    config = await loadConfig(overrides);
   } catch (err) {
     if (err instanceof ConfigError) {
       console.error(`error: ${err.message}`);

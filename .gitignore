@@ -26,3 +26,7 @@ dist/
 # Claude Code per-project state — track shared skills, ignore local settings
 .claude/*
 !.claude/skills/
+
+# Local pull output from the user's own PostHog project (root only;
+# examples/*/posthog/ are still tracked).
+/posthog/
