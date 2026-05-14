@@ -25,7 +25,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | ------------------------ | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
 | Feature flags            | ✅ `projects/{id}/feature_flags`            | ✅                  | Tag-identified via `iac:feature-flags:<key>`; dependent flags and encrypted payloads not yet supported |
 | Experiments              | ✅ `projects/{id}/experiments`              | ❌                  | Enterprise viewset                                                                                     |
-| Experiment holdouts      | ✅ `projects/{id}/experiment_holdouts`      | ❌                  |                                                                                                        |
+| Experiment holdouts      | ✅ `projects/{id}/experiment_holdouts`      | ✅                  | Identity via `iac:experiment-holdouts:<key>` marker in `description`.                                  |
 | Experiment saved metrics | ✅ `projects/{id}/experiment_saved_metrics` | ❌                  |                                                                                                        |
 | Cohorts                  | ✅ `projects/{id}/cohorts`                  | ❌                  |                                                                                                        |
 | Actions                  | ✅ `projects/{id}/actions`                  | ❌                  |                                                                                                        |

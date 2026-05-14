@@ -57,6 +57,8 @@ export type ApplyContext = {
   insightKeyByServerId: Map<number, string>;
   /** Property-group server id by spec key. Populated by the property-group module's executor; read by the event-definition module to reconcile EventSchema links. */
   propertyGroupIdByKey: Map<string, string>;
+  /** Experiment-holdout server id by spec key. Populated by the experiment-holdout module's executor; read by the experiment module's resolver. */
+  experimentHoldoutIdByKey: Map<string, number>;
 };
 
 export function newApplyContext(): ApplyContext {
@@ -64,6 +66,7 @@ export function newApplyContext(): ApplyContext {
     insightIdByKey: new Map(),
     insightKeyByServerId: new Map(),
     propertyGroupIdByKey: new Map(),
+    experimentHoldoutIdByKey: new Map(),
   };
 }
 
