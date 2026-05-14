@@ -295,13 +295,27 @@ Fixtures should be hand-authored from an actual `curl` against the PostHog API, 
 
 Test files run under a 500ms per-case timeout (`--test-timeout=500` in the `test` script). Anything slower means a hang — fix the test, do not raise the cap.
 
+## Examples (required)
+
+Every new resource ships with at least one example under `examples/posthog/<resources>/`. Examples are the in-repo cheat-sheet anyone reading the SDK skims before authoring their own definitions, and they double as the surface that the dry-run smoke test in the verification flow below exercises.
+
+Match the existing style — see `examples/posthog/cohorts/`, `examples/posthog/feature-flags/`, and `examples/posthog/experiments/` for the canonical shape:
+
+- **Generic B2B SaaS as the implied product.** Trial signups, paid plans, seats, support tickets, churn — the kind of fictional product anyone reading the repo can map onto their own. Do not invent a brand or a product name.
+- **One file, one default-exported resource.** Same pattern every other example uses. File name mirrors the resource key.
+- **Light dry asides, not overt jokes.** A one-line aside in the description or a top-of-file comment is plenty — "useful for spotting which acquisition channels are trending", "maintained by the growth team via the UI / CSV upload". The voice is realistic-with-a-wink, not parody.
+- **2–3 examples for a collection resource, 1 for a singleton.** Cover meaningfully different SDK shapes — e.g. for cohorts, one behavioral / one static; for feature flags, one boolean kill-switch / one multivariate with payloads; for experiments, one full set (experiment + flag + holdout + saved metric).
+- **Top-of-file comments explain what the _file_ demonstrates**, not what the resource is ("Reusable property group: events that touch billing share this shape so the typed client can enforce consistent property names …"). The reader already knows what a cohort is; they're skimming to learn how to author one.
+
+Then run `pnpm dev apply --dry-run --dir examples/posthog` and confirm the new files load cleanly with no validation errors. The full examples directory is part of the verification flow below — this is just the quick local check.
+
 ## Verification (manual, end-to-end)
 
 Unit tests catch the easy failures; the manual flow catches everything else. Run against the dev project:
 
 1. `pnpm typecheck` — must pass.
-2. Add an example file under `examples/` exercising the new resource.
-3. `npx posthog-definitions apply --dry-run` against the dev project. Inspect the plan output: counts make sense, no spurious diffs, no orphan listing of hand-built resources.
+2. The example(s) from the "Examples" section above are what we'll dry-run against in the next step.
+3. `npx posthog-definitions apply --dry-run --dir examples/posthog` against the dev project. Inspect the plan output: counts make sense, no spurious diffs, no orphan listing of hand-built resources.
 4. `npx posthog-definitions apply`. Confirm the resource appears in the PostHog UI with the `iac:foos:<key>` and `iac:hash:<hex>` tags.
 5. Run `apply` again with no changes. The plan must show `0 to create · 0 to update · N unchanged` for the new resource. **If even one row is "to update" on a no-op apply, the hash projection is wrong** — fix it before moving on.
 6. Edit the spec, re-apply. Confirm an `update` op.
