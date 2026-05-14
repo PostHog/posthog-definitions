@@ -59,6 +59,8 @@ export type ApplyContext = {
   propertyGroupIdByKey: Map<string, string>;
   /** Experiment-holdout server id by spec key. Populated by the experiment-holdout module's executor; read by the experiment module's resolver. */
   experimentHoldoutIdByKey: Map<string, number>;
+  /** Experiment-saved-metric server id by spec key. Populated by the experiment-saved-metric module's executor; read by the experiment module's resolver. */
+  experimentSavedMetricIdByKey: Map<string, number>;
 };
 
 export function newApplyContext(): ApplyContext {
@@ -67,6 +69,7 @@ export function newApplyContext(): ApplyContext {
     insightKeyByServerId: new Map(),
     propertyGroupIdByKey: new Map(),
     experimentHoldoutIdByKey: new Map(),
+    experimentSavedMetricIdByKey: new Map(),
   };
 }
 

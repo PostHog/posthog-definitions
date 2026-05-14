@@ -45,5 +45,8 @@ export type { EventDefinition, EnforcementMode } from "./resources/event-definit
 export { experimentHoldout } from "./resources/experiment-holdout/index.js";
 export type { ExperimentHoldout } from "./resources/experiment-holdout/index.js";
 
+export { experimentSavedMetric } from "./resources/experiment-saved-metric/index.js";
+export type { ExperimentSavedMetric } from "./resources/experiment-saved-metric/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";
