@@ -19,6 +19,9 @@ export type {
   InsightVizNode,
 } from "./resources/insight/index.js";
 
+export { cohort } from "./resources/cohort/index.js";
+export type { Cohort, CohortFilters, CohortType } from "./resources/cohort/index.js";
+
 export { featureFlag } from "./resources/feature-flag/index.js";
 export type {
   FeatureFlag,

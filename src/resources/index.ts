@@ -1,4 +1,5 @@
 import type { ResourceModule } from "./types.js";
+import { cohortResource } from "./cohort/index.js";
 import { dashboardResource } from "./dashboard/index.js";
 import { endpointResource } from "./endpoint/index.js";
 import { featureFlagResource } from "./feature-flag/index.js";
@@ -19,6 +20,9 @@ import { propertyGroupResource } from "./property-group/index.js";
 export const RESOURCES: ReadonlyArray<ResourceModule<unknown, unknown>> = [
   insightResource as ResourceModule<unknown, unknown>,
   dashboardResource as ResourceModule<unknown, unknown>,
+  // Cohorts run before feature flags so cohort references inside flag
+  // conditions can be resolved by key (future cross-resource integration).
+  cohortResource as ResourceModule<unknown, unknown>,
   featureFlagResource as ResourceModule<unknown, unknown>,
   endpointResource as ResourceModule<unknown, unknown>,
   propertyGroupResource as ResourceModule<unknown, unknown>,
@@ -31,6 +35,7 @@ export const RESOURCES: ReadonlyArray<ResourceModule<unknown, unknown>> = [
 
 export { insightResource } from "./insight/index.js";
 export { dashboardResource } from "./dashboard/index.js";
+export { cohortResource } from "./cohort/index.js";
 export { featureFlagResource } from "./feature-flag/index.js";
 export { endpointResource } from "./endpoint/index.js";
 export { propertyGroupResource } from "./property-group/index.js";
