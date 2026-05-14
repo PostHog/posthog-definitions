@@ -9,7 +9,7 @@ import {
   scalar,
   type DisplayValue,
 } from "../../apply/display.js";
-import { SafetyViolationError } from "../../apply/execute.js";
+import { SafetyViolationError } from "../../apply/errors.js";
 import type { ApplyContext, ResourceOp } from "../types.js";
 import type { FeatureFlag, FeatureFlagFilters, PropertyFilter } from "./sdk.js";
 import {

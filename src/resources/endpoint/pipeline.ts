@@ -2,7 +2,7 @@ import type { ClientConfig } from "../../client/config.js";
 import { ApiError } from "../../client/typed.js";
 import { specHash } from "../../apply/hash.js";
 import { displayJson, obj, scalar, type DisplayValue } from "../../apply/display.js";
-import { SafetyViolationError } from "../../apply/execute.js";
+import { SafetyViolationError } from "../../apply/errors.js";
 import { getResourceKind, type ApplyContext, type ResourceOp } from "../types.js";
 import type { Endpoint } from "./sdk.js";
 import {

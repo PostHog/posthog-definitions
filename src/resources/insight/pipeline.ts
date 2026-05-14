@@ -9,7 +9,7 @@ import {
   scalar,
   type DisplayValue,
 } from "../../apply/display.js";
-import { SafetyViolationError } from "../../apply/execute.js";
+import { SafetyViolationError } from "../../apply/errors.js";
 import { getResourceKind, type ApplyContext, type ResourceOp } from "../types.js";
 import type { Insight, Query } from "./sdk.js";
 import {
