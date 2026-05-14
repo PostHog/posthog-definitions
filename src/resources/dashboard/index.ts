@@ -1,4 +1,5 @@
 import type { ApplyContext, ResourceModule } from "../types.js";
+import { insightResource } from "../insight/index.js";
 import type { Dashboard } from "./sdk.js";
 import {
   DASHBOARD_TAG_PREFIX,
@@ -23,6 +24,7 @@ export const dashboardResource: ResourceModule<Dashboard, ServerDashboard> = {
   name: "dashboards",
   displayName: "dashboard",
   identityPrefix: DASHBOARD_TAG_PREFIX,
+  dependsOn: [insightResource],
 
   isSpec: looksLikeDashboard,
   specKey: (spec) => spec.key,

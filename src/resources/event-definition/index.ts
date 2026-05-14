@@ -1,4 +1,5 @@
 import type { ApplyContext, ResourceModule } from "../types.js";
+import { propertyGroupResource } from "../property-group/index.js";
 import type { EventDefinition } from "./sdk.js";
 import {
   displayEventDefinition,
@@ -22,6 +23,7 @@ export const eventDefinitionResource: ResourceModule<EventDefinition, ServerEven
   name: "event-definitions",
   displayName: "event definition",
   identityPrefix: EVENT_DEFINITION_TAG_PREFIX,
+  dependsOn: [propertyGroupResource],
 
   isSpec: looksLikeEventDefinition,
   specKey: (spec) => spec.key,

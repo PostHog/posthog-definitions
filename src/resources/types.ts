@@ -103,6 +103,20 @@ interface BaseResourceModule<TSpec, TServer> {
   readonly name: string;
   /** Singular form used in plan output (e.g. "insight"). */
   readonly displayName: string;
+  /**
+   * Other resource modules this one reads from at apply time — server ids it
+   * looks up in `ApplyContext`, sibling specs it cross-references during
+   * validation, or inline children it pulls out of its own specs. Drives the
+   * topological sort that produces apply-execute order; if A depends on B,
+   * B runs first.
+   *
+   * Direct module references (not names) so typos are caught by the compiler
+   * and refactor-renames propagate automatically. Type is `any/any` because
+   * the dependent doesn't care about the dependency's spec/server types — it
+   * only needs identity.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly dependsOn?: ReadonlyArray<ResourceModule<any, any>>;
 
   isSpec(value: unknown): value is TSpec;
 

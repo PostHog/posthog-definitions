@@ -44,6 +44,7 @@ export function makeFakeResource<TSpec = unknown, TServer = unknown>(
     displayServer: overrides.displayServer ?? defaultDisplay,
 
     extractInlineSpecs: overrides.extractInlineSpecs,
+    dependsOn: overrides.dependsOn,
   };
 }
 

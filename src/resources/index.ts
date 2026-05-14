@@ -1,4 +1,5 @@
 import type { ResourceModule } from "./types.js";
+import { topoOrder } from "./order.js";
 import { cohortResource } from "./cohort/index.js";
 import { dashboardResource } from "./dashboard/index.js";
 import { endpointResource } from "./endpoint/index.js";
@@ -12,26 +13,31 @@ import { projectSettingsResource } from "./project-settings/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
 
 /**
- * Resources are listed in apply-execute order: each resource is fully created/updated
- * before the next runs, so a resource may depend on earlier ones (e.g. dashboards rely
- * on insight server ids being available in ApplyContext, and event-definitions rely
- * on property-group ids).
+ * Source-of-truth registry. Listed in stable, human-readable order — the
+ * `topoOrder` call below derives apply-execute order from each module's
+ * declared `dependsOn` edges, so this list itself is order-independent.
  */
-export const RESOURCES: ReadonlyArray<ResourceModule<unknown, unknown>> = [
-  insightResource as ResourceModule<unknown, unknown>,
-  dashboardResource as ResourceModule<unknown, unknown>,
-  // Cohorts run before feature flags so cohort references inside flag
-  // conditions can be resolved by key (future cross-resource integration).
+const REGISTRY: ReadonlyArray<ResourceModule<unknown, unknown>> = [
   cohortResource as ResourceModule<unknown, unknown>,
-  featureFlagResource as ResourceModule<unknown, unknown>,
+  dashboardResource as ResourceModule<unknown, unknown>,
   endpointResource as ResourceModule<unknown, unknown>,
-  propertyGroupResource as ResourceModule<unknown, unknown>,
   eventDefinitionResource as ResourceModule<unknown, unknown>,
+  experimentResource as ResourceModule<unknown, unknown>,
   experimentHoldoutResource as ResourceModule<unknown, unknown>,
   experimentSavedMetricResource as ResourceModule<unknown, unknown>,
-  experimentResource as ResourceModule<unknown, unknown>,
+  featureFlagResource as ResourceModule<unknown, unknown>,
+  insightResource as ResourceModule<unknown, unknown>,
   projectSettingsResource as ResourceModule<unknown, unknown>,
+  propertyGroupResource as ResourceModule<unknown, unknown>,
 ];
+
+/**
+ * Resources in apply-execute order. Derived by topologically sorting `REGISTRY`
+ * over each module's `dependsOn` edges, so any code that iterates `RESOURCES`
+ * processes producers before consumers (e.g. insights before dashboards,
+ * property-groups before event-definitions).
+ */
+export const RESOURCES: ReadonlyArray<ResourceModule<unknown, unknown>> = topoOrder(REGISTRY);
 
 export { insightResource } from "./insight/index.js";
 export { dashboardResource } from "./dashboard/index.js";

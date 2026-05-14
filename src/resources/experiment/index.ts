@@ -1,4 +1,7 @@
 import type { ApplyContext, ResourceModule } from "../types.js";
+import { experimentHoldoutResource } from "../experiment-holdout/index.js";
+import { experimentSavedMetricResource } from "../experiment-saved-metric/index.js";
+import { featureFlagResource } from "../feature-flag/index.js";
 import type { Experiment } from "./sdk.js";
 import {
   displayExperiment,
@@ -31,6 +34,7 @@ export const experimentResource: ResourceModule<Experiment, ServerExperiment> = 
   name: "experiments",
   displayName: "experiment",
   identityPrefix: EXPERIMENT_IDENTITY_PREFIX,
+  dependsOn: [featureFlagResource, experimentHoldoutResource, experimentSavedMetricResource],
 
   isSpec: looksLikeExperiment,
   specKey: (spec) => spec.key,
