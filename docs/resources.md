@@ -84,6 +84,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 | Resource                | PostHog API                                    | posthog-definitions | Notes                              |
 | ----------------------- | ---------------------------------------------- | ------------------- | ---------------------------------- |
+| Project settings        | ✅ `projects/{id}/environments/{id}/`          | ✅                  | Singleton — one row per project. Declare any subset of writable `PatchedTeam` fields; undeclared fields are left alone. Removing a previously-declared field abandons it (server value persists). |
 | Project secret API keys | ✅ `environments/{id}/project_secret_api_keys` | ❌                  | Secret material — likely never IaC |
 | Quick filters           | ✅ `environments/{id}/quick_filters`           | ❌                  |                                    |
 | File system / shortcuts | ✅ `environments/{id}/file_system`             | —                   | UI-state, not a sync target        |
@@ -95,7 +96,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 ## Summary
 
-Currently shipped: **9 resource types** — Dashboards, Insights, Feature flags, Endpoints, Schema property groups, Event definitions, Experiments, Experiment holdouts, Experiment saved metrics. Event definitions and property groups together feed `createTypedPostHog`, which wraps any `posthog-js`-shaped client and type-checks `.capture(name, properties)` at compile time against the same specs synced via `apply`. Experiments are declarative across the full lifecycle (draft / running / paused / stopped) — apply drives the launch / pause / resume / end transitions to match.
+Currently shipped: **10 resource types** — Dashboards, Insights, Feature flags, Endpoints, Schema property groups, Event definitions, Experiments, Experiment holdouts, Experiment saved metrics, and Project settings. Event definitions and property groups together feed `createTypedPostHog`, which wraps any `posthog-js`-shaped client and type-checks `.capture(name, properties)` at compile time against the same specs synced via `apply`. Experiments are declarative across the full lifecycle (draft / running / paused / stopped) — apply drives the launch / pause / resume / end transitions to match. Project settings is the first singleton resource: declared as one block, field-level diff against the live row, declared-only PATCH.
 
 Reasonable IaC targets across the API surface: **~25–30** (cohorts, actions, surveys, annotations, alerts, hog functions/flows, error-tracking rules, warehouse queries, batch exports, …).
 

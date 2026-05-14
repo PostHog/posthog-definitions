@@ -7,6 +7,7 @@ import { eventDefinitionResource } from "./event-definition/index.js";
 import { experimentResource } from "./experiment/index.js";
 import { experimentHoldoutResource } from "./experiment-holdout/index.js";
 import { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";
+import { projectSettingsResource } from "./project-settings/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
 
 /**
@@ -25,6 +26,7 @@ export const RESOURCES: ReadonlyArray<ResourceModule<unknown, unknown>> = [
   experimentHoldoutResource as ResourceModule<unknown, unknown>,
   experimentSavedMetricResource as ResourceModule<unknown, unknown>,
   experimentResource as ResourceModule<unknown, unknown>,
+  projectSettingsResource as ResourceModule<unknown, unknown>,
 ];
 
 export { insightResource } from "./insight/index.js";
@@ -36,4 +38,13 @@ export { eventDefinitionResource } from "./event-definition/index.js";
 export { experimentHoldoutResource } from "./experiment-holdout/index.js";
 export { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";
 export { experimentResource } from "./experiment/index.js";
-export type { ResourceModule, ResourceOp, ApplyContext, DesiredState } from "./types.js";
+export { projectSettingsResource } from "./project-settings/index.js";
+export type {
+  ResourceModule,
+  CollectionResourceModule,
+  SingletonResourceModule,
+  ResourceOp,
+  FieldChange,
+  ApplyContext,
+  DesiredState,
+} from "./types.js";
