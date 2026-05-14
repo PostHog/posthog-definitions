@@ -57,17 +57,21 @@ export type FormatOptions = {
   serverState?: Map<string, unknown[]>;
 };
 
-export function formatPlan(result: DiffResult, options: FormatOptions = {}): string {
+export function formatPlan(
+  result: DiffResult,
+  options: FormatOptions = {},
+  resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
+): string {
   const color = options.color ?? shouldUseColor();
   const p = pickPalette(color);
-  const ctx = buildDisplayContext(options.serverState);
+  const ctx = buildDisplayContext(options.serverState, resources);
 
   const out: string[] = [];
   out.push(p.bold("Plan"));
   out.push(p.dim("────"));
 
   let anyOrphan = false;
-  for (const resource of RESOURCES) {
+  for (const resource of resources) {
     const slice = result.get(resource.name);
     const counts = countOps(slice?.ops ?? []);
     out.push(
@@ -79,7 +83,7 @@ export function formatPlan(result: DiffResult, options: FormatOptions = {}): str
   if (anyOrphan) {
     const action = options.prune ? p.red("to delete") : p.dim("(left alone)");
     const segments: string[] = [];
-    for (const resource of RESOURCES) {
+    for (const resource of resources) {
       const orphans = result.get(resource.name)?.orphans ?? [];
       if (orphans.length === 0) continue;
       segments.push(p.blue(`${orphans.length} ${resource.displayName}(s)`));
@@ -87,7 +91,7 @@ export function formatPlan(result: DiffResult, options: FormatOptions = {}): str
     out.push(`  orphans:    ${segments.join("  ·  ")}  ${action}`);
   }
 
-  for (const resource of RESOURCES) {
+  for (const resource of resources) {
     const slice = result.get(resource.name);
     if (!slice) continue;
     for (const op of slice.ops) {
@@ -97,7 +101,7 @@ export function formatPlan(result: DiffResult, options: FormatOptions = {}): str
   }
 
   const orphanMarker = options.prune ? p.red("-") : p.blue("·");
-  for (const resource of RESOURCES) {
+  for (const resource of resources) {
     const orphans = result.get(resource.name)?.orphans ?? [];
     for (const orphan of orphans) {
       const key = resource.keyFromServer(orphan) ?? `id:${(orphan as { id: number }).id}`;
@@ -111,13 +115,16 @@ export function formatPlan(result: DiffResult, options: FormatOptions = {}): str
   return out.join("\n");
 }
 
-function buildDisplayContext(serverState: Map<string, unknown[]> | undefined): ApplyContext {
+function buildDisplayContext(
+  serverState: Map<string, unknown[]> | undefined,
+  resources: ReadonlyArray<ResourceModule<unknown, unknown>>,
+): ApplyContext {
   const ctx = newApplyContext();
   if (!serverState) return ctx;
 
   // Populate the reverse map (insight server id → key) so dashboard tile diffs
   // render insight keys rather than opaque ids.
-  const insightResource = RESOURCES.find((r) => r.name === "insights");
+  const insightResource = resources.find((r) => r.name === "insights");
   if (insightResource) {
     for (const row of serverState.get("insights") ?? []) {
       const key = insightResource.keyFromServer(row);
@@ -177,7 +184,10 @@ function renderDiff(before: string[], after: string[], p: Palette): string[] {
   });
 }
 
-function lcsDiff(a: string[], b: string[]): Array<{ kind: "eq" | "del" | "add"; value: string }> {
+export function lcsDiff(
+  a: string[],
+  b: string[],
+): Array<{ kind: "eq" | "del" | "add"; value: string }> {
   const n = a.length;
   const m = b.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
