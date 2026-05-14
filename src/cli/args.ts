@@ -4,6 +4,7 @@ export type ApplyArgs = {
   verbose: boolean;
   prune: boolean;
   dir: string;
+  json: boolean;
   host?: string;
   project?: string;
 };
@@ -21,13 +22,23 @@ export type PullArgs = {
   allRows: boolean;
   /** Don't follow cross-resource pullDependencies edges. */
   noCascade: boolean;
+  json: boolean;
+  host?: string;
+  project?: string;
+};
+
+export type DumpArgs = {
+  command: "dump";
+  verbose: boolean;
+  dir: string;
+  json: boolean;
   host?: string;
   project?: string;
 };
 
 export type HelpArgs = { command: "help" };
 
-export type ParsedArgs = ApplyArgs | PullArgs | HelpArgs;
+export type ParsedArgs = ApplyArgs | PullArgs | DumpArgs | HelpArgs;
 
 export class ArgError extends Error {
   constructor(message: string) {
@@ -44,6 +55,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   const command = argv[0];
   if (command === "apply") return parseApply(argv);
   if (command === "pull") return parsePull(argv);
+  if (command === "dump") return parseDump(argv);
   throw new ArgError(`Unknown command "${command}". Run "posthog-definitions help" for usage.`);
 }
 
@@ -54,6 +66,7 @@ function parseApply(argv: string[]): ApplyArgs {
     verbose: false,
     prune: false,
     dir: "posthog",
+    json: false,
   };
 
   for (let i = 1; i < argv.length; i++) {
@@ -68,6 +81,9 @@ function parseApply(argv: string[]): ApplyArgs {
       case "--verbose":
       case "-v":
         args.verbose = true;
+        break;
+      case "--json":
+        args.json = true;
         break;
       case "--dir":
         args.dir = expectValue(argv, ++i, flag);
@@ -99,6 +115,7 @@ function parsePull(argv: string[]): PullArgs {
     all: false,
     allRows: false,
     noCascade: false,
+    json: false,
   };
 
   for (let i = 1; i < argv.length; i++) {
@@ -116,6 +133,9 @@ function parsePull(argv: string[]): PullArgs {
         break;
       case "--no-cascade":
         args.noCascade = true;
+        break;
+      case "--json":
+        args.json = true;
         break;
       case "--verbose":
       case "-v":
@@ -152,6 +172,44 @@ function parsePull(argv: string[]): PullArgs {
   return args;
 }
 
+function parseDump(argv: string[]): DumpArgs {
+  const args: DumpArgs = {
+    command: "dump",
+    verbose: false,
+    dir: "posthog",
+    json: false,
+  };
+
+  for (let i = 1; i < argv.length; i++) {
+    const flag = argv[i];
+    switch (flag) {
+      case "--verbose":
+      case "-v":
+        args.verbose = true;
+        break;
+      case "--json":
+        args.json = true;
+        break;
+      case "--dir":
+        args.dir = expectValue(argv, ++i, flag);
+        break;
+      case "--project":
+        args.project = expectValue(argv, ++i, flag);
+        break;
+      case "--host":
+        args.host = expectValue(argv, ++i, flag);
+        break;
+      case "--help":
+      case "-h":
+        throw new ArgError("Run 'posthog-definitions help' for usage.");
+      default:
+        throw new ArgError(`Unknown flag: ${flag}`);
+    }
+  }
+
+  return args;
+}
+
 function expectValue(argv: string[], index: number, flag: string): string {
   const value = argv[index];
   if (value === undefined || value.startsWith("--")) {
@@ -165,10 +223,12 @@ export const HELP_TEXT = `posthog-definitions — IaC for PostHog dashboards and
 Usage:
   posthog-definitions apply [flags]
   posthog-definitions pull  [flags]
+  posthog-definitions dump  [flags]
 
 Common flags:
-  --dry-run            Compute the plan but make no changes.
+  --dry-run            Compute the plan but make no changes. (apply, pull)
   --verbose, -v        Log each HTTP call.
+  --json               Emit machine-readable JSON instead of human prose.
   --dir <path>         Definitions directory (default: posthog).
   --project <id>       Override POSTHOG_PROJECT_ID.
   --host <url>         Override POSTHOG_HOST (default: https://us.posthog.com).
@@ -193,6 +253,10 @@ Pull flags:
                        flag, pulling a dashboard also pulls its tile-insights,
                        experiments also pull their flag/holdout/saved-metrics,
                        etc.
+
+Dump flags:
+  (Lists every managed resource in apply order; no server calls.
+   With --json emits a machine-readable summary; without, a tree.)
 
 Environment:
   POSTHOG_PERSONAL_API_KEY   Required. Personal API key with dashboard:read/write

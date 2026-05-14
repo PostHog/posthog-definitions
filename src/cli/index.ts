@@ -3,6 +3,7 @@ import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { runApply } from "./apply.js";
 import { ArgError, HELP_TEXT, parseArgs } from "./args.js";
+import { runDump } from "./dump.js";
 import { runPullCli } from "./pull.js";
 
 export async function main(argv: string[]): Promise<void> {
@@ -22,7 +23,10 @@ export async function main(argv: string[]): Promise<void> {
     process.exit(0);
   }
 
-  const code = parsed.command === "apply" ? await runApply(parsed) : await runPullCli(parsed);
+  let code: number;
+  if (parsed.command === "apply") code = await runApply(parsed);
+  else if (parsed.command === "pull") code = await runPullCli(parsed);
+  else code = await runDump(parsed);
   process.exit(code);
 }
 

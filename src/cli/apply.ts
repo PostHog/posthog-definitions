@@ -1,7 +1,7 @@
 import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/typed.js";
 import { RESOURCES } from "../resources/index.js";
-import { diff } from "../apply/diff.js";
+import { diff, type DiffResult } from "../apply/diff.js";
 import { execute, fetchCurrentState, SafetyViolationError } from "../apply/execute.js";
 import { formatPlan } from "../apply/format-plan.js";
 import { type LoadFailure, loadDefinitions } from "../apply/load.js";
@@ -22,8 +22,7 @@ export async function runApply(args: ApplyArgs): Promise<number> {
     config = loadConfig(overrides);
   } catch (err) {
     if (err instanceof ConfigError) {
-      console.error(`error: ${err.message}`);
-      return 3;
+      return reportError(args, err.message, 3);
     }
     throw err;
   }
@@ -32,8 +31,7 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("loading definitions", { dir: args.dir });
   const loaded = await loadDefinitions(args.dir);
   if (!loaded.ok) {
-    console.error(`error: ${describeLoadFailure(loaded.error)}`);
-    return 1;
+    return reportError(args, describeLoadFailure(loaded.error), 1);
   }
   const desired = loaded.value;
   const loadedCounts = describeCounts(desired);
@@ -43,28 +41,48 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   const validation = validate(desired);
   if (!validation.ok) {
     const lines = validation.error.issues.map((i) => `${i.resource}: ${i.message}`);
-    console.error(`error: Validation failed:\n - ${lines.join("\n - ")}`);
+    if (args.json) {
+      emitJson({ ok: false, stage: "validate", issues: validation.error.issues });
+    } else {
+      console.error(`error: Validation failed:\n - ${lines.join("\n - ")}`);
+    }
     return 1;
   }
   debug("validation passed");
 
-  const summarySegments = RESOURCES.map(
-    (r) => `${desired.get(r.name)?.length ?? 0} ${r.displayName}(s)`,
-  );
-  console.error(`Loaded ${summarySegments.join(" and ")} from ${args.dir}/`);
+  if (!args.json) {
+    const summarySegments = RESOURCES.map(
+      (r) => `${desired.get(r.name)?.length ?? 0} ${r.displayName}(s)`,
+    );
+    console.error(`Loaded ${summarySegments.join(" and ")} from ${args.dir}/`);
+  }
 
   const totalDesired = RESOURCES.reduce((sum, r) => sum + (desired.get(r.name)?.length ?? 0), 0);
   if (args.dryRun && totalDesired === 0) {
-    console.log("Nothing to do.");
+    if (args.json) {
+      emitJson({
+        ok: true,
+        dryRun: true,
+        applied: false,
+        plan: { totalOps: 0, byResource: [] },
+      });
+    } else {
+      console.log("Nothing to do.");
+    }
     return 0;
   }
 
   debug("fetching current server state");
   let current;
   try {
-    current = await fetchCurrentState(config, { verbose: args.verbose }, undefined, desired);
+    current = await fetchCurrentState(
+      config,
+      { verbose: args.verbose, prune: args.prune },
+      undefined,
+      desired,
+    );
   } catch (err) {
-    return reportApiError(err, "while fetching current state");
+    return reportApiError(args, err, "while fetching current state");
   }
   debug(
     "current state fetched",
@@ -74,10 +92,21 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("diffing");
   const diffResult = diff(desired, current);
 
-  console.log(formatPlan(diffResult, { serverState: current, prune: args.prune }));
+  if (!args.json) {
+    console.log(formatPlan(diffResult, { serverState: current, prune: args.prune }));
+  }
 
   if (args.dryRun) {
-    console.log("\nDry run — no changes applied.");
+    if (args.json) {
+      emitJson({
+        ok: true,
+        dryRun: true,
+        applied: false,
+        plan: planToJson(diffResult, args.prune),
+      });
+    } else {
+      console.log("\nDry run — no changes applied.");
+    }
     return 0;
   }
 
@@ -98,18 +127,73 @@ export async function runApply(args: ApplyArgs): Promise<number> {
       totalUnchanged += counts.unchanged;
       totalPruned += counts.pruned;
     }
-    const prunedSegment = args.prune ? `, ${totalPruned} deleted` : "";
-    console.log(
-      `\nApplied: ${totalCreated} created, ${totalUpdated} updated, ${totalUnchanged} unchanged${prunedSegment}.`,
-    );
+    if (args.json) {
+      emitJson({
+        ok: true,
+        dryRun: false,
+        applied: true,
+        totals: {
+          created: totalCreated,
+          updated: totalUpdated,
+          unchanged: totalUnchanged,
+          pruned: totalPruned,
+        },
+        byResource: Object.fromEntries(summary.entries()),
+      });
+    } else {
+      const prunedSegment = args.prune ? `, ${totalPruned} deleted` : "";
+      console.log(
+        `\nApplied: ${totalCreated} created, ${totalUpdated} updated, ${totalUnchanged} unchanged${prunedSegment}.`,
+      );
+    }
     return 0;
   } catch (err) {
     if (err instanceof SafetyViolationError) {
-      console.error(`error: ${err.message}`);
-      return 2;
+      return reportError(args, err.message, 2);
     }
-    return reportApiError(err, "during apply");
+    return reportApiError(args, err, "during apply");
   }
+}
+
+function emitJson(payload: unknown): void {
+  process.stdout.write(JSON.stringify(payload, null, 2) + "\n");
+}
+
+function reportError(args: ApplyArgs, message: string, code: number): number {
+  if (args.json) {
+    emitJson({ ok: false, error: message });
+  } else {
+    console.error(`error: ${message}`);
+  }
+  return code;
+}
+
+function planToJson(
+  diffResult: DiffResult,
+  prune: boolean,
+): { totalOps: number; byResource: Array<{ resource: string; create: number; update: number; unchanged: number; orphans: number }> } {
+  const byResource: Array<{
+    resource: string;
+    create: number;
+    update: number;
+    unchanged: number;
+    orphans: number;
+  }> = [];
+  let totalOps = 0;
+  for (const [resourceName, slice] of diffResult) {
+    let create = 0;
+    let update = 0;
+    let unchanged = 0;
+    for (const op of slice.ops) {
+      if (op.kind === "create") create++;
+      else if (op.kind === "update") update++;
+      else unchanged++;
+    }
+    const orphans = prune ? slice.orphans.length : 0;
+    totalOps += create + update + orphans;
+    byResource.push({ resource: resourceName, create, update, unchanged, orphans });
+  }
+  return { totalOps, byResource };
 }
 
 function describeCounts(desired: Map<string, Array<unknown>>): Array<[string, number]> {
@@ -130,10 +214,9 @@ function summaryToObject(summary: Map<string, unknown>): Record<string, unknown>
   return Object.fromEntries(summary.entries());
 }
 
-function reportApiError(err: unknown, context: string): number {
+function reportApiError(args: ApplyArgs, err: unknown, context: string): number {
   if (err instanceof ApiError) {
-    console.error(`error: PostHog API ${context}: ${err.message}`);
-    return 2;
+    return reportError(args, `PostHog API ${context}: ${err.message}`, 2);
   }
   throw err;
 }

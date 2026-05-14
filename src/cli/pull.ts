@@ -17,7 +17,8 @@ export async function runPullCli(args: PullArgs): Promise<number> {
     config = loadConfig(overrides);
   } catch (err) {
     if (err instanceof ConfigError) {
-      console.error(`error: ${err.message}`);
+      if (args.json) emitJson({ ok: false, error: err.message });
+      else console.error(`error: ${err.message}`);
       return 3;
     }
     throw err;
@@ -34,9 +35,9 @@ export async function runPullCli(args: PullArgs): Promise<number> {
     for (const kind of args.kinds) {
       const r = byName.get(kind);
       if (!r) {
-        console.error(
-          `error: --kind "${kind}" is not a pullable resource. Pullable: ${[...byName.keys()].join(", ")}.`,
-        );
+        const message = `--kind "${kind}" is not a pullable resource. Pullable: ${[...byName.keys()].join(", ")}.`;
+        if (args.json) emitJson({ ok: false, error: message });
+        else console.error(`error: ${message}`);
         return 3;
       }
       resolved.push(r);
@@ -44,7 +45,8 @@ export async function runPullCli(args: PullArgs): Promise<number> {
     targets = resolved;
   }
   if (targets.length === 0) {
-    console.log("Nothing to pull (no pullable resources matched).");
+    if (args.json) emitJson({ ok: true, pulled: 0, byResource: {} });
+    else console.log("Nothing to pull (no pullable resources matched).");
     return 0;
   }
 
@@ -53,9 +55,10 @@ export async function runPullCli(args: PullArgs): Promise<number> {
   const selectionByResource = new Map<string, Set<number | string>>();
   if (!args.allRows) {
     if (!process.stdin.isTTY) {
-      console.error(
-        "error: pull is interactive by default. Pass --all-rows to import every row, or run from a terminal.",
-      );
+      const message =
+        "pull is interactive by default. Pass --all-rows to import every row, or run from a terminal.";
+      if (args.json) emitJson({ ok: false, error: message });
+      else console.error(`error: ${message}`);
       return 3;
     }
     for (const resource of targets) {
@@ -98,15 +101,60 @@ export async function runPullCli(args: PullArgs): Promise<number> {
       dryRun: args.dryRun,
       verbose: args.verbose,
     });
-    report(result, args.dir, args.dryRun);
+    if (args.json) emitJsonReport(result, args.dir, args.dryRun);
+    else report(result, args.dir, args.dryRun);
     return 0;
   } catch (err) {
     if (err instanceof ApiError) {
-      console.error(`error: PostHog API while pulling: ${err.message}`);
+      const message = `PostHog API while pulling: ${err.message}`;
+      if (args.json) emitJson({ ok: false, error: message });
+      else console.error(`error: ${message}`);
       return 2;
     }
     throw err;
   }
+}
+
+function emitJson(payload: unknown): void {
+  process.stdout.write(JSON.stringify(payload, null, 2) + "\n");
+}
+
+function emitJsonReport(result: PullRunResult, dir: string, dryRun: boolean): void {
+  const byResource: Record<
+    string,
+    {
+      written: string[];
+      tagged: number;
+      skipped: Array<{ id: number | string; reason: string }>;
+      filteredOut: Array<{ id: number | string; reason: string }>;
+      warnings: string[];
+    }
+  > = {};
+  let totalWritten = 0;
+  let totalTagged = 0;
+  for (const [name, rep] of result.byResource) {
+    byResource[name] = {
+      written: rep.written,
+      tagged: rep.tagged,
+      skipped: rep.skippedReasons,
+      filteredOut: rep.filteredOut,
+      warnings: rep.warnings,
+    };
+    totalWritten += rep.written.length;
+    totalTagged += rep.tagged;
+  }
+  emitJson({
+    ok: true,
+    dryRun,
+    dir: path.resolve(dir),
+    totals: {
+      written: dryRun ? 0 : totalWritten,
+      tagged: dryRun ? 0 : totalTagged,
+      dryRunPlanned: dryRun ? result.dryRunSkipped.length : 0,
+    },
+    dryRunPlanned: result.dryRunSkipped,
+    byResource,
+  });
 }
 
 function isPullable(resource: ResourceModule<unknown, unknown>): boolean {
