@@ -21,6 +21,18 @@ const HASH_TAG_PREFIX = "iac:hash:";
  */
 const linkedGroupIdsByServer = new WeakMap<ServerEventDefinition, string[]>();
 
+/**
+ * Per-config memoization of the EventSchema list call. Without this, every
+ * event-definition's `pullDependencies` re-fetches the entire join table —
+ * O(N) round-trips for N event definitions in one pull. With the cache it
+ * collapses to one. Keyed by ClientConfig (one orchestrator run = one
+ * config object); WeakMap lets the cache GC after the run.
+ */
+const eventSchemasByConfig = new WeakMap<
+  ClientConfig,
+  Promise<Awaited<ReturnType<typeof listEventSchemas>>>
+>();
+
 export function pullFilter(
   _server: ServerEventDefinition,
 ): { kept: true } | { kept: false; reason: string } {
@@ -52,7 +64,12 @@ export async function pullDependencies(
   server: ServerEventDefinition,
   options: { verbose?: boolean } = {},
 ): Promise<PullDependency[]> {
-  const schemas = await listEventSchemas(config, options);
+  let pending = eventSchemasByConfig.get(config);
+  if (!pending) {
+    pending = listEventSchemas(config, options);
+    eventSchemasByConfig.set(config, pending);
+  }
+  const schemas = await pending;
   const groupIds: string[] = [];
   for (const link of schemas) {
     if (link.event_definition === server.id) {

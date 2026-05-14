@@ -219,44 +219,104 @@ export async function runPull(
 // Cascade
 // ---------------------------------------------------------------------------
 
+/**
+ * Wave-parallel BFS. Each wave:
+ *   1. Calls every frontier row's `pullDependencies` in parallel — important
+ *      for hooks that round-trip the API (e.g. event-definition listing
+ *      EventSchemas). pullDependencies implementations are encouraged to
+ *      cache their own round-trips so the parallel calls collapse to one.
+ *   2. Collects every (resource, id) pair the wave produced, deduped.
+ *   3. Splits them into "already in byId" (fast) and "must fetch" (slow).
+ *   4. Issues all `getById` calls in parallel.
+ *   5. Selects + enqueues each fresh row for the next wave.
+ *
+ * The sequential version was O(N) round-trips for a dashboard pulling N
+ * tile-insights; this version is O(depth) parallel round-trips, where
+ * depth ≤ 2 for the resource graph we have today.
+ */
 async function cascadeDependencies(
   config: ClientConfig,
   entries: Map<string, CollectionEntry>,
   verbose: boolean | undefined,
 ): Promise<void> {
-  // BFS frontier: rows whose dependencies haven't been resolved yet.
-  const frontier: Array<{ resource: CollectionResourceModule<unknown, unknown>; row: unknown }> = [];
+  type Frontier = {
+    resource: CollectionResourceModule<unknown, unknown>;
+    row: unknown;
+  };
+
+  let frontier: Frontier[] = [];
   for (const entry of entries.values()) {
     for (const row of entry.selected) frontier.push({ resource: entry.resource, row });
   }
-  while (frontier.length > 0) {
-    const { resource, row } = frontier.shift()!;
-    const deps = resource.pullDependencies
-      ? await resource.pullDependencies(config, row, { verbose })
-      : [];
-    for (const dep of deps) {
-      const depEntry = entries.get(dep.resourceName);
-      if (!depEntry) continue;
-      const idStr = String(dep.serverId);
-      const idOf =
-        depEntry.resource.serverIdOf ?? ((r: unknown) => (r as { id: number | string }).id);
-      if (depEntry.selected.some((r) => String(idOf(r)) === idStr)) continue;
 
-      let depRow = depEntry.byId.get(idStr);
-      if (!depRow) {
-        // Wasn't in the initial listAll — fetch it directly.
-        if (!depEntry.resource.getById) continue;
+  while (frontier.length > 0) {
+    // 1. Discover dependencies for every row in this wave in parallel.
+    const allDeps = await Promise.all(
+      frontier.map(async ({ resource, row }) => {
+        if (!resource.pullDependencies) return [];
+        return resource.pullDependencies(config, row, { verbose });
+      }),
+    );
+
+    // 2. Dedupe to the missing-from-byId set, keyed by (resourceName,id).
+    const missing = new Map<
+      string,
+      { entry: CollectionEntry; serverId: number | string }
+    >();
+    const alreadyKnown: Array<{ entry: CollectionEntry; row: unknown }> = [];
+    for (const deps of allDeps) {
+      for (const dep of deps) {
+        const depEntry = entries.get(dep.resourceName);
+        if (!depEntry) continue;
+        const idStr = String(dep.serverId);
+        const idOf =
+          depEntry.resource.serverIdOf ??
+          ((r: unknown) => (r as { id: number | string }).id);
+        if (depEntry.selected.some((r) => String(idOf(r)) === idStr)) continue;
+
+        const cacheKey = `${dep.resourceName}|${idStr}`;
+        const existing = depEntry.byId.get(idStr);
+        if (existing !== undefined) {
+          alreadyKnown.push({ entry: depEntry, row: existing });
+        } else if (depEntry.resource.getById) {
+          if (!missing.has(cacheKey)) {
+            missing.set(cacheKey, { entry: depEntry, serverId: dep.serverId });
+          }
+        }
+      }
+    }
+
+    // 3. Fetch every missing row in parallel.
+    const fetched = await Promise.all(
+      [...missing.values()].map(async ({ entry, serverId }) => {
         try {
-          depRow = await depEntry.resource.getById(config, dep.serverId, { verbose });
+          const row = await entry.resource.getById!(config, serverId, { verbose });
+          return { entry, row };
         } catch (err) {
-          if (err instanceof ApiError && err.status === 404) continue;
+          if (err instanceof ApiError && err.status === 404) return undefined;
           throw err;
         }
-        depEntry.byId.set(idStr, depRow);
-      }
-      depEntry.selected.push(depRow);
-      frontier.push({ resource: depEntry.resource, row: depRow });
+      }),
+    );
+
+    // 4. Promote every newly-known row to selected and seed the next wave.
+    const nextFrontier: Frontier[] = [];
+    const promote = (entry: CollectionEntry, row: unknown): void => {
+      const idOf =
+        entry.resource.serverIdOf ??
+        ((r: unknown) => (r as { id: number | string }).id);
+      const idStr = String(idOf(row));
+      if (entry.selected.some((r) => String(idOf(r)) === idStr)) return;
+      entry.byId.set(idStr, row);
+      entry.selected.push(row);
+      nextFrontier.push({ resource: entry.resource, row });
+    };
+    for (const { entry, row } of alreadyKnown) promote(entry, row);
+    for (const f of fetched) {
+      if (f) promote(f.entry, f.row);
     }
+
+    frontier = nextFrontier;
   }
 }
 
