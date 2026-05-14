@@ -1,5 +1,5 @@
 import type { ClientConfig } from "../../client/config.js";
-import { paginate, request } from "../../client/http.js";
+import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
 
 export type ServerTile = {
   id?: number;
@@ -32,18 +32,19 @@ export type DashboardCreate = {
 
 export type DashboardUpdate = Partial<DashboardCreate>;
 
-function dashboardsPath(projectId: string, suffix = ""): string {
-  return `/api/projects/${projectId}/dashboards/${suffix}`;
-}
-
 export async function listDashboards(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerDashboard[]> {
-  return paginate<ServerDashboard>(config, dashboardsPath(config.projectId), {
-    query: { limit: 100 },
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/projects/{project_id}/dashboards/", {
+    params: {
+      path: { project_id: config.projectId },
+      query: { limit: 100 },
+    },
   });
+  const firstPage = data as unknown as Paginated<ServerDashboard>;
+  return followPagination(config, firstPage, { verbose: options.verbose });
 }
 
 export async function listManagedDashboards(
@@ -59,9 +60,11 @@ export async function getDashboard(
   id: number,
   options: { verbose?: boolean } = {},
 ): Promise<ServerDashboard> {
-  return request<ServerDashboard>(config, dashboardsPath(config.projectId, `${id}/`), {
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/projects/{project_id}/dashboards/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
   });
+  return data as unknown as ServerDashboard;
 }
 
 export async function createDashboard(
@@ -69,11 +72,12 @@ export async function createDashboard(
   payload: DashboardCreate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerDashboard> {
-  return request<ServerDashboard>(config, dashboardsPath(config.projectId), {
-    method: "POST",
-    body: payload,
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.POST("/api/projects/{project_id}/dashboards/", {
+    params: { path: { project_id: config.projectId } },
+    body: payload as never,
   });
+  return data as unknown as ServerDashboard;
 }
 
 export async function updateDashboard(
@@ -82,11 +86,12 @@ export async function updateDashboard(
   payload: DashboardUpdate,
   options: { verbose?: boolean } = {},
 ): Promise<ServerDashboard> {
-  return request<ServerDashboard>(config, dashboardsPath(config.projectId, `${id}/`), {
-    method: "PATCH",
-    body: payload,
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.PATCH("/api/projects/{project_id}/dashboards/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+    body: payload as never,
   });
+  return data as unknown as ServerDashboard;
 }
 
 export async function deleteDashboard(
@@ -94,9 +99,9 @@ export async function deleteDashboard(
   id: number,
   options: { verbose?: boolean } = {},
 ): Promise<void> {
-  await request<void>(config, dashboardsPath(config.projectId, `${id}/`), {
-    method: "PATCH",
-    body: { deleted: true },
-    verbose: options.verbose,
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.PATCH("/api/projects/{project_id}/dashboards/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+    body: { deleted: true } as never,
   });
 }
