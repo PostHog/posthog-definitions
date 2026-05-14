@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayJson, renderLines } from "./display.js";
+import { displayJson, filterUserTags, isManagedTag, renderLines } from "./display.js";
 
 describe("displayJson", () => {
   it("renders identical lines for objects with the same keys in a different order", () => {
@@ -24,5 +24,47 @@ describe("displayJson", () => {
     const withNull = renderLines(displayJson({ description: null }));
     const withoutKey = renderLines(displayJson({}));
     expect(withNull).not.toEqual(withoutKey);
+  });
+});
+
+describe("isManagedTag", () => {
+  it("recognises the iac: prefix as managed", () => {
+    expect(isManagedTag("iac:insights:growth")).toBe(true);
+    expect(isManagedTag("iac:hash:abc123")).toBe(true);
+  });
+
+  it("treats anything without iac: prefix as user-owned", () => {
+    expect(isManagedTag("growth")).toBe(false);
+    expect(isManagedTag("priority")).toBe(false);
+  });
+
+  it("does not match substrings or near-prefixes", () => {
+    expect(isManagedTag("not-iac:")).toBe(false);
+    expect(isManagedTag("iac")).toBe(false);
+  });
+
+  it("treats the empty string as not managed", () => {
+    expect(isManagedTag("")).toBe(false);
+  });
+});
+
+describe("filterUserTags", () => {
+  it("strips managed tags and keeps user tags in original order", () => {
+    expect(filterUserTags(["growth", "iac:insights:growth", "priority", "iac:hash:abc"])).toEqual([
+      "growth",
+      "priority",
+    ]);
+  });
+
+  it("treats undefined as empty", () => {
+    expect(filterUserTags(undefined)).toEqual([]);
+  });
+
+  it("returns an empty array when every tag is managed", () => {
+    expect(filterUserTags(["iac:a", "iac:b"])).toEqual([]);
+  });
+
+  it("returns the input unchanged when no managed tags are present", () => {
+    expect(filterUserTags(["growth", "priority"])).toEqual(["growth", "priority"]);
   });
 });

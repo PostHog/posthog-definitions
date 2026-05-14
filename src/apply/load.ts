@@ -3,21 +3,36 @@ import { pathToFileURL } from "node:url";
 import { glob } from "tinyglobby";
 import { tsImport } from "tsx/esm/api";
 import { RESOURCES } from "../resources/index.js";
-import type { DesiredState, LoadedSpec } from "../resources/types.js";
+import type { DesiredState, LoadedSpec, ResourceModule } from "../resources/types.js";
+import { err, ok, type Result } from "../result.js";
 
-export class LoadError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "LoadError";
-  }
-}
+/**
+ * A load failure is always a user mistake in the definitions directory —
+ * a malformed default export or a duplicate key. Modeled as a discriminated
+ * union so the CLI can render a tailored message per kind without parsing
+ * strings.
+ *
+ * See `.claude/skills/result-vs-exceptions/SKILL.md` for the convention.
+ */
+export type LoadFailure =
+  | { kind: "unknown-shape"; file: string; sample: string }
+  | {
+      kind: "inline-collision";
+      resourceDisplayName: string;
+      key: string;
+      firstPath: string;
+      secondPath: string;
+    };
 
-export async function loadDefinitions(dir: string): Promise<DesiredState> {
+export async function loadDefinitions(
+  dir: string,
+  resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
+): Promise<Result<DesiredState, LoadFailure>> {
   const absDir = path.resolve(dir);
   const files = await glob("**/*.ts", { cwd: absDir, absolute: true });
 
   const state: DesiredState = new Map();
-  for (const resource of RESOURCES) {
+  for (const resource of resources) {
     state.set(resource.name, []);
   }
 
@@ -26,32 +41,50 @@ export async function loadDefinitions(dir: string): Promise<DesiredState> {
     const exported = (module as { default?: unknown }).default;
     if (exported === undefined) continue;
 
-    const resource = RESOURCES.find((r) => r.isSpec(exported));
+    const resource = resources.find((r) => r.isSpec(exported));
     if (!resource) {
-      throw new LoadError(
-        `${file}: default export does not match any known resource shape. Got: ${JSON.stringify(exported).slice(0, 200)}`,
-      );
+      return err({
+        kind: "unknown-shape",
+        file,
+        sample: JSON.stringify(exported).slice(0, 200),
+      });
     }
     state.get(resource.name)!.push({ path: file, spec: exported });
   }
 
-  // Second pass: each resource can pull dependency specs out of its loaded items
-  // (e.g. inline insights inside dashboard tiles). Inline specs are deduped by key
-  // against anything already loaded by the resource that owns them.
-  for (const resource of RESOURCES) {
+  return mergeInlineSpecs(state, resources);
+}
+
+/**
+ * Second pass: each resource can pull dependency specs out of its loaded items
+ * (e.g. inline insights inside dashboard tiles). Inline specs are deduped by
+ * key against anything already loaded by the resource that owns them.
+ *
+ * Pure given the inputs — exported for direct unit testing.
+ */
+export function mergeInlineSpecs(
+  state: DesiredState,
+  resources: ReadonlyArray<ResourceModule<unknown, unknown>>,
+): Result<DesiredState, LoadFailure> {
+  for (const resource of resources) {
     if (!resource.extractInlineSpecs) continue;
     for (const loaded of state.get(resource.name) ?? []) {
       for (const dep of resource.extractInlineSpecs(loaded.spec)) {
-        const target = RESOURCES.find((r) => r.name === dep.resourceName);
+        const target = resources.find((r) => r.name === dep.resourceName);
         if (!target) continue;
-        const bucket = state.get(target.name)!;
+        const bucket = state.get(target.name) ?? [];
+        if (!state.has(target.name)) state.set(target.name, bucket);
         const depKey = target.specKey(dep.spec);
         const existing = bucket.find((b) => target.specKey(b.spec) === depKey);
         if (existing) {
           if (existing.spec !== dep.spec) {
-            throw new LoadError(
-              `${target.displayName} key "${depKey}" is defined in multiple places (${existing.path} and inline in ${loaded.path}). Keys must be unique.`,
-            );
+            return err({
+              kind: "inline-collision",
+              resourceDisplayName: target.displayName,
+              key: depKey,
+              firstPath: existing.path,
+              secondPath: loaded.path,
+            });
           }
           continue;
         }
@@ -59,8 +92,7 @@ export async function loadDefinitions(dir: string): Promise<DesiredState> {
       }
     }
   }
-
-  return state;
+  return ok(state);
 }
 
 export type { LoadedSpec, DesiredState };

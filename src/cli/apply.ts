@@ -4,7 +4,7 @@ import { RESOURCES } from "../resources/index.js";
 import { diff } from "../apply/diff.js";
 import { execute, fetchCurrentState, SafetyViolationError } from "../apply/execute.js";
 import { formatPlan } from "../apply/format-plan.js";
-import { LoadError, loadDefinitions } from "../apply/load.js";
+import { type LoadFailure, loadDefinitions } from "../apply/load.js";
 import { validate } from "../apply/validate.js";
 import type { ApplyArgs } from "./args.js";
 import { createDebug, debugEnabled } from "./debug.js";
@@ -30,16 +30,12 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("config loaded", { host: config.host, projectId: config.projectId });
 
   debug("loading definitions", { dir: args.dir });
-  let desired;
-  try {
-    desired = await loadDefinitions(args.dir);
-  } catch (err) {
-    if (err instanceof LoadError) {
-      console.error(`error: ${err.message}`);
-      return 1;
-    }
-    throw err;
+  const loaded = await loadDefinitions(args.dir);
+  if (!loaded.ok) {
+    console.error(`error: ${describeLoadFailure(loaded.error)}`);
+    return 1;
   }
+  const desired = loaded.value;
   const loadedCounts = describeCounts(desired);
   debug("definitions loaded", Object.fromEntries(loadedCounts));
 
@@ -118,6 +114,13 @@ export async function runApply(args: ApplyArgs): Promise<number> {
 
 function describeCounts(desired: Map<string, Array<unknown>>): Array<[string, number]> {
   return Array.from(desired.entries()).map(([k, v]) => [k, v.length]);
+}
+
+function describeLoadFailure(failure: LoadFailure): string {
+  if (failure.kind === "unknown-shape") {
+    return `${failure.file}: default export does not match any known resource shape. Got: ${failure.sample}`;
+  }
+  return `${failure.resourceDisplayName} key "${failure.key}" is defined in multiple places (${failure.firstPath} and inline in ${failure.secondPath}). Keys must be unique.`;
 }
 
 function summaryToObject(summary: Map<string, unknown>): Record<string, unknown> {

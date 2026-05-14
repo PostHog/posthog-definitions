@@ -4,6 +4,8 @@ import { makeFakeResource } from "../test-helpers/fake-resource.js";
 import type { DiffResult } from "./diff.js";
 import { formatPlan, lcsDiff } from "./format-plan.js";
 
+const ANSI_ESC = String.fromCharCode(0x1b) + "[";
+
 type Spec = { key: string };
 type Server = { id: number; key: string };
 
@@ -97,7 +99,7 @@ describe("formatPlan", () => {
       { color: false, prune: true },
       [alpha],
     );
-    expect(out).not.toMatch(/\[/);
+    expect(out.includes(ANSI_ESC)).toBe(false);
   });
 
   it("emits ANSI escapes when color is true", () => {
@@ -106,7 +108,7 @@ describe("formatPlan", () => {
       { color: true },
       [alpha],
     );
-    expect(out).toMatch(/\[/);
+    expect(out.includes(ANSI_ESC)).toBe(true);
   });
 
   it("falls back to id:<n> when an orphan has no key", () => {
