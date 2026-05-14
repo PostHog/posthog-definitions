@@ -39,9 +39,9 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 | Resource               | PostHog API                               | posthog-definitions | Notes                                                        |
 | ---------------------- | ----------------------------------------- | ------------------- | ------------------------------------------------------------ |
-| Event definitions      | ✅ `projects/{id}/event_definitions`      | ❌                  | Metadata; usually emergent from ingest                       |
+| Event definitions      | ✅ `projects/{id}/event_definitions`      | ✅                  | Tag-identified via `iac:event-definitions:<key>`. Feeds `createTypedPostHog` for compile-time type-safe `.capture()` calls |
 | Property definitions   | ✅ `projects/{id}/property_definitions`   | ❌                  |                                                              |
-| Schema property groups | ✅ `projects/{id}/schema_property_groups` | ❌                  |                                                              |
+| Schema property groups | ✅ `projects/{id}/schema_property_groups` | ✅                  | Identity via `iac:property-groups:<key>` marker in `description`. Reusable bundles of properties attached to events |
 | Data color themes      | ✅ `environments/{id}/data_color_themes`  | 🟡                  | Referenced by dashboards via `dataColorThemeKey`, not synced |
 | Tags                   | ✅ `projects/{id}/tags`                   | 🟡                  | Used internally for IaC identity (`iac:dashboards:*`)        |
 | Groups types           | ✅ `projects/{id}/groups_types`           | ❌                  |                                                              |

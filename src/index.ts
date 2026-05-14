@@ -38,3 +38,6 @@ export type {
   PropertyMap,
   PropertyType,
 } from "./resources/property-group/index.js";
+
+export { eventDefinition } from "./resources/event-definition/index.js";
+export type { EventDefinition, EnforcementMode } from "./resources/event-definition/index.js";
