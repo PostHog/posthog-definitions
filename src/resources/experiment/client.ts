@@ -127,8 +127,11 @@ export async function deleteExperiment(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   const api = createApiClient(config, { verbose: options.verbose });
-  await api.DELETE("/api/projects/{project_id}/experiments/{id}/", {
+  // The experiment viewset uses ForbidDestroyModel — hard DELETE returns 405.
+  // Soft-delete via `PATCH {deleted: true}` like feature flags.
+  await api.PATCH("/api/projects/{project_id}/experiments/{id}/", {
     params: { path: { project_id: config.projectId, id } },
+    body: { deleted: true } as unknown as PatchedBody,
   });
 }
 
