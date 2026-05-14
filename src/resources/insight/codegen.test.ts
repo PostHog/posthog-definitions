@@ -86,17 +86,46 @@ describe("insight codegen", () => {
     expect(result.contents).toContain('hogql("SELECT 1")');
   });
 
+  it("renderToFile emits a funnels() call for a FunnelsQuery", () => {
+    const ctx = makeCtx();
+    const result = renderToFile(
+      serverInsight({
+        name: "Onboarding funnel",
+        query: {
+          kind: "InsightVizNode",
+          source: {
+            kind: "FunnelsQuery",
+            series: [
+              { kind: "EventsNode", event: "$pageview" },
+              { kind: "EventsNode", event: "user_signed_up" },
+            ],
+            funnelsFilter: { funnelOrderType: "ordered" },
+            filterTestAccounts: true,
+          },
+        },
+      }),
+      ctx,
+    );
+    if ("skipped" in result) throw new Error(`Expected RenderedFile, got skipped: ${result.reason}`);
+    expect(result.contents).toContain("import { funnels, insight }");
+    expect(result.contents).toContain("funnels({");
+    expect(result.contents).toContain('event: "$pageview"');
+    expect(result.contents).toContain('event: "user_signed_up"');
+    expect(result.contents).toContain("filterTestAccounts: true");
+    expect(result.contents).toContain('funnelOrderType: "ordered"');
+  });
+
   it("renderToFile warns and emits a raw object for unsupported queries", () => {
     const ctx = makeCtx();
     const result = renderToFile(
       serverInsight({
-        name: "Funnel",
-        query: { kind: "FunnelsQuery", series: [] },
+        name: "Retention",
+        query: { kind: "RetentionQuery", retentionFilter: {} } as unknown as ServerInsight["query"],
       }),
       ctx,
     );
     if ("skipped" in result) throw new Error("Expected raw-fallback, not skipped");
-    expect(ctx.warnings.some((w) => w.includes("FunnelsQuery"))).toBe(true);
+    expect(ctx.warnings.some((w) => w.includes("RetentionQuery"))).toBe(true);
     expect(result.contents).toContain("as unknown as");
   });
 

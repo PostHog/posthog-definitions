@@ -19,6 +19,20 @@ export type TrendsQuery = {
   [key: string]: unknown;
 };
 
+export type FunnelsQuery = {
+  kind: "FunnelsQuery";
+  series: EventsNode[];
+  interval?: "hour" | "day" | "week" | "month";
+  dateRange?: { date_from?: string; date_to?: string };
+  breakdownFilter?: Record<string, unknown>;
+  funnelsFilter?: Record<string, unknown>;
+  filterTestAccounts?: boolean;
+  samplingFactor?: number | null;
+  properties?: unknown[];
+  aggregation_group_type_index?: number | null;
+  [key: string]: unknown;
+};
+
 export type HogQLQuery = {
   kind: "HogQLQuery";
   query: string;
@@ -28,10 +42,10 @@ export type HogQLQuery = {
 
 export type InsightVizNode = {
   kind: "InsightVizNode";
-  source: TrendsQuery;
+  source: TrendsQuery | FunnelsQuery;
 };
 
-export type Query = TrendsQuery | HogQLQuery;
+export type Query = TrendsQuery | FunnelsQuery | HogQLQuery;
 
 export type Insight = {
   key: string;
@@ -63,6 +77,33 @@ export function trends(spec: {
     ...(spec.breakdownFilter !== undefined && { breakdownFilter: spec.breakdownFilter }),
     ...(spec.trendsFilter !== undefined && { trendsFilter: spec.trendsFilter }),
     ...(spec.properties !== undefined && { properties: spec.properties }),
+  };
+}
+
+export function funnels(spec: {
+  series: EventsNode[];
+  interval?: FunnelsQuery["interval"];
+  dateRange?: FunnelsQuery["dateRange"];
+  breakdownFilter?: FunnelsQuery["breakdownFilter"];
+  funnelsFilter?: FunnelsQuery["funnelsFilter"];
+  filterTestAccounts?: FunnelsQuery["filterTestAccounts"];
+  samplingFactor?: FunnelsQuery["samplingFactor"];
+  properties?: FunnelsQuery["properties"];
+  aggregation_group_type_index?: FunnelsQuery["aggregation_group_type_index"];
+}): FunnelsQuery {
+  return {
+    kind: "FunnelsQuery",
+    series: spec.series.map((node) => ({ kind: "EventsNode", ...node })),
+    ...(spec.interval !== undefined && { interval: spec.interval }),
+    ...(spec.dateRange !== undefined && { dateRange: spec.dateRange }),
+    ...(spec.breakdownFilter !== undefined && { breakdownFilter: spec.breakdownFilter }),
+    ...(spec.funnelsFilter !== undefined && { funnelsFilter: spec.funnelsFilter }),
+    ...(spec.filterTestAccounts !== undefined && { filterTestAccounts: spec.filterTestAccounts }),
+    ...(spec.samplingFactor !== undefined && { samplingFactor: spec.samplingFactor }),
+    ...(spec.properties !== undefined && { properties: spec.properties }),
+    ...(spec.aggregation_group_type_index !== undefined && {
+      aggregation_group_type_index: spec.aggregation_group_type_index,
+    }),
   };
 }
 

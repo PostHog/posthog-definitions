@@ -26,8 +26,16 @@ import {
   tagOnServer,
 } from "./codegen.js";
 
-export { insight, trends, hogql } from "./sdk.js";
-export type { Insight, Query, TrendsQuery, HogQLQuery, EventsNode, InsightVizNode } from "./sdk.js";
+export { insight, trends, funnels, hogql } from "./sdk.js";
+export type {
+  Insight,
+  Query,
+  TrendsQuery,
+  FunnelsQuery,
+  HogQLQuery,
+  EventsNode,
+  InsightVizNode,
+} from "./sdk.js";
 
 export const insightResource: CollectionResourceModule<Insight, ServerInsight> = {
   kind: "collection",

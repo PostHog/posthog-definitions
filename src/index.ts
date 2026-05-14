@@ -9,11 +9,12 @@ export type {
   Filters,
 } from "./resources/dashboard/index.js";
 
-export { insight, trends, hogql } from "./resources/insight/index.js";
+export { insight, trends, funnels, hogql } from "./resources/insight/index.js";
 export type {
   Insight,
   Query,
   TrendsQuery,
+  FunnelsQuery,
   HogQLQuery,
   EventsNode,
   InsightVizNode,

@@ -125,6 +125,10 @@ function renderQuery(
     imports.add("trends");
     return renderTrendsCall(source);
   }
+  if (source.kind === "FunnelsQuery") {
+    imports.add("funnels");
+    return renderFunnelsCall(source);
+  }
   if (source.kind === "HogQLQuery") {
     imports.add("hogql");
     return renderHogqlCall(source);
@@ -152,6 +156,37 @@ function renderTrendsCall(source: Record<string, unknown>): string {
     }
   }
   return `trends(${renderObject(fields, 4)})`;
+}
+
+function renderFunnelsCall(source: Record<string, unknown>): string {
+  const fields: Record<string, string> = {};
+  const series = Array.isArray(source.series) ? source.series : [];
+  fields.series = renderArray(
+    series.map((node) => {
+      if (!isObject(node)) return renderRawLiteral(node, 6);
+      const { kind: _kind, ...rest } = node as Record<string, unknown>;
+      return renderRawLiteral(rest, 6);
+    }),
+    4,
+  );
+  // Fields the funnels() factory accepts. Anything else gets dropped because
+  // the factory would reject it at TS time; pull stays lossy-but-clean here
+  // rather than emitting a half-typed object the user can't compile.
+  for (const key of [
+    "interval",
+    "dateRange",
+    "breakdownFilter",
+    "funnelsFilter",
+    "filterTestAccounts",
+    "samplingFactor",
+    "properties",
+    "aggregation_group_type_index",
+  ]) {
+    if (source[key] !== undefined && source[key] !== null) {
+      fields[key] = renderRawLiteral(source[key], 4);
+    }
+  }
+  return `funnels(${renderObject(fields, 4)})`;
 }
 
 function renderHogqlCall(source: Record<string, unknown>): string {
