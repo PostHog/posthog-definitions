@@ -68,21 +68,28 @@ step() {
   echo "=== $* ==="
 }
 
-# Expect dry-run apply to find no work to do (all counts zero).
+# Expect dry-run apply to find no work to do for the targeted kinds.
+# Pass `--prune` so orphans surface too: that's how we catch a pull that
+# silently missed rows present on the server. Scoped to the smoke's kinds
+# because the project carries unrelated iac-tagged rows we don't want
+# polluting the no-op assertion.
 expect_no_changes() {
   local dir="$1"
   local output
-  output=$($CLI apply --dir "$dir" --dry-run --json)
+  output=$($CLI apply --dir "$dir" --dry-run --prune --json)
   local create update orphans
-  create=$(echo "$output"   | jq '[.plan.byResource[].create]   | add // 0')
-  update=$(echo "$output"   | jq '[.plan.byResource[].update]   | add // 0')
-  orphans=$(echo "$output"  | jq '[.plan.byResource[].orphans]  | add // 0')
+  # Limit the assertion to the resource kinds the smoke touches; the project
+  # has leftover iac state in other kinds that we're not pulling here.
+  local kinds_filter='.plan.byResource | map(select(.resource == "feature-flags" or .resource == "cohorts" or .resource == "endpoints"))'
+  create=$(echo  "$output" | jq "[$kinds_filter | .[].create]   | add // 0")
+  update=$(echo  "$output" | jq "[$kinds_filter | .[].update]   | add // 0")
+  orphans=$(echo "$output" | jq "[$kinds_filter | .[].orphans]  | add // 0")
   if [[ "$create" != "0" || "$update" != "0" || "$orphans" != "0" ]]; then
     echo "smoke: expected no changes in $dir, got create=$create update=$update orphans=$orphans" >&2
     echo "$output" >&2
     exit 1
   fi
-  echo "smoke: dry-run on $dir is a no-op ✓"
+  echo "smoke: dry-run on $dir (with prune) is a no-op ✓"
 }
 
 # Pull JSON exposes write counts under .totals.written; assert it matches.
