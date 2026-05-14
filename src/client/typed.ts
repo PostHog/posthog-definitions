@@ -133,7 +133,16 @@ function makeRetriedFetch(opts: { verbose?: boolean }): typeof fetch {
 
       let response: Response;
       try {
-        response = await fetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+        // openapi-fetch hands us a Request, whose body is single-use. Passing
+        // it to `fetch(input, init)` (with init.signal overriding the timeout)
+        // makes the fetch impl construct a new Request from it, which consumes
+        // input — and any retry after that fails with "Request object that has
+        // already been used". Clone per-attempt so the original survives.
+        const attemptInput = input instanceof Request ? input.clone() : input;
+        response = await fetch(attemptInput, {
+          ...init,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
       } catch (err) {
         const verdict = classifyNetworkError(err, method);
         if (verdict.kind === "fatal") throw err;
