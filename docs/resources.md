@@ -24,7 +24,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Resource                 | PostHog API                                 | posthog-definitions | Notes                                                                                                  |
 | ------------------------ | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
 | Feature flags            | ✅ `projects/{id}/feature_flags`            | ✅                  | Tag-identified via `iac:feature-flags:<key>`; dependent flags and encrypted payloads not yet supported |
-| Experiments              | ✅ `projects/{id}/experiments`              | ❌                  | Enterprise viewset                                                                                     |
+| Experiments              | ✅ `projects/{id}/experiments`              | ✅                  | Identity via `iac:experiments:<key>` marker in `description`. Lifecycle (`draft` / `running` / `paused` / `stopped`) is declarative — apply drives the launch / pause / resume / end transitions to match. References the experiment's feature flag, optional holdout, and shared saved metrics by object reference. |
 | Experiment holdouts      | ✅ `projects/{id}/experiment_holdouts`      | ✅                  | Identity via `iac:experiment-holdouts:<key>` marker in `description`.                                  |
 | Experiment saved metrics | ✅ `projects/{id}/experiment_saved_metrics` | ✅                  | Identity via `iac:experiment-saved-metrics:<key>` marker in `description`. Attached to experiments as primary or secondary. |
 | Cohorts                  | ✅ `projects/{id}/cohorts`                  | ❌                  |                                                                                                        |
@@ -95,8 +95,8 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 ## Summary
 
-Currently shipped: **6 resource types** — Dashboards, Insights, Feature flags, Endpoints, Schema property groups, Event definitions. Event definitions and property groups together feed `createTypedPostHog`, which wraps any `posthog-js`-shaped client and type-checks `.capture(name, properties)` at compile time against the same specs synced via `apply`.
+Currently shipped: **9 resource types** — Dashboards, Insights, Feature flags, Endpoints, Schema property groups, Event definitions, Experiments, Experiment holdouts, Experiment saved metrics. Event definitions and property groups together feed `createTypedPostHog`, which wraps any `posthog-js`-shaped client and type-checks `.capture(name, properties)` at compile time against the same specs synced via `apply`. Experiments are declarative across the full lifecycle (draft / running / paused / stopped) — apply drives the launch / pause / resume / end transitions to match.
 
-Reasonable IaC targets across the API surface: **~25–30** (cohorts, actions, surveys, experiments, annotations, alerts, hog functions/flows, error-tracking rules, warehouse queries, batch exports, …).
+Reasonable IaC targets across the API surface: **~25–30** (cohorts, actions, surveys, annotations, alerts, hog functions/flows, error-tracking rules, warehouse queries, batch exports, …).
 
 Likely next candidates: actions and cohorts (referenced from feature flag conditions and a frequent need in declarative setups).
