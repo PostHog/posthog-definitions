@@ -56,7 +56,7 @@ describe("project-settings (client + pipeline acceptance)", () => {
             : undefined;
       registerCleanup(async () => {
         if (originalTz !== undefined) {
-          await patchProjectSettings(config, { timezone: originalTz }).catch((err) => console.error("cleanup failed:", err));
+          await patchProjectSettings(config, { timezone: originalTz });
         }
       });
 
@@ -101,7 +101,7 @@ describe("project-settings (client + pipeline acceptance)", () => {
         await patchProjectSettings(config, {
           timezone: originalTz,
           week_start_day: originalWeekStart,
-        }).catch((err) => console.error("cleanup failed:", err));
+        });
       });
 
       const newTz: "UTC" | "Europe/London" = originalTz === "UTC" ? "Europe/London" : "UTC";
@@ -155,7 +155,7 @@ describe("project-settings (client + pipeline acceptance)", () => {
 
     await withCleanup(async (registerCleanup) => {
       registerCleanup(async () => {
-        await patchProjectSettings(config, { timezone: originalTz }).catch((err) => console.error("cleanup failed:", err));
+        await patchProjectSettings(config, { timezone: originalTz });
       });
 
       const newTz: "UTC" | "Europe/London" = originalTz === "UTC" ? "Europe/London" : "UTC";

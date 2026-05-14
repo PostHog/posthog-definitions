@@ -35,11 +35,7 @@ export async function purgeStale<T extends { id: number; tags?: string[] }>(
   for (const row of rows) {
     const key = keyFromTags(row.tags);
     if (!key || !key.startsWith(keyPrefix)) continue;
-    try {
-      await remove(config, row.id);
-    } catch (err) {
-      console.error(`Failed to purge stale row ${row.id} (key=${key}):`, err);
-    }
+    await remove(config, row.id);
   }
 }
 
@@ -61,17 +57,25 @@ export async function purgeStaleByRow<T, TId extends number | string>(
   for (const row of rows) {
     const key = keyFromRow(row);
     if (!key || !key.startsWith(keyPrefix)) continue;
-    const id = idOf(row);
-    try {
-      await remove(config, id);
-    } catch (err) {
-      console.error(`Failed to purge stale row ${String(id)} (key=${key}):`, err);
-    }
+    await remove(config, idOf(row));
   }
 }
 
 type Cleanup = () => Promise<void> | void;
 
+/**
+ * Run a test body with deferred cleanups. Every registered cleanup is
+ * attempted regardless of whether earlier ones failed; if any throws, the
+ * collected errors are surfaced as an `AggregateError` once the body returns.
+ *
+ * The previous implementation swallowed cleanup failures via console.error,
+ * which let leaky tests silently leave server-side residue (e.g. soft-deleted
+ * feature flags reserving their keys). Failing loudly forces the responsible
+ * test author to fix the leak.
+ *
+ * If the test body itself throws, that error takes precedence — but cleanup
+ * still runs, and any cleanup errors are reported alongside the body error.
+ */
 export async function withCleanup<T>(
   fn: (registerCleanup: (cleanup: Cleanup) => void) => Promise<T>,
 ): Promise<T> {
@@ -79,15 +83,35 @@ export async function withCleanup<T>(
   const register = (cleanup: Cleanup): void => {
     cleanups.push(cleanup);
   };
+
+  let bodyError: unknown;
+  let result: T | undefined;
   try {
-    return await fn(register);
-  } finally {
-    for (const cleanup of cleanups.reverse()) {
-      try {
-        await cleanup();
-      } catch (err) {
-        console.error("Acceptance cleanup failed:", err);
-      }
+    result = await fn(register);
+  } catch (err) {
+    bodyError = err;
+  }
+
+  const cleanupErrors: unknown[] = [];
+  for (const cleanup of cleanups.reverse()) {
+    try {
+      await cleanup();
+    } catch (err) {
+      cleanupErrors.push(err);
     }
   }
+
+  if (bodyError !== undefined) {
+    if (cleanupErrors.length > 0) {
+      throw new AggregateError(
+        [bodyError, ...cleanupErrors],
+        "Test body threw; cleanup also failed",
+      );
+    }
+    throw bodyError;
+  }
+  if (cleanupErrors.length > 0) {
+    throw new AggregateError(cleanupErrors, "Test cleanup failed");
+  }
+  return result as T;
 }

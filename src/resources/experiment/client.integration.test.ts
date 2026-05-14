@@ -56,7 +56,7 @@ async function createBoundFlag(
     tags: [featureFlagTag(flagKey)],
   });
   registerCleanup(async () => {
-    await deleteFeatureFlag(config, flag.id).catch((err) => console.error("cleanup failed:", err));
+    await deleteFeatureFlag(config, flag.id);
   });
   return flagKey;
 }
@@ -103,7 +103,7 @@ describe("experiment client (integration)", () => {
       const expKey = uniqueKey(EXP_PREFIX);
       const created = await createExperiment(config, expPayload(expKey, flagKey));
       registerCleanup(async () => {
-        await deleteExperiment(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteExperiment(config, created.id);
       });
 
       expect(typeof created.id).toBe("number");
@@ -119,7 +119,7 @@ describe("experiment client (integration)", () => {
       const expKey = uniqueKey(EXP_PREFIX);
       const created = await createExperiment(config, expPayload(expKey, flagKey));
       registerCleanup(async () => {
-        await deleteExperiment(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteExperiment(config, created.id);
       });
 
       const fetched = await getExperiment(config, created.id);
@@ -134,7 +134,7 @@ describe("experiment client (integration)", () => {
       const expKey = uniqueKey(EXP_PREFIX);
       const created = await createExperiment(config, expPayload(expKey, flagKey));
       registerCleanup(async () => {
-        await deleteExperiment(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteExperiment(config, created.id);
       });
 
       const managed = await listManagedExperiments(config);
@@ -148,7 +148,7 @@ describe("experiment client (integration)", () => {
       const expKey = uniqueKey(EXP_PREFIX);
       const created = await createExperiment(config, expPayload(expKey, flagKey));
       registerCleanup(async () => {
-        await deleteExperiment(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteExperiment(config, created.id);
       });
 
       const newDesc = `<!-- iac:experiments:${expKey} iac:hash:newhash --> updated body`;
@@ -163,7 +163,7 @@ describe("experiment client (integration)", () => {
       const expKey = uniqueKey(EXP_PREFIX);
       const created = await createExperiment(config, expPayload(expKey, flagKey));
       registerCleanup(async () => {
-        await deleteExperiment(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteExperiment(config, created.id);
       });
 
       const launched = await launchExperiment(config, created.id);

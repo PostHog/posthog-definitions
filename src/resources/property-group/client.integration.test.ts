@@ -56,7 +56,7 @@ describe("property-group client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createPropertyGroup(config, basePayload(key));
       registerCleanup(async () => {
-        await deletePropertyGroup(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deletePropertyGroup(config, created.id);
       });
 
       expect(typeof created.id).toBe("string");
@@ -72,7 +72,7 @@ describe("property-group client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createPropertyGroup(config, basePayload(key));
       registerCleanup(async () => {
-        await deletePropertyGroup(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deletePropertyGroup(config, created.id);
       });
 
       const fetched = await getPropertyGroup(config, created.id);
@@ -86,7 +86,7 @@ describe("property-group client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createPropertyGroup(config, basePayload(key));
       registerCleanup(async () => {
-        await deletePropertyGroup(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deletePropertyGroup(config, created.id);
       });
 
       const managed = await listManagedPropertyGroups(config);
@@ -99,7 +99,7 @@ describe("property-group client (integration)", () => {
       const key = uniqueKey(KEY_PREFIX);
       const created = await createPropertyGroup(config, basePayload(key));
       registerCleanup(async () => {
-        await deletePropertyGroup(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deletePropertyGroup(config, created.id);
       });
 
       const updated = await updatePropertyGroup(config, created.id, {

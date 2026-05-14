@@ -88,7 +88,7 @@ describe("dashboard pipeline (acceptance)", () => {
       const insightId = ctx.insightIdByKey.get(insightKey);
       expect(insightId).toBeDefined();
       registerCleanup(async () => {
-        await deleteInsight(config, insightId!).catch((err) => console.error("cleanup failed:", err));
+        await deleteInsight(config, insightId!);
       });
 
       const createOp: ResourceOp<Dashboard, never> = { kind: "create", spec: initial };
@@ -102,7 +102,7 @@ describe("dashboard pipeline (acceptance)", () => {
 
       const dashboardId = listed.id;
       registerCleanup(async () => {
-        await deleteDashboard(config, dashboardId).catch((err) => console.error("cleanup failed:", err));
+        await deleteDashboard(config, dashboardId);
       });
 
       const inline = extractInlineInsights(initial);

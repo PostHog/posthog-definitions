@@ -109,7 +109,7 @@ describe("event-definition pipeline (acceptance)", () => {
       await runPropertyGroupOp(config, { kind: "create", spec: group }, ctx);
       const groupServerId = ctx.propertyGroupIdByKey.get(groupKey)!;
       registerCleanup(async () => {
-        await deletePropertyGroup(config, groupServerId).catch((err) => console.error("cleanup failed:", err));
+        await deletePropertyGroup(config, groupServerId);
       });
 
       // Now the event definition.
@@ -118,7 +118,7 @@ describe("event-definition pipeline (acceptance)", () => {
       const created = managed.find((row) => eventDefinitionKeyFromTags(row.tags) === evKey);
       if (!created) throw new Error(`event def ${evKey} not visible after create`);
       registerCleanup(async () => {
-        await deleteEventDefinition(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteEventDefinition(config, created.id);
       });
 
       expect(eventDefinitionHashFromTags(created.tags)).toBe(eventDefinitionHash(initial));

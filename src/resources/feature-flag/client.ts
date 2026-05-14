@@ -1,7 +1,33 @@
 import { z } from "zod";
 import type { ClientConfig } from "../../client/config.js";
 import type { components } from "../../generated/api.js";
-import { createApiClient, followPagination, type Paginated } from "../../client/typed.js";
+import { ApiError, createApiClient, followPagination, type Paginated } from "../../client/typed.js";
+
+/**
+ * Raised when PostHog rejects a flag create because the `key` is already taken.
+ * Distinct from the generic ApiError because the most common cause is a
+ * previously-soft-deleted flag with the same key — PostHog enforces uniqueness
+ * across both active and soft-deleted rows, so soft-deleted keys are reserved
+ * permanently. Callers (and tests) need to know about that explicitly.
+ */
+export class FeatureFlagKeyTakenError extends Error {
+  constructor(public readonly key: string, public override readonly cause: ApiError) {
+    super(
+      `Feature flag key "${key}" is already taken on PostHog. ` +
+        `Note: PostHog reserves keys of soft-deleted flags permanently — ` +
+        `if a previous run deleted a flag with this key, the key cannot be reused. ` +
+        `Pick a different key.`,
+    );
+    this.name = "FeatureFlagKeyTakenError";
+  }
+}
+
+function isKeyCollision(err: unknown): err is ApiError {
+  if (!(err instanceof ApiError)) return false;
+  if (err.status !== 400) return false;
+  // Body is a JSON string from DRF; match defensively rather than parsing.
+  return err.body.includes('"code":"unique"') && err.body.includes('"attr":"key"');
+}
 
 export const ServerFeatureFlagSchema = z
   .object({
@@ -89,15 +115,20 @@ export async function createFeatureFlag(
   options: { verbose?: boolean } = {},
 ): Promise<ServerFeatureFlag> {
   const api = createApiClient(config, { verbose: options.verbose });
-  // FeatureFlagCreateRequestSchema only lists 6 fields; the API accepts more
-  // (ensure_experience_continuity, is_remote_configuration, evaluation_runtime,
-  // bucketing_identifier, has_encrypted_payloads). Cast to bypass the schema
-  // gap — known upstream issue.
-  const { data } = await api.POST("/api/projects/{project_id}/feature_flags/", {
-    params: { path: { project_id: config.projectId } },
-    body: payload as unknown as FeatureFlagBody,
-  });
-  return ServerFeatureFlagSchema.parse(data);
+  try {
+    // FeatureFlagCreateRequestSchema only lists 6 fields; the API accepts more
+    // (ensure_experience_continuity, is_remote_configuration, evaluation_runtime,
+    // bucketing_identifier, has_encrypted_payloads). Cast to bypass the schema
+    // gap — known upstream issue.
+    const { data } = await api.POST("/api/projects/{project_id}/feature_flags/", {
+      params: { path: { project_id: config.projectId } },
+      body: payload as unknown as FeatureFlagBody,
+    });
+    return ServerFeatureFlagSchema.parse(data);
+  } catch (err) {
+    if (isKeyCollision(err)) throw new FeatureFlagKeyTakenError(payload.key, err);
+    throw err;
+  }
 }
 
 export async function updateFeatureFlag(

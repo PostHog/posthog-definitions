@@ -71,7 +71,7 @@ describe("cohort pipeline (acceptance)", () => {
       const created = managed.find((row) => cohortKeyFromServer(row) === key);
       if (!created) throw new Error(`cohort ${key} not visible after create`);
       registerCleanup(async () => {
-        await deleteCohort(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteCohort(config, created.id);
       });
 
       expect(cohortHashFromServer(created)).toBe(cohortHash(initial));

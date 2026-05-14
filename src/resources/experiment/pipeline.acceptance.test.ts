@@ -129,7 +129,7 @@ describe("experiment pipeline (acceptance)", () => {
       const flagRow = flagsAfterCreate.find((row) => featureFlagKeyFromTags(row.tags) === flagKey);
       if (!flagRow) throw new Error(`flag ${flagKey} not visible after create`);
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, flagRow.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteFeatureFlag(config, flagRow.id);
       });
 
       // Create experiment.
@@ -138,7 +138,7 @@ describe("experiment pipeline (acceptance)", () => {
       const created = managed.find((row) => experimentKeyFromServer(row) === expKey);
       if (!created) throw new Error(`experiment ${expKey} not visible after create`);
       registerCleanup(async () => {
-        await deleteExperiment(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteExperiment(config, created.id);
       });
 
       expect(experimentHashFromServer(created)).toBe(experimentHash(initial));
@@ -203,7 +203,7 @@ describe("experiment pipeline (acceptance)", () => {
       );
       if (!flagRow) throw new Error(`flag ${flagKey} not visible after create`);
       registerCleanup(async () => {
-        await deleteFeatureFlag(config, flagRow.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteFeatureFlag(config, flagRow.id);
       });
 
       // Create as draft.
@@ -214,7 +214,7 @@ describe("experiment pipeline (acceptance)", () => {
       );
       if (!created) throw new Error(`experiment ${expKey} not visible after create`);
       registerCleanup(async () => {
-        await deleteExperiment(config, created.id).catch((err) => console.error("cleanup failed:", err));
+        await deleteExperiment(config, created.id);
       });
       expect(created.status).toBe("draft");
 
