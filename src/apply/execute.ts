@@ -65,16 +65,24 @@ export async function fetchCurrentState(
   config: ClientConfig,
   options: ExecuteOptions = {},
   resources: ReadonlyArray<ResourceModule<unknown, unknown>> = RESOURCES,
+  desired?: Map<string, Array<{ spec: unknown }>>,
 ): Promise<Map<string, unknown[]>> {
   const entries = await Promise.all(
     resources.map(async (r) => {
       // Singletons fetch one object and wrap it; collections list the
       // tag-filtered rows. Both end up as `unknown[]` in current state so the
-      // diff layer can treat them uniformly.
-      const rows =
-        r.kind === "singleton"
-          ? [await r.fetchOne(config, { verbose: options.verbose })]
-          : await r.list(config, { verbose: options.verbose });
+      // diff layer can treat them uniformly. Skip singleton fetches when no
+      // spec was declared — the diff layer emits no ops for unmanaged
+      // singletons, so the fetch would be wasted work (and may hit endpoints
+      // the API key isn't authorized for, e.g. project settings on hosted
+      // PostHog where multi-env-per-project is disabled).
+      if (r.kind === "singleton") {
+        const declared = desired?.get(r.name) ?? [];
+        if (declared.length === 0) return [r.name, [] as unknown[]] as const;
+        const row = await r.fetchOne(config, { verbose: options.verbose });
+        return [r.name, [row] as unknown[]] as const;
+      }
+      const rows = await r.list(config, { verbose: options.verbose });
       return [r.name, rows] as const;
     }),
   );

@@ -62,7 +62,7 @@ export async function runApply(args: ApplyArgs): Promise<number> {
   debug("fetching current server state");
   let current;
   try {
-    current = await fetchCurrentState(config, { verbose: args.verbose });
+    current = await fetchCurrentState(config, { verbose: args.verbose }, undefined, desired);
   } catch (err) {
     return reportApiError(err, "while fetching current state");
   }

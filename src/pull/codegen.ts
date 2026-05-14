@@ -35,6 +35,20 @@ export type GeneratedFile = {
   insightKeysByServerId: Map<number, string>;
 };
 
+export type GeneratedInsightFile = {
+  filename: string;
+  contents: string;
+  warnings: string[];
+  insightKey: string;
+  serverId: number;
+};
+
+export type InsightImportEntry = {
+  key: string;
+  varName: string;
+  filename: string;
+};
+
 type Imports = {
   dashboard: boolean;
   insight: boolean;
@@ -43,15 +57,69 @@ type Imports = {
   hogql: boolean;
 };
 
+type ServerInsight = NonNullable<ServerTile["insight"]>;
+
 const RESTRICTION_LEVEL_TO_NAME: Record<number, "everyone" | "collaborators"> = {
   21: "everyone",
   37: "collaborators",
 };
 
+export function generateInsightFile(
+  srv: ServerInsight,
+  takenSlugs: Set<string>,
+): GeneratedInsightFile | { skipped: true; warning: string } {
+  const warnings: string[] = [];
+  const imports: Imports = {
+    dashboard: false,
+    insight: true,
+    text: false,
+    trends: false,
+    hogql: false,
+  };
+
+  const baseSlug =
+    slugify(srv.name ?? "") || (srv.short_id ? `insight-${srv.short_id}` : `insight-${srv.id}`);
+  const slug = uniqueSlug(baseSlug, takenSlugs);
+
+  const queryRendered = renderQuery(srv.query, imports, warnings, srv.short_id ?? String(srv.id));
+  if (!queryRendered) {
+    return {
+      skipped: true,
+      warning: `Skipped insight ${srv.short_id ?? srv.id}: unable to render query.`,
+    };
+  }
+
+  const insightSpec: Record<string, string> = {
+    key: stringLiteral(slug),
+    name: stringLiteral(srv.name ?? slug),
+  };
+  if (srv.description) insightSpec.description = stringLiteral(srv.description);
+  insightSpec.query = queryRendered;
+  const userTags = (srv.tags ?? []).filter((t) => !t.startsWith("iac:"));
+  if (userTags.length > 0) {
+    insightSpec.tags = `[${userTags.map(stringLiteral).join(", ")}]`;
+  }
+
+  const importLine = renderImportLine(imports);
+  const body = renderObject(insightSpec, 2);
+  return {
+    filename: `${slug}.ts`,
+    contents: `${importLine}\n\nexport default insight(${body});\n`,
+    warnings,
+    insightKey: slug,
+    serverId: srv.id,
+  };
+}
+
+export function insightVarNameFromKey(key: string): string {
+  return identifierFromSlug(key);
+}
+
 export function generateDashboardFile(
   server: ServerDashboard,
   takenFilenames: Set<string>,
-): GeneratedFile {
+  insightImportsByServerId: ReadonlyMap<number, InsightImportEntry>,
+): GeneratedFile | { skipped: true; warning: string } {
   const warnings: string[] = [];
   const imports: Imports = {
     dashboard: true,
@@ -65,21 +133,19 @@ export function generateDashboardFile(
   const filename = `${uniqueSlug(baseSlug, takenFilenames)}.ts`;
   const dashboardKey = baseSlug;
 
-  const insightVars: string[] = [];
   const tileLiterals: string[] = [];
-  const usedInsightSlugs = new Set<string>();
-  const insightVarByInsightId = new Map<number, string>();
   const insightKeysByServerId = new Map<number, string>();
+  const insightImportLines: Array<{ varName: string; filename: string }> = [];
+  const usedVarNames = new Set<string>();
 
   for (const tile of server.tiles ?? []) {
     if (tile.insight) {
       const literal = renderInsightTile(
         tile,
-        insightVars,
-        insightVarByInsightId,
+        insightImportsByServerId,
         insightKeysByServerId,
-        usedInsightSlugs,
-        imports,
+        insightImportLines,
+        usedVarNames,
         warnings,
       );
       if (literal) tileLiterals.push(literal);
@@ -96,9 +162,10 @@ export function generateDashboardFile(
   }
 
   if (tileLiterals.length === 0) {
-    warnings.push(
-      `Dashboard "${server.name}" (id=${server.id}) has no recognizable tiles; output may not pass validation.`,
-    );
+    return {
+      skipped: true,
+      warning: `Skipped dashboard "${server.name}" (id=${server.id}): no recognizable tiles. Add tiles in the UI and re-pull.`,
+    };
   }
 
   const dashboardSpec: Record<string, string> = {
@@ -121,10 +188,11 @@ export function generateDashboardFile(
   const dashboardBody = renderObject(dashboardSpec, 2);
   const importLine = renderImportLine(imports);
 
-  const parts: string[] = [importLine, ""];
-  if (insightVars.length > 0) {
-    parts.push(...insightVars);
+  const parts: string[] = [importLine];
+  for (const { varName, filename: insightFile } of insightImportLines) {
+    parts.push(`import ${varName} from "../insights/${insightFile.replace(/\.ts$/, ".js")}";`);
   }
+  parts.push("");
   parts.push(`export default dashboard(${dashboardBody});`);
   parts.push("");
 
@@ -139,44 +207,25 @@ export function generateDashboardFile(
 
 function renderInsightTile(
   tile: ServerTile,
-  insightVars: string[],
-  insightVarByInsightId: Map<number, string>,
+  insightImportsByServerId: ReadonlyMap<number, InsightImportEntry>,
   insightKeysByServerId: Map<number, string>,
-  usedInsightSlugs: Set<string>,
-  imports: Imports,
+  insightImportLines: Array<{ varName: string; filename: string }>,
+  usedVarNames: Set<string>,
   warnings: string[],
 ): string | undefined {
   const srv = tile.insight!;
-  let varName = insightVarByInsightId.get(srv.id);
-  if (!varName) {
-    const baseSlug =
-      slugify(srv.name ?? "") || (srv.short_id ? `insight-${srv.short_id}` : `insight-${srv.id}`);
-    const slug = uniqueSlug(baseSlug, usedInsightSlugs);
-    varName = identifierFromSlug(slug);
-
-    const queryRendered = renderQuery(srv.query, imports, warnings, srv.short_id ?? String(srv.id));
-    if (!queryRendered) {
-      warnings.push(`Skipped insight ${srv.short_id ?? srv.id}: unable to render query.`);
-      return undefined;
-    }
-    imports.insight = true;
-
-    const insightSpec: Record<string, string> = {
-      key: stringLiteral(slug),
-      name: stringLiteral(srv.name ?? slug),
-    };
-    if (srv.description) insightSpec.description = stringLiteral(srv.description);
-    insightSpec.query = queryRendered;
-    const userTags = (srv.tags ?? []).filter((t) => !t.startsWith("iac:"));
-    if (userTags.length > 0) {
-      insightSpec.tags = `[${userTags.map(stringLiteral).join(", ")}]`;
-    }
-
-    insightVars.push(`const ${varName} = insight(${renderObject(insightSpec, 2)});`);
-    insightVars.push("");
-    insightVarByInsightId.set(srv.id, varName);
-    insightKeysByServerId.set(srv.id, slug);
+  const entry = insightImportsByServerId.get(srv.id);
+  if (!entry) {
+    warnings.push(
+      `Skipped insight tile for "${srv.name ?? srv.short_id ?? srv.id}": no extracted insight file.`,
+    );
+    return undefined;
   }
+  if (!usedVarNames.has(entry.varName)) {
+    usedVarNames.add(entry.varName);
+    insightImportLines.push({ varName: entry.varName, filename: entry.filename });
+  }
+  insightKeysByServerId.set(srv.id, entry.key);
 
   const layout = pickLayout(tile.layouts);
   if (!layout) {
@@ -185,7 +234,7 @@ function renderInsightTile(
   const layoutLiteral = renderLayout(layout ?? { x: 0, y: 0, w: 6, h: 4 });
 
   const tileSpec: Record<string, string> = {
-    insight: varName,
+    insight: entry.varName,
     layout: layoutLiteral,
   };
   if (tile.color) tileSpec.color = stringLiteral(tile.color);

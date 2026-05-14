@@ -93,15 +93,19 @@ function reportDashboards(
   dir: string,
   dryRun: boolean,
 ): void {
-  const target = path.join(path.resolve(dir), "dashboards");
+  const outDir = path.resolve(dir);
+  const counts = (files: string[]) => ({
+    d: files.filter((f) => f.startsWith(path.join(outDir, "dashboards") + path.sep)).length,
+    i: files.filter((f) => f.startsWith(path.join(outDir, "insights") + path.sep)).length,
+  });
   if (dryRun) {
-    console.log(
-      `Dry run — ${result.skipped.length} dashboard file(s) would be written to ${target}/`,
-    );
+    const { d, i } = counts(result.skipped);
+    console.log(`Dry run — ${d} dashboard + ${i} insight file(s) would be written under ${outDir}/`);
     for (const f of result.skipped) console.log(`  would write ${path.relative(process.cwd(), f)}`);
     console.log("Server tags would not change (dry run).");
   } else {
-    console.log(`Wrote ${result.written.length} dashboard file(s) to ${target}/`);
+    const { d, i } = counts(result.written);
+    console.log(`Wrote ${d} dashboard + ${i} insight file(s) under ${outDir}/`);
     for (const f of result.written) console.log(`  ${path.relative(process.cwd(), f)}`);
     console.log(
       `Tagged ${result.tagged.dashboards} dashboard(s) and ${result.tagged.insights} insight(s) on the server as iac-managed.`,

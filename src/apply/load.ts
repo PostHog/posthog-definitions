@@ -1,7 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { glob } from "tinyglobby";
-import { tsImport } from "tsx/esm/api";
+import { register } from "tsx/esm/api";
 import { RESOURCES } from "../resources/index.js";
 import type { DesiredState, LoadedSpec, ResourceModule } from "../resources/types.js";
 import { err, ok, type Result } from "../result.js";
@@ -42,20 +42,30 @@ export async function loadDefinitions(
     state.set(resource.name, []);
   }
 
-  for (const file of files.sort()) {
-    const module = await tsImport(pathToFileURL(file).href, import.meta.url);
-    const exported = (module as { default?: unknown }).default;
-    if (exported === undefined) continue;
+  // Single tsx namespace shared across every file load: modules imported by
+  // multiple definition files (e.g. a shared insight pulled into two
+  // dashboards) must resolve to the *same* JS object so the inline-spec
+  // merger can dedupe by reference. Per-call `tsImport` creates a fresh
+  // module graph per file and surfaces spurious "inline-collision" errors.
+  const tsx = register({ namespace: "definitions-load" });
+  try {
+    for (const file of files.sort()) {
+      const module = await tsx.import(pathToFileURL(file).href, import.meta.url);
+      const exported = (module as { default?: unknown }).default;
+      if (exported === undefined) continue;
 
-    const resource = resources.find((r) => r.isSpec(exported));
-    if (!resource) {
-      return err({
-        kind: "unknown-shape",
-        file,
-        sample: JSON.stringify(exported).slice(0, 200),
-      });
+      const resource = resources.find((r) => r.isSpec(exported));
+      if (!resource) {
+        return err({
+          kind: "unknown-shape",
+          file,
+          sample: JSON.stringify(exported).slice(0, 200),
+        });
+      }
+      state.get(resource.name)!.push({ path: file, spec: exported });
     }
-    state.get(resource.name)!.push({ path: file, spec: exported });
+  } finally {
+    await tsx.unregister();
   }
 
   return mergeInlineSpecs(state, resources);

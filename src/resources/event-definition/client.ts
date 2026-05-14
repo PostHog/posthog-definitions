@@ -13,9 +13,9 @@ export const ServerEventDefinitionSchema = z
     tags: z.array(z.string()).default([]),
     enforcement_mode: z.enum(["allow", "reject"]).optional(),
     primary_property: z.string().nullable().optional(),
-    verified: z.boolean().optional(),
+    verified: z.boolean().nullable().optional(),
     hidden: z.boolean().nullable().optional(),
-    post_to_slack: z.boolean().optional(),
+    post_to_slack: z.boolean().nullable().optional(),
   })
   .loose();
 
