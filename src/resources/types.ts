@@ -55,12 +55,15 @@ export type ApplyContext = {
   insightIdByKey: Map<string, number>;
   /** Inverse of insightIdByKey; populated when displaying server-side dashboard tiles so we can show keys rather than ids. */
   insightKeyByServerId: Map<number, string>;
+  /** Property-group server id by spec key. Populated by the property-group module's executor; read by the event-definition module to reconcile EventSchema links. */
+  propertyGroupIdByKey: Map<string, string>;
 };
 
 export function newApplyContext(): ApplyContext {
   return {
     insightIdByKey: new Map(),
     insightKeyByServerId: new Map(),
+    propertyGroupIdByKey: new Map(),
   };
 }
 
