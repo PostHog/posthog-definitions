@@ -249,7 +249,10 @@ async function cascadeDependencies(
     for (const row of entry.selected) frontier.push({ resource: entry.resource, row });
   }
 
+  let wave = 0;
   while (frontier.length > 0) {
+    wave++;
+    if (verbose) console.error(`[cascade] wave ${wave}: frontier=${frontier.length}`);
     // 1. Discover dependencies for every row in this wave in parallel.
     const allDeps = await Promise.all(
       frontier.map(async ({ resource, row }) => {
@@ -287,6 +290,11 @@ async function cascadeDependencies(
     }
 
     // 3. Fetch every missing row in parallel.
+    if (verbose) {
+      console.error(
+        `[cascade] wave ${wave}: alreadyKnown=${alreadyKnown.length} missing=${missing.size}`,
+      );
+    }
     const fetched = await Promise.all(
       [...missing.values()].map(async ({ entry, serverId }) => {
         try {
