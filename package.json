@@ -1,6 +1,6 @@
 {
   "name": "@posthog/definitions",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Infrastructure-as-code for PostHog dashboards and insights.",
   "type": "module",
   "main": "./dist/index.js",
