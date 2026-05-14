@@ -8,15 +8,19 @@ export type ApplyArgs = {
   project?: string;
 };
 
-export type PullKind = "dashboards";
-
 export type PullArgs = {
   command: "pull";
   dryRun: boolean;
   verbose: boolean;
   dir: string;
-  kinds: PullKind[];
+  /** Empty array means "all pull-capable resources". */
+  kinds: string[];
+  /** True = treat as "every pull-capable resource", skip --kind filtering. */
   all: boolean;
+  /** Skip the interactive picker and import every (filtered) row of each target resource. */
+  allRows: boolean;
+  /** Don't follow cross-resource pullDependencies edges. */
+  noCascade: boolean;
   host?: string;
   project?: string;
 };
@@ -24,8 +28,6 @@ export type PullArgs = {
 export type HelpArgs = { command: "help" };
 
 export type ParsedArgs = ApplyArgs | PullArgs | HelpArgs;
-
-const SUPPORTED_PULL_KINDS: readonly PullKind[] = ["dashboards"];
 
 export class ArgError extends Error {
   constructor(message: string) {
@@ -93,8 +95,10 @@ function parsePull(argv: string[]): PullArgs {
     dryRun: false,
     verbose: false,
     dir: "posthog",
-    kinds: [...SUPPORTED_PULL_KINDS],
+    kinds: [],
     all: false,
+    allRows: false,
+    noCascade: false,
   };
 
   for (let i = 1; i < argv.length; i++) {
@@ -104,7 +108,14 @@ function parsePull(argv: string[]): PullArgs {
         args.dryRun = true;
         break;
       case "--all":
+        // Now means "every pull-capable resource"; pairs with --kind being empty.
         args.all = true;
+        break;
+      case "--all-rows":
+        args.allRows = true;
+        break;
+      case "--no-cascade":
+        args.noCascade = true;
         break;
       case "--verbose":
       case "-v":
@@ -125,14 +136,9 @@ function parsePull(argv: string[]): PullArgs {
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
-        for (const k of kinds) {
-          if (!SUPPORTED_PULL_KINDS.includes(k as PullKind)) {
-            throw new ArgError(
-              `Unsupported --kind "${k}". Supported: ${SUPPORTED_PULL_KINDS.join(", ")}.`,
-            );
-          }
-        }
-        args.kinds = kinds as PullKind[];
+        // Validity of each kind is checked at runtime against the registry of
+        // pull-capable resources — the CLI doesn't carry a hard-coded list.
+        args.kinds = kinds;
         break;
       }
       case "--help":
@@ -176,10 +182,17 @@ Apply flags:
                        considered.
 
 Pull flags:
-  --kind <list>        Comma-separated list of entity kinds to pull.
-                       Supported: dashboards. Default: dashboards.
-  --all                Skip the interactive picker and import everything.
-                       (Required when stdin is not a TTY.)
+  --kind <list>        Comma-separated list of resource kinds to pull
+                       (e.g. dashboards, feature-flags, cohorts). Omit or
+                       pass --all to pull every pull-capable resource.
+  --all                Pull every pull-capable resource (no --kind filter).
+  --all-rows           Skip the interactive picker and import every (filtered)
+                       row of each target resource. Required when stdin is
+                       not a TTY.
+  --no-cascade         Don't follow cross-resource references. Without this
+                       flag, pulling a dashboard also pulls its tile-insights,
+                       experiments also pull their flag/holdout/saved-metrics,
+                       etc.
 
 Environment:
   POSTHOG_PERSONAL_API_KEY   Required. Personal API key with dashboard:read/write

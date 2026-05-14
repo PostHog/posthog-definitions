@@ -1,5 +1,5 @@
 import enquirer from "enquirer";
-import type { ServerDashboard } from "../resources/dashboard/client.js";
+import type { CollectionResourceModule } from "../resources/types.js";
 
 export class PickAbortedError extends Error {
   constructor() {
@@ -11,33 +11,46 @@ export class PickAbortedError extends Error {
 type Choice = {
   name: string;
   message: string;
-  value: number;
+  value: string;
   hint?: string;
   enabled: boolean;
 };
 
-export async function pickDashboardIds(dashboards: ServerDashboard[]): Promise<Set<number>> {
-  if (dashboards.length === 0) return new Set();
+/**
+ * Interactive multi-select over a resource's filtered server rows. Returns a
+ * Set of stringified server ids (Map-friendly across number / string types).
+ * Throws `PickAbortedError` on ctrl-c.
+ */
+export async function pickServerIds(
+  resource: CollectionResourceModule<unknown, unknown>,
+  rows: ReadonlyArray<unknown>,
+): Promise<Set<number | string>> {
+  if (rows.length === 0) return new Set();
 
-  const choices: Choice[] = dashboards.map((d) => {
+  const idOf =
+    resource.serverIdOf ?? ((row: unknown) => (row as { id: number | string }).id);
+
+  const choices: Choice[] = rows.map((row) => {
+    const id = idOf(row);
+    const label = resource.pullLabel
+      ? resource.pullLabel(row)
+      : { primary: String(id) };
     const choice: Choice = {
-      name: String(d.id),
-      message: d.name || `(untitled #${d.id})`,
-      value: d.id,
+      name: String(id),
+      message: label.primary,
+      value: String(id),
       enabled: true,
     };
-    if (d.tags && d.tags.length > 0) {
-      choice.hint = `[${d.tags.filter((t) => !t.startsWith("iac:")).join(", ")}]`;
-    }
+    if (label.secondary) choice.hint = label.secondary;
     return choice;
   });
 
-  let answer: { dashboards: string[] };
+  let answer: { picked: string[] };
   try {
-    answer = await enquirer.prompt<{ dashboards: string[] }>({
+    answer = await enquirer.prompt<{ picked: string[] }>({
       type: "autocomplete",
-      name: "dashboards",
-      message: `Select dashboards to import (${dashboards.length} total)`,
+      name: "picked",
+      message: `Select ${resource.displayName}(s) to import (${rows.length} total)`,
       multiple: true,
       limit: 15,
       choices,
@@ -48,10 +61,13 @@ export async function pickDashboardIds(dashboards: ServerDashboard[]): Promise<S
     throw new PickAbortedError();
   }
 
-  const picked = new Set<number>();
-  for (const name of answer.dashboards) {
+  const picked = new Set<number | string>();
+  for (const name of answer.picked) {
     const choice = choices.find((c) => c.name === name || c.message === name);
-    if (choice) picked.add(choice.value);
+    if (!choice) continue;
+    // Recover the original id type by looking up the row.
+    const row = rows.find((r) => String(idOf(r)) === choice.value);
+    if (row) picked.add(idOf(row));
   }
   return picked;
 }

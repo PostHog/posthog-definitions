@@ -45,6 +45,16 @@ export function makeFakeResource<TSpec = unknown, TServer = unknown>(
 
     extractInlineSpecs: overrides.extractInlineSpecs,
     dependsOn: overrides.dependsOn,
+
+    // Pull-side hooks: forward through (all optional).
+    listAll: overrides.listAll,
+    getById: overrides.getById,
+    pullFilter: overrides.pullFilter,
+    pullLabel: overrides.pullLabel,
+    serverIdOf: overrides.serverIdOf,
+    pullDependencies: overrides.pullDependencies,
+    renderToFile: overrides.renderToFile,
+    tagOnServer: overrides.tagOnServer,
   };
 }
 

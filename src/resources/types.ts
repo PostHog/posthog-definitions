@@ -1,5 +1,6 @@
 import type { ClientConfig } from "../client/config.js";
 import type { DisplayValue } from "../apply/display.js";
+import type { PullRenderContext, RenderedFile } from "../pull/types.js";
 
 /**
  * Non-enumerable marker installed by each resource's user-facing factory
@@ -156,6 +157,79 @@ export interface CollectionResourceModule<TSpec = unknown, TServer = unknown>
   hash(spec: TSpec): string;
 
   prune(config: ClientConfig, orphan: TServer, options?: { verbose?: boolean }): Promise<boolean>;
+
+  // ---- Pull-side hooks (optional; resources that don't implement them can't be pulled) ----
+
+  /**
+   * Unfiltered list of every server row in the project, including ones that
+   * aren't iac-managed. Distinct from `list()` (which only returns rows
+   * carrying our identity marker). The puller needs the broader view because
+   * the whole point is to import things that aren't yet under management.
+   */
+  listAll?(config: ClientConfig, options?: { verbose?: boolean }): Promise<TServer[]>;
+
+  /**
+   * Fetch a single server row by id. Used by the puller to resolve
+   * cross-resource dependency references that the dependent declared via
+   * `pullDependencies` — those ids may or may not be in the dependency's
+   * own listAll result (e.g. an insight referenced from a dashboard tile
+   * but not picked by the user directly).
+   */
+  getById?(
+    config: ClientConfig,
+    id: number | string,
+    options?: { verbose?: boolean },
+  ): Promise<TServer>;
+
+  /**
+   * Decide whether a server row is worth offering to the user for pull. Used
+   * to drop auto-generated, deleted, or system rows that the user can't
+   * usefully declare as code.
+   */
+  pullFilter?(server: TServer): { kept: true } | { kept: false; reason: string };
+
+  /** Display label for the interactive picker. */
+  pullLabel?(server: TServer): { primary: string; secondary?: string };
+
+  /** Server-id extractor for the picker / dependency cascade. */
+  serverIdOf?(server: TServer): number | string;
+
+  /**
+   * Declare cross-resource references — when pulling row X that references
+   * row Y by server id, the orchestrator follows the edge so Y gets a file
+   * too and X's codegen can resolve the import. Edges typically mirror the
+   * apply-time `dependsOn` graph.
+   */
+  pullDependencies?(server: TServer): Array<{
+    resourceName: string;
+    serverId: number | string;
+  }>;
+
+  /**
+   * Render a server row to a TS source file. `ctx` provides cross-resource
+   * lookups (for import lines), unique-slug helpers, and warning collection.
+   */
+  renderToFile?(
+    server: TServer,
+    ctx: import("../pull/types.js").PullRenderContext,
+  ):
+    | import("../pull/types.js").RenderedFile
+    | { skipped: true; reason: string };
+
+  /**
+   * After the freshly-written file is reloaded and re-hashed, stamp the
+   * server row with the iac identity (tag or description marker) + hash so
+   * the next `apply` sees it as unchanged. Identity-carrier-specific:
+   * tag-based resources patch tags, marker-based resources patch the
+   * description.
+   */
+  tagOnServer?(
+    config: ClientConfig,
+    server: TServer,
+    spec: TSpec,
+    hash: string,
+    options?: { verbose?: boolean },
+  ): Promise<void>;
 }
 
 /**
@@ -178,6 +252,18 @@ export interface SingletonResourceModule<TSpec = unknown, TServer = unknown>
    * the singleton is in sync.
    */
   diffFields(spec: TSpec, server: TServer): FieldChange[];
+
+  /**
+   * Render the server row as a single TS file. Singletons have no picker
+   * and no tag-back step — there's nothing to filter and no identity carrier
+   * to stamp. They get a simpler hook than collections.
+   */
+  renderToFile?(
+    server: TServer,
+    ctx: import("../pull/types.js").PullRenderContext,
+  ):
+    | import("../pull/types.js").RenderedFile
+    | { skipped: true; reason: string };
 }
 
 export type ResourceModule<TSpec = unknown, TServer = unknown> =

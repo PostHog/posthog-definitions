@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import type { Insight } from "./sdk.js";
 import {
   displayInsight,
@@ -12,12 +12,24 @@ import {
   runInsightOp,
   validateInsights,
 } from "./pipeline.js";
-import { listManagedInsights, type ServerInsight } from "./client.js";
+import {
+  getInsight,
+  listInsights,
+  listManagedInsights,
+  type ServerInsight,
+} from "./client.js";
+import {
+  pullFilter,
+  pullLabel,
+  renderToFile,
+  serverIdOf,
+  tagOnServer,
+} from "./codegen.js";
 
 export { insight, trends, hogql } from "./sdk.js";
 export type { Insight, Query, TrendsQuery, HogQLQuery, EventsNode, InsightVizNode } from "./sdk.js";
 
-export const insightResource: ResourceModule<Insight, ServerInsight> = {
+export const insightResource: CollectionResourceModule<Insight, ServerInsight> = {
   kind: "collection",
   name: "insights",
   displayName: "insight",
@@ -37,4 +49,13 @@ export const insightResource: ResourceModule<Insight, ServerInsight> = {
 
   displaySpec: (spec, _ctx: ApplyContext) => displayInsight(spec),
   displayServer: (server, _ctx: ApplyContext) => displayInsightFromServer(server),
+
+  listAll: listInsights,
+  getById: (config, id, options) =>
+    getInsight(config, typeof id === "string" ? Number(id) : id, options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };

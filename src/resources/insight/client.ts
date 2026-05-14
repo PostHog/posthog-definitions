@@ -54,6 +54,19 @@ export async function listManagedInsights(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerInsight[]> {
+  const all = await listInsights(config, options);
+  return all.filter((i) => i.tags.some((tag) => tag.startsWith("iac:insights:")));
+}
+
+/**
+ * Unfiltered list of every insight in the project. Used by `pull` (which
+ * needs to see rows it doesn't yet manage). The apply pipeline uses
+ * `listManagedInsights` instead — it filters for the iac:* identity tag.
+ */
+export async function listInsights(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerInsight[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/insights/", {
     params: {
@@ -65,9 +78,7 @@ export async function listManagedInsights(
   const all = await followPagination<GeneratedInsight>(config, firstPage, {
     verbose: options.verbose,
   });
-  return all
-    .map(toServerInsight)
-    .filter((i) => i.tags.some((tag) => tag.startsWith("iac:insights:")));
+  return all.map(toServerInsight);
 }
 
 export async function getInsight(
