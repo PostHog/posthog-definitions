@@ -55,6 +55,39 @@ export interface paths {
         patch: operations["environments_endpoints_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/cohorts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cohorts_list"];
+        put?: never;
+        post: operations["cohorts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/cohorts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cohorts_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Hard delete of this model is not allowed. Use a patch API call to set "deleted" to true */
+        delete: operations["cohorts_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["cohorts_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/dashboards/": {
         parameters: {
             query?: never;
@@ -1083,6 +1116,105 @@ export interface components {
          * @enum {string}
          */
         BaseMathType: "total" | "dau" | "weekly_active" | "monthly_active" | "unique_session" | "first_time_for_user" | "first_matching_event_for_user";
+        /** BehavioralFilter */
+        BehavioralFilter: {
+            /**
+             * Bytecode
+             * @default null
+             */
+            bytecode: unknown[] | null;
+            /**
+             * Bytecode Error
+             * @default null
+             */
+            bytecode_error: string | null;
+            /**
+             * Conditionhash
+             * @default null
+             */
+            conditionHash: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "behavioral";
+            /** Key */
+            key: string | number;
+            /** Value */
+            value: string;
+            /** Event Type */
+            event_type: string;
+            /**
+             * Time Value
+             * @default null
+             */
+            time_value: number | null;
+            /**
+             * Time Interval
+             * @default null
+             */
+            time_interval: string | null;
+            /**
+             * Negation
+             * @default false
+             */
+            negation: boolean;
+            /**
+             * Operator
+             * @default null
+             */
+            operator: string | null;
+            /**
+             * Operator Value
+             * @default null
+             */
+            operator_value: number | null;
+            /**
+             * Seq Time Interval
+             * @default null
+             */
+            seq_time_interval: string | null;
+            /**
+             * Seq Time Value
+             * @default null
+             */
+            seq_time_value: number | null;
+            /**
+             * Seq Event
+             * @default null
+             */
+            seq_event: string | number | null;
+            /**
+             * Seq Event Type
+             * @default null
+             */
+            seq_event_type: string | null;
+            /**
+             * Total Periods
+             * @default null
+             */
+            total_periods: number | null;
+            /**
+             * Min Periods
+             * @default null
+             */
+            min_periods: number | null;
+            /**
+             * Event Filters
+             * @default null
+             */
+            event_filters: (components["schemas"]["EventPropFilter"] | components["schemas"]["HogQLFilter"])[] | null;
+            /**
+             * Explicit Datetime
+             * @default null
+             */
+            explicit_datetime: string | null;
+            /**
+             * Explicit Datetime To
+             * @default null
+             */
+            explicit_datetime_to: string | null;
+        };
         /** @enum {unknown} */
         BlankEnum: "";
         /**
@@ -1364,6 +1496,97 @@ export interface components {
             /** Time Elapsed */
             time_elapsed: number;
         };
+        Cohort: {
+            readonly id: number;
+            name?: string | null;
+            description?: string;
+            deleted?: boolean;
+            filters?: components["schemas"]["CohortFilters"] | null;
+            readonly version: number | null;
+            readonly pending_version: number | null;
+            readonly is_calculating: boolean;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at: string | null;
+            /** Format: date-time */
+            readonly last_calculation: string | null;
+            /** Format: date-time */
+            readonly last_backfill_person_properties_at: string | null;
+            readonly errors_calculating: number;
+            readonly last_error_message: string | null;
+            readonly count: number | null;
+            is_static?: boolean;
+            /**
+             * @description Type of cohort based on filter complexity
+             *
+             *     * `static` - static
+             *     * `person_property` - person_property
+             *     * `behavioral` - behavioral
+             *     * `realtime` - realtime
+             *     * `analytical` - analytical
+             */
+            cohort_type?: components["schemas"]["CohortTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            readonly experiment_set: number[];
+            /** create in folder */
+            _create_in_folder?: string;
+            /**
+             * create static person ids
+             * @default []
+             */
+            _create_static_person_ids: string[];
+        };
+        /** CohortFilter */
+        CohortFilter: {
+            /**
+             * Bytecode
+             * @default null
+             */
+            bytecode: unknown[] | null;
+            /**
+             * Bytecode Error
+             * @default null
+             */
+            bytecode_error: string | null;
+            /**
+             * Conditionhash
+             * @default null
+             */
+            conditionHash: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "cohort";
+            /**
+             * Key
+             * @constant
+             */
+            key: "id";
+            /** Value */
+            value: number;
+            /**
+             * Negation
+             * @default false
+             */
+            negation: boolean;
+        };
+        /**
+         * CohortFilterGroup
+         * @description AND/OR group containing cohort filters. Named to avoid collision with analytics Group model.
+         */
+        CohortFilterGroup: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "AND" | "OR";
+            /** Values */
+            values: (components["schemas"]["BehavioralFilter"] | components["schemas"]["CohortFilter"] | components["schemas"]["PersonFilter"] | components["schemas"]["CohortFilterGroup"])[];
+        };
+        /** CohortFilters */
+        CohortFilters: {
+            properties: components["schemas"]["CohortFilterGroup"];
+        };
         /** CohortPropertyFilter */
         CohortPropertyFilter: {
             /**
@@ -1393,6 +1616,15 @@ export interface components {
             /** Value */
             value: number;
         };
+        /**
+         * @description * `static` - static
+         *     * `person_property` - person_property
+         *     * `behavioral` - behavioral
+         *     * `realtime` - realtime
+         *     * `analytical` - analytical
+         * @enum {string}
+         */
+        CohortTypeEnum: "static" | "person_property" | "behavioral" | "realtime" | "analytical";
         /**
          * ColorMode
          * @enum {string}
@@ -3326,6 +3558,22 @@ export interface components {
             /** Success Count */
             success_count: number;
         };
+        /** EventPropFilter */
+        EventPropFilter: {
+            /** Type */
+            type: components["schemas"]["EventPropFilterTypeEnum"];
+            /** Key */
+            key: string;
+            /** Value */
+            value: unknown;
+            /**
+             * Operator
+             * @default null
+             */
+            operator: string | null;
+        };
+        /** @enum {string} */
+        EventPropFilterTypeEnum: "event" | "element";
         /** EventPropertyFilter */
         EventPropertyFilter: {
             /** Key */
@@ -6568,6 +6816,21 @@ export interface components {
          * @enum {string}
          */
         HeatmapSortOrder: "asc" | "desc";
+        /** HogQLFilter */
+        HogQLFilter: {
+            /**
+             * Type
+             * @constant
+             */
+            type: "hogql";
+            /** Key */
+            key: string;
+            /**
+             * Value
+             * @default null
+             */
+            value: unknown;
+        };
         /** HogQLFilters */
         HogQLFilters: {
             /** @default null */
@@ -8245,6 +8508,21 @@ export interface components {
          * @enum {string}
          */
         OrderDirection2: "ASC" | "DESC";
+        PaginatedCohortList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Cohort"][];
+        };
         PaginatedDashboardBasicList: {
             /** @example 123 */
             count: number;
@@ -8394,6 +8672,45 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
+        };
+        PatchedCohort: {
+            readonly id?: number;
+            name?: string | null;
+            description?: string;
+            deleted?: boolean;
+            filters?: components["schemas"]["CohortFilters"] | null;
+            readonly version?: number | null;
+            readonly pending_version?: number | null;
+            readonly is_calculating?: boolean;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at?: string | null;
+            /** Format: date-time */
+            readonly last_calculation?: string | null;
+            /** Format: date-time */
+            readonly last_backfill_person_properties_at?: string | null;
+            readonly errors_calculating?: number;
+            readonly last_error_message?: string | null;
+            readonly count?: number | null;
+            is_static?: boolean;
+            /**
+             * @description Type of cohort based on filter complexity
+             *
+             *     * `static` - static
+             *     * `person_property` - person_property
+             *     * `behavioral` - behavioral
+             *     * `realtime` - realtime
+             *     * `analytical` - analytical
+             */
+            cohort_type?: components["schemas"]["CohortTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            readonly experiment_set?: number[];
+            /** create in folder */
+            _create_in_folder?: string;
+            /**
+             * create static person ids
+             * @default []
+             */
+            _create_static_person_ids: string[];
         };
         /** @description Serializer mixin that handles tags for objects. */
         PatchedDashboard: {
@@ -9039,6 +9356,46 @@ export interface components {
              */
             timings: components["schemas"]["QueryTiming"][] | null;
         };
+        /** PersonFilter */
+        PersonFilter: {
+            /**
+             * Bytecode
+             * @default null
+             */
+            bytecode: unknown[] | null;
+            /**
+             * Bytecode Error
+             * @default null
+             */
+            bytecode_error: string | null;
+            /**
+             * Conditionhash
+             * @default null
+             */
+            conditionHash: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "person";
+            /** Key */
+            key: string;
+            /**
+             * Operator
+             * @default null
+             */
+            operator: string | null;
+            /**
+             * Value
+             * @default null
+             */
+            value: unknown;
+            /**
+             * Negation
+             * @default false
+             */
+            negation: boolean;
+        };
         /** PersonPropertyFilter */
         PersonPropertyFilter: {
             /** Key */
@@ -9176,6 +9533,8 @@ export interface components {
             /** Values */
             values: (components["schemas"]["PropertyGroupFilterValue"] | components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[];
         };
+        /** @enum {string} */
+        PropertyGroupOperator: "AND" | "OR";
         /**
          * @description * `cohort` - cohort
          *     * `person` - person
@@ -14872,6 +15231,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EndpointResponse"];
+                };
+            };
+        };
+    };
+    cohorts_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCohortList"];
+                };
+            };
+        };
+    };
+    cohorts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Cohort"];
+                "application/x-www-form-urlencoded": components["schemas"]["Cohort"];
+                "multipart/form-data": components["schemas"]["Cohort"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cohort"];
+                };
+            };
+        };
+    };
+    cohorts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this cohort. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cohort"];
+                };
+            };
+        };
+    };
+    cohorts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this cohort. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cohorts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this cohort. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCohort"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCohort"];
+                "multipart/form-data": components["schemas"]["PatchedCohort"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cohort"];
                 };
             };
         };

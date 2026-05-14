@@ -73,6 +73,12 @@ inverseOperationIds:
   - environments_retrieve
   - environments_partial_update
 
+  - cohorts_list
+  - cohorts_create
+  - cohorts_retrieve
+  - cohorts_partial_update
+  - cohorts_destroy
+
 unusedComponents:
   - schemas
   - parameters
