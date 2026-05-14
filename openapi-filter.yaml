@@ -46,6 +46,30 @@ inverseOperationIds:
   - event_schemas_create
   - event_schemas_destroy
 
+  - experiment_holdouts_list
+  - experiment_holdouts_create
+  - experiment_holdouts_retrieve
+  - experiment_holdouts_partial_update
+  - experiment_holdouts_destroy
+
+  - experiment_saved_metrics_list
+  - experiment_saved_metrics_create
+  - experiment_saved_metrics_retrieve
+  - experiment_saved_metrics_partial_update
+  - experiment_saved_metrics_destroy
+
+  - experiments_list
+  - experiments_create
+  - experiments_retrieve
+  - experiments_partial_update
+  - experiments_destroy
+  - experiments_launch_create
+  - experiments_end_create
+  - experiments_pause_create
+  - experiments_resume_create
+  - experiments_archive_create
+  - experiments_unarchive_create
+
 unusedComponents:
   - schemas
   - parameters

@@ -152,6 +152,265 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/experiment_holdouts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["experiment_holdouts_list"];
+        put?: never;
+        post: operations["experiment_holdouts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiment_holdouts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["experiment_holdouts_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["experiment_holdouts_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["experiment_holdouts_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiment_saved_metrics/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["experiment_saved_metrics_list"];
+        put?: never;
+        post: operations["experiment_saved_metrics_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiment_saved_metrics/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["experiment_saved_metrics_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["experiment_saved_metrics_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["experiment_saved_metrics_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List experiments for the current project. Supports filtering by status and archival state. */
+        get: operations["experiments_list"];
+        put?: never;
+        /** @description Create a new experiment in draft status with optional metrics. */
+        post: operations["experiments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Retrieve a single experiment by ID, including its current status, metrics, feature flag, and results metadata. */
+        get: operations["experiments_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Hard delete of this model is not allowed. Use a patch API call to set "deleted" to true */
+        delete: operations["experiments_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Update an experiment. Use this to modify experiment properties such as name, description, metrics, variants, and configuration. Metrics can be added, changed and removed at any time. */
+        patch: operations["experiments_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/{id}/archive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Archive an ended experiment.
+         *
+         *     Hides the experiment from the default list view. The experiment can be
+         *     restored at any time by updating archived=false. Returns 400 if the
+         *     experiment is already archived or has not ended yet.
+         */
+        post: operations["experiments_archive_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/{id}/end/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description End a running experiment without shipping a variant.
+         *
+         *     Sets end_date to now and marks the experiment as stopped. The feature
+         *     flag is NOT modified — users continue to see their assigned variants
+         *     and exposure events ($feature_flag_called) continue to be recorded.
+         *     However, only data up to end_date is included in experiment results.
+         *
+         *     Use this when:
+         *
+         *     - You want to freeze the results window without changing which variant
+         *       users see.
+         *     - A variant was already shipped manually via the feature flag UI and
+         *       the experiment just needs to be marked complete.
+         *
+         *     The end_date can be adjusted after ending via PATCH if it needs to be
+         *     backdated (e.g. to match when the flag was actually paused).
+         *
+         *     Other options:
+         *     - Use ship_variant to end the experiment AND roll out a single variant to 100%% of users.
+         *     - Use pause to deactivate the flag without ending the experiment (stops variant assignment but does not freeze results).
+         *
+         *     Returns 400 if the experiment is not running.
+         */
+        post: operations["experiments_end_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/{id}/launch/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Launch a draft experiment.
+         *
+         *     Validates the experiment is in draft state, activates its linked feature flag,
+         *     sets start_date to the current server time, and transitions the experiment to running.
+         *     Returns 400 if the experiment has already been launched or if the feature flag
+         *     configuration is invalid (e.g. missing "control" variant or fewer than 2 variants).
+         */
+        post: operations["experiments_launch_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/{id}/pause/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Pause a running experiment.
+         *
+         *     Deactivates the linked feature flag so it is no longer returned by the
+         *     /decide endpoint. Users fall back to the application default (typically
+         *     the control experience), and no new exposure events are recorded (i.e.
+         *     $feature_flag_called is not fired).
+         *     Returns 400 if the experiment is not running or is already paused.
+         */
+        post: operations["experiments_pause_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/{id}/resume/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Resume a paused experiment.
+         *
+         *     Reactivates the linked feature flag so it is returned by /decide again.
+         *     Users are re-bucketed deterministically into the same variants they had
+         *     before the pause, and exposure tracking resumes.
+         *     Returns 400 if the experiment is not running or is not paused.
+         */
+        post: operations["experiments_resume_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/experiments/{id}/unarchive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Unarchive an archived experiment.
+         *
+         *     Restores the experiment to the default list view. Returns 400 if the
+         *     experiment is not currently archived.
+         */
+        post: operations["experiments_unarchive_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/feature_flags/": {
         parameters: {
             query?: never;
@@ -894,6 +1153,15 @@ export interface components {
              */
             compare_to: string | null;
         };
+        /**
+         * @description * `won` - won
+         *     * `lost` - lost
+         *     * `inconclusive` - inconclusive
+         *     * `stopped_early` - stopped_early
+         *     * `invalid` - invalid
+         * @enum {string}
+         */
+        ConclusionEnum: "won" | "lost" | "inconclusive" | "stopped_early" | "invalid";
         /** ConditionalFormattingRule */
         ConditionalFormattingRule: {
             /** Bytecode */
@@ -1857,6 +2125,20 @@ export interface components {
              * @constant
              */
             type: "empty";
+        };
+        EndExperiment: {
+            /**
+             * @description The conclusion of the experiment.
+             *
+             *     * `won` - won
+             *     * `lost` - lost
+             *     * `inconclusive` - inconclusive
+             *     * `stopped_early` - stopped_early
+             *     * `invalid` - invalid
+             */
+            conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
+            /** @description Optional comment about the experiment conclusion. */
+            conclusion_comment?: string | null;
         };
         /** @description A column in the endpoint's query result. */
         EndpointColumn: {
@@ -3132,6 +3414,85 @@ export interface components {
          * @enum {string}
          */
         ExistenceOperatorEnum: "is_set" | "is_not_set";
+        /** @description Mixin for serializers to add user access control fields */
+        Experiment: {
+            readonly id: number;
+            /** @description Name of the experiment. */
+            name: string;
+            /** @description Description of the experiment hypothesis and expected outcomes. */
+            description?: string | null;
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flags-get-all tool first — reuse an existing flag when possible. */
+            feature_flag_key: string;
+            readonly feature_flag: {
+                [key: string]: unknown;
+            };
+            readonly holdout: components["schemas"]["ExperimentHoldout"];
+            /** @description ID of a holdout group to exclude from the experiment. */
+            holdout_id?: number | null;
+            readonly exposure_cohort: number | null;
+            /** @description Variant definitions and rollout configuration. Set feature_flag_variants to customize the split (default: 50/50 control/test). Each variant needs a key and split_percent (the variant's share of traffic); percentages must sum to 100. Set rollout_percentage (0-100, default 100) to limit what fraction of users enter the experiment. Set minimum_detectable_effect (percentage, suggest 20-30) to control statistical power. */
+            parameters?: components["schemas"]["ExperimentParameters"] | null;
+            readonly saved_metrics: components["schemas"]["ExperimentToSavedMetric"][];
+            /** @description IDs of shared saved metrics to attach to this experiment. Each item has 'id' (saved metric ID) and 'metadata' with 'type' (primary or secondary). */
+            saved_metrics_ids?: unknown[] | null;
+            /**
+             * @description Whether the experiment is archived.
+             * @default false
+             */
+            archived: boolean;
+            deleted?: boolean | null;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /**
+             * @description Experiment type: web for frontend UI changes, product for backend/API changes.
+             *
+             *     * `web` - web
+             *     * `product` - product
+             */
+            type?: components["schemas"]["ExperimentTypeEnum"] | components["schemas"]["NullEnum"];
+            /** @description Exposure configuration including filter test accounts and custom exposure events. */
+            exposure_criteria?: components["schemas"]["ExperimentApiExposureCriteria"] | null;
+            /** @description Primary experiment metrics. Each metric must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Use the event-definitions-list tool to find available events in the project. */
+            metrics?: components["schemas"]["_ExperimentApiMetricsList"] | null;
+            /** @description Secondary metrics for additional measurements. Same format as primary metrics. */
+            metrics_secondary?: components["schemas"]["_ExperimentApiMetricsList"] | null;
+            /**
+             * @description Suppresses the validation that rejects metrics referencing events not yet ingested by this project. REQUIRES explicit user confirmation before being set to true — never flip this silently to retry a failed call. The default validation catches typo'd event names and missing instrumentation. Set this to true only when the user has confirmed the event is intentional (e.g. they are about to instrument it).
+             * @default false
+             */
+            allow_unknown_events: boolean;
+            /** create in folder */
+            _create_in_folder?: string;
+            /**
+             * @description Experiment conclusion: won, lost, inconclusive, stopped_early, or invalid.
+             *
+             *     * `won` - won
+             *     * `lost` - lost
+             *     * `inconclusive` - inconclusive
+             *     * `stopped_early` - stopped_early
+             *     * `invalid` - invalid
+             */
+            conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
+            /** @description Comment about the experiment conclusion. */
+            conclusion_comment?: string | null;
+            only_count_matured_users?: boolean;
+            /**
+             * @description When true, sync feature flag configuration from parameters to the linked feature flag. Draft experiments always sync regardless of update_feature_flag_params, so only required for non-drafts.
+             * @default false
+             */
+            update_feature_flag_params: boolean;
+            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'stopped' (ended). */
+            readonly status: components["schemas"]["ExperimentStatusEnum"];
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+        };
         /** ExperimentActorsQuery */
         ExperimentActorsQuery: {
             /**
@@ -3190,6 +3551,135 @@ export interface components {
              * @default null
              */
             version: number | null;
+        };
+        /** ExperimentApiEventSource */
+        ExperimentApiEventSource: {
+            /**
+             * Event
+             * @description Event name, e.g. '$pageview'. Required for EventsNode.
+             * @default null
+             */
+            event: string | null;
+            /**
+             * Id
+             * @description Action ID. Required for ActionsNode.
+             * @default null
+             */
+            id: number | null;
+            kind: components["schemas"]["Kind"];
+            /**
+             * Properties
+             * @description Event property filters to narrow which events are counted.
+             * @default null
+             */
+            properties: components["schemas"]["EventPropertyFilter"][] | null;
+        };
+        /** ExperimentApiExposureConfig */
+        ExperimentApiExposureConfig: {
+            /**
+             * Event
+             * @description Custom exposure event name.
+             */
+            event: string;
+            /**
+             * Kind
+             * @default ExperimentEventExposureConfig
+             * @constant
+             */
+            kind: "ExperimentEventExposureConfig";
+            /**
+             * Properties
+             * @description Event property filters. Pass an empty array if no filters needed.
+             */
+            properties: components["schemas"]["EventPropertyFilter"][];
+        };
+        /** ExperimentApiExposureCriteria */
+        ExperimentApiExposureCriteria: {
+            /** @default null */
+            exposure_config: components["schemas"]["ExperimentApiExposureConfig"] | null;
+            /**
+             * Filtertestaccounts
+             * @default null
+             */
+            filterTestAccounts: boolean | null;
+        };
+        /** ExperimentApiMetric */
+        ExperimentApiMetric: {
+            /**
+             * @description For retention metrics: completion event.
+             * @default null
+             */
+            completion_event: components["schemas"]["ExperimentApiEventSource"] | null;
+            /**
+             * Conversion Window
+             * @description Conversion window duration.
+             * @default null
+             */
+            conversion_window: number | null;
+            /**
+             * @description For ratio metrics: denominator source.
+             * @default null
+             */
+            denominator: components["schemas"]["ExperimentApiEventSource"] | null;
+            /**
+             * @description Whether higher or lower values indicate success.
+             * @default null
+             */
+            goal: components["schemas"]["ExperimentMetricGoal"] | null;
+            /**
+             * Kind
+             * @default ExperimentMetric
+             * @constant
+             */
+            kind: "ExperimentMetric";
+            metric_type: components["schemas"]["ExperimentMetricType"];
+            /**
+             * Name
+             * @description Human-readable metric name.
+             * @default null
+             */
+            name: string | null;
+            /**
+             * @description For ratio metrics: numerator source.
+             * @default null
+             */
+            numerator: components["schemas"]["ExperimentApiEventSource"] | null;
+            /**
+             * Retention Window End
+             * @default null
+             */
+            retention_window_end: number | null;
+            /**
+             * Retention Window Start
+             * @default null
+             */
+            retention_window_start: number | null;
+            /** @default null */
+            retention_window_unit: components["schemas"]["FunnelConversionWindowTimeUnit"] | null;
+            /**
+             * Series
+             * @description For funnel metrics: array of EventsNode/ActionsNode steps.
+             * @default null
+             */
+            series: components["schemas"]["ExperimentApiEventSource"][] | null;
+            /**
+             * @description For mean metrics: event source.
+             * @default null
+             */
+            source: components["schemas"]["ExperimentApiEventSource"] | null;
+            /**
+             * @description For retention metrics: start event.
+             * @default null
+             */
+            start_event: components["schemas"]["ExperimentApiEventSource"] | null;
+            /** @default null */
+            start_handling: components["schemas"]["StartHandling"] | null;
+            /**
+             * Uuid
+             * @description Unique identifier. Auto-generated if omitted.
+             * @default null
+             */
+            uuid: string | null;
         };
         /** ExperimentBreakdownResult */
         ExperimentBreakdownResult: {
@@ -3466,6 +3956,16 @@ export interface components {
             /** Variants */
             variants: components["schemas"]["ExperimentVariantFunnelsBaseStats"][];
         };
+        ExperimentHoldout: {
+            readonly id: number;
+            name: string;
+            description?: string | null;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
         /** ExperimentMeanMetric */
         ExperimentMeanMetric: {
             /** @default null */
@@ -3557,6 +4057,32 @@ export interface components {
          * @enum {string}
          */
         ExperimentMetricMathType: "total" | "sum" | "unique_session" | "min" | "max" | "avg" | "dau" | "unique_group" | "hogql";
+        /**
+         * ExperimentMetricType
+         * @enum {string}
+         */
+        ExperimentMetricType: "funnel" | "mean" | "ratio" | "retention";
+        /** ExperimentParameters */
+        ExperimentParameters: {
+            /**
+             * Feature Flag Variants
+             * @description Experiment variants. If specified, must include a variant with key 'control' (lowercase). Defaults to a 50/50 control/test split when omitted. Minimum 2, maximum 20.
+             * @default null
+             */
+            feature_flag_variants: components["schemas"]["ExperimentVariant"][] | null;
+            /**
+             * Minimum Detectable Effect
+             * @description Minimum detectable effect as a percentage. Lower values need more users but catch smaller changes. Suggest 20–30% for most experiments.
+             * @default null
+             */
+            minimum_detectable_effect: number | null;
+            /**
+             * Rollout Percentage
+             * @description Overall rollout percentage (0-100). Controls what fraction of all users enter the experiment. Users outside the rollout never see any variant and are excluded from analysis. Default: 100.
+             * @default null
+             */
+            rollout_percentage: number | null;
+        };
         /** ExperimentQuery */
         ExperimentQuery: {
             /**
@@ -3823,6 +4349,20 @@ export interface components {
              */
             version: number | null;
         };
+        /** @description Mixin for serializers to add user access control fields */
+        ExperimentSavedMetric: {
+            readonly id: number;
+            name: string;
+            description?: string | null;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            tags?: unknown[];
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+        };
         /**
          * ExperimentSignificanceCode
          * @enum {string}
@@ -3889,6 +4429,17 @@ export interface components {
          * @enum {string}
          */
         ExperimentStatsValidationFailure: "not-enough-exposures" | "baseline-mean-is-zero" | "not-enough-metric-data";
+        /** @enum {string} */
+        ExperimentStatusEnum: "draft" | "running" | "paused" | "stopped";
+        ExperimentToSavedMetric: {
+            readonly id: number;
+            experiment: number;
+            saved_metric: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly query: unknown;
+            readonly name: string;
+        };
         /** ExperimentTrendsQuery */
         ExperimentTrendsQuery: {
             count_query: components["schemas"]["TrendsQuery"];
@@ -3972,6 +4523,37 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][];
+        };
+        /**
+         * @description * `web` - web
+         *     * `product` - product
+         * @enum {string}
+         */
+        ExperimentTypeEnum: "web" | "product";
+        /** ExperimentVariant */
+        ExperimentVariant: {
+            /**
+             * Key
+             * @description Variant key. Exactly one variant in feature_flag_variants must use key 'control' (lowercase, exactly) — that is the baseline used for analysis and the special key the experiment runtime expects. Other variants use keys like 'test', 'variant_a', 'variant_b'. Map natural-language names ('original', 'A', 'baseline') to 'control'.
+             */
+            key: string;
+            /**
+             * Name
+             * @description Human-readable variant name.
+             * @default null
+             */
+            name: string | null;
+            /**
+             * Rollout Percentage
+             * @default null
+             */
+            rollout_percentage: number | null;
+            /**
+             * Split Percent
+             * @description Percentage of users assigned to this variant (0–100). All variants must sum to 100. One of split_percent (recommended) or rollout_percentage must be provided.
+             * @default null
+             */
+            split_percent: number | null;
         };
         /** ExperimentVariantFunnelsBaseStats */
         ExperimentVariantFunnelsBaseStats: {
@@ -6383,6 +6965,11 @@ export interface components {
          * @enum {string}
          */
         Key10: "tag_name" | "text" | "href" | "selector";
+        /**
+         * Kind
+         * @enum {string}
+         */
+        Kind: "EventsNode" | "ActionsNode";
         /** LLMTrace */
         LLMTrace: {
             /**
@@ -7444,6 +8031,51 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["EventSchema"][];
         };
+        PaginatedExperimentHoldoutList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["ExperimentHoldout"][];
+        };
+        PaginatedExperimentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Experiment"][];
+        };
+        PaginatedExperimentSavedMetricList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["ExperimentSavedMetric"][];
+        };
         PaginatedFeatureFlagList: {
             /** @example 123 */
             count: number;
@@ -7608,6 +8240,109 @@ export interface components {
             post_to_slack: boolean;
             default_columns?: string[];
             readonly media_preview_urls?: string[];
+        };
+        /** @description Mixin for serializers to add user access control fields */
+        PatchedExperiment: {
+            readonly id?: number;
+            /** @description Name of the experiment. */
+            name?: string;
+            /** @description Description of the experiment hypothesis and expected outcomes. */
+            description?: string | null;
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flags-get-all tool first — reuse an existing flag when possible. */
+            feature_flag_key?: string;
+            readonly feature_flag?: {
+                [key: string]: unknown;
+            };
+            readonly holdout?: components["schemas"]["ExperimentHoldout"];
+            /** @description ID of a holdout group to exclude from the experiment. */
+            holdout_id?: number | null;
+            readonly exposure_cohort?: number | null;
+            /** @description Variant definitions and rollout configuration. Set feature_flag_variants to customize the split (default: 50/50 control/test). Each variant needs a key and split_percent (the variant's share of traffic); percentages must sum to 100. Set rollout_percentage (0-100, default 100) to limit what fraction of users enter the experiment. Set minimum_detectable_effect (percentage, suggest 20-30) to control statistical power. */
+            parameters?: components["schemas"]["ExperimentParameters"] | null;
+            readonly saved_metrics?: components["schemas"]["ExperimentToSavedMetric"][];
+            /** @description IDs of shared saved metrics to attach to this experiment. Each item has 'id' (saved metric ID) and 'metadata' with 'type' (primary or secondary). */
+            saved_metrics_ids?: unknown[] | null;
+            /**
+             * @description Whether the experiment is archived.
+             * @default false
+             */
+            archived: boolean;
+            deleted?: boolean | null;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            /**
+             * @description Experiment type: web for frontend UI changes, product for backend/API changes.
+             *
+             *     * `web` - web
+             *     * `product` - product
+             */
+            type?: components["schemas"]["ExperimentTypeEnum"] | components["schemas"]["NullEnum"];
+            /** @description Exposure configuration including filter test accounts and custom exposure events. */
+            exposure_criteria?: components["schemas"]["ExperimentApiExposureCriteria"] | null;
+            /** @description Primary experiment metrics. Each metric must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Use the event-definitions-list tool to find available events in the project. */
+            metrics?: components["schemas"]["_ExperimentApiMetricsList"] | null;
+            /** @description Secondary metrics for additional measurements. Same format as primary metrics. */
+            metrics_secondary?: components["schemas"]["_ExperimentApiMetricsList"] | null;
+            /**
+             * @description Suppresses the validation that rejects metrics referencing events not yet ingested by this project. REQUIRES explicit user confirmation before being set to true — never flip this silently to retry a failed call. The default validation catches typo'd event names and missing instrumentation. Set this to true only when the user has confirmed the event is intentional (e.g. they are about to instrument it).
+             * @default false
+             */
+            allow_unknown_events: boolean;
+            /** create in folder */
+            _create_in_folder?: string;
+            /**
+             * @description Experiment conclusion: won, lost, inconclusive, stopped_early, or invalid.
+             *
+             *     * `won` - won
+             *     * `lost` - lost
+             *     * `inconclusive` - inconclusive
+             *     * `stopped_early` - stopped_early
+             *     * `invalid` - invalid
+             */
+            conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
+            /** @description Comment about the experiment conclusion. */
+            conclusion_comment?: string | null;
+            only_count_matured_users?: boolean;
+            /**
+             * @description When true, sync feature flag configuration from parameters to the linked feature flag. Draft experiments always sync regardless of update_feature_flag_params, so only required for non-drafts.
+             * @default false
+             */
+            update_feature_flag_params: boolean;
+            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'stopped' (ended). */
+            readonly status?: components["schemas"]["ExperimentStatusEnum"];
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level?: string | null;
+        };
+        PatchedExperimentHoldout: {
+            readonly id?: number;
+            name?: string;
+            description?: string | null;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+        };
+        /** @description Mixin for serializers to add user access control fields */
+        PatchedExperimentSavedMetric: {
+            readonly id?: number;
+            name?: string;
+            description?: string | null;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            tags?: unknown[];
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level?: string | null;
         };
         PatchedFeatureFlagPartialUpdateRequestSchema: {
             /** @description Feature flag key. */
@@ -12865,6 +13600,11 @@ export interface components {
             startAtZero: boolean | null;
         };
         /**
+         * _ExperimentApiMetricsList
+         * @description List wrapper for OpenAPI schema generation — the field stores an array of metrics.
+         */
+        _ExperimentApiMetricsList: components["schemas"]["ExperimentApiMetric"][];
+        /**
          * _InsightQuerySchema
          * @description The query definition for this insight. The `kind` field determines the query type:
          *     - `InsightVizNode` — product analytics (trends, funnels, retention, paths, stickiness, lifecycle)
@@ -13438,6 +14178,564 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    experiment_holdouts_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedExperimentHoldoutList"];
+                };
+            };
+        };
+    };
+    experiment_holdouts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentHoldout"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExperimentHoldout"];
+                "multipart/form-data": components["schemas"]["ExperimentHoldout"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentHoldout"];
+                };
+            };
+        };
+    };
+    experiment_holdouts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment holdout. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentHoldout"];
+                };
+            };
+        };
+    };
+    experiment_holdouts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment holdout. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    experiment_holdouts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment holdout. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedExperimentHoldout"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedExperimentHoldout"];
+                "multipart/form-data": components["schemas"]["PatchedExperimentHoldout"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentHoldout"];
+                };
+            };
+        };
+    };
+    experiment_saved_metrics_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedExperimentSavedMetricList"];
+                };
+            };
+        };
+    };
+    experiment_saved_metrics_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentSavedMetric"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExperimentSavedMetric"];
+                "multipart/form-data": components["schemas"]["ExperimentSavedMetric"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentSavedMetric"];
+                };
+            };
+        };
+    };
+    experiment_saved_metrics_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment saved metric. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentSavedMetric"];
+                };
+            };
+        };
+    };
+    experiment_saved_metrics_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment saved metric. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    experiment_saved_metrics_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment saved metric. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedExperimentSavedMetric"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedExperimentSavedMetric"];
+                "multipart/form-data": components["schemas"]["PatchedExperimentSavedMetric"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentSavedMetric"];
+                };
+            };
+        };
+    };
+    experiments_list: {
+        parameters: {
+            query?: {
+                /** @description Filter by archived state. Defaults to non-archived experiments only. */
+                archived?: boolean;
+                /** @description Filter to experiments created by the given user ID. */
+                created_by_id?: number;
+                /** @description Filter to experiments linked to the given feature flag ID. */
+                feature_flag_id?: number;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Field to order by. Prefix with '-' for descending. Allowlisted fields include name, created_at, updated_at, start_date, end_date, duration, and status. */
+                order?: string;
+                /** @description Free-text search applied to the experiment name (case-insensitive). */
+                search?: string;
+                /** @description Filter by experiment status. "running" and "paused" are mutually exclusive: "running" returns launched experiments with an active feature flag, "paused" returns launched experiments whose feature flag is deactivated. "complete" is an alias for "stopped". "all" disables status filtering. */
+                status?: "all" | "complete" | "draft" | "paused" | "running" | "stopped";
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedExperimentList"];
+                };
+            };
+        };
+    };
+    experiments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Experiment"];
+                "application/x-www-form-urlencoded": components["schemas"]["Experiment"];
+                "multipart/form-data": components["schemas"]["Experiment"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    experiments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedExperiment"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedExperiment"];
+                "multipart/form-data": components["schemas"]["PatchedExperiment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_archive_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_end_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EndExperiment"];
+                "application/x-www-form-urlencoded": components["schemas"]["EndExperiment"];
+                "multipart/form-data": components["schemas"]["EndExperiment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_launch_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_pause_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_resume_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_unarchive_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
             };
         };
     };
