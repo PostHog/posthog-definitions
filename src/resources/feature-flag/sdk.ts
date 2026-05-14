@@ -1,3 +1,5 @@
+import { markResourceKind } from "../types.js";
+
 export type PropertyFilter = {
   key: string;
   type: "person" | "cohort" | "group" | "flag";
@@ -41,5 +43,5 @@ export type FeatureFlag = {
 };
 
 export function featureFlag(spec: FeatureFlag): FeatureFlag {
-  return spec;
+  return markResourceKind(spec, "feature-flag");
 }

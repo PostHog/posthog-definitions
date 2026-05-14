@@ -10,7 +10,7 @@ import {
   type DisplayValue,
 } from "../../apply/display.js";
 import { SafetyViolationError } from "../../apply/errors.js";
-import type { ApplyContext, ResourceOp } from "../types.js";
+import { getResourceKind, type ApplyContext, type ResourceOp } from "../types.js";
 import type { FeatureFlag, FeatureFlagFilters, PropertyFilter } from "./sdk.js";
 import {
   createFeatureFlag,
@@ -106,13 +106,7 @@ export function featureFlagHash(spec: FeatureFlag): string {
 }
 
 export function looksLikeFeatureFlag(value: unknown): value is FeatureFlag {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  if (typeof v.key !== "string") return false;
-  if (!v.filters || typeof v.filters !== "object") return false;
-  if ("query" in v) return false;
-  if ("tiles" in v) return false;
-  return true;
+  return getResourceKind(value) === "feature-flag";
 }
 
 function collectPropertyFilters(filters: FeatureFlagFilters): PropertyFilter[] {
