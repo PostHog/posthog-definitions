@@ -779,9 +779,8 @@ export interface components {
             /** Id */
             id: number;
             /**
-             * Kind
-             * @default ActionsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ActionsNode";
             /**
@@ -1545,6 +1544,14 @@ export interface components {
             heatmap: components["schemas"]["HeatmapSettings"] | null;
             /** @default null */
             leftYAxisSettings: components["schemas"]["YAxisSettings"] | null;
+            /**
+             * Resultcustomizations
+             * @description Per-breakdown-value color customizations. Keyed by the raw breakdown column value.
+             * @default null
+             */
+            resultCustomizations: {
+                [key: string]: components["schemas"]["ResultCustomizationByValue"];
+            } | null;
             /** @default null */
             rightYAxisSettings: components["schemas"]["YAxisSettings"] | null;
             /**
@@ -3856,9 +3863,8 @@ export interface components {
              */
             fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default EventsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "EventsNode";
             /**
@@ -4506,9 +4512,8 @@ export interface components {
              */
             fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default ExperimentDataWarehouseNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ExperimentDataWarehouseNode";
             /**
@@ -5140,8 +5145,12 @@ export interface components {
         /** @description Mixin for serializers to add user access control fields */
         ExperimentSavedMetric: {
             readonly id: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
             name: string;
+            /** @description Short description of what the metric measures. */
             description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query: unknown;
             readonly created_by: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at: string;
@@ -7309,6 +7318,11 @@ export interface components {
              * @default null
              */
             optimizeProjections: boolean | null;
+            /**
+             * @description HogQL parser backend; absent → `cpp_only`. `*_shadow` modes return the primary result and sample-compare against the other parser, reporting divergences without failing the request. The `rust_py_*` modes drive the same hand-rolled Rust parser as `rust_*` but build `posthog.hogql.ast` dataclass instances directly via PyO3, skipping the JSON round-trip.
+             * @default null
+             */
+            parserMode: components["schemas"]["ParserMode"] | null;
             /** @default null */
             personsArgMaxVersion: components["schemas"]["PersonsArgMaxVersion"] | null;
             /** @default null */
@@ -9019,6 +9033,11 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
         };
+        /**
+         * ParserMode
+         * @enum {string}
+         */
+        ParserMode: "cpp_only" | "cpp_with_rust_shadow" | "rust_with_cpp_shadow" | "rust_only" | "rust_py_only" | "rust_py_with_cpp_shadow";
         /** @description Serializer mixin that handles tags for objects. */
         PatchedAction: {
             readonly id?: number;
@@ -9306,8 +9325,12 @@ export interface components {
         /** @description Mixin for serializers to add user access control fields */
         PatchedExperimentSavedMetric: {
             readonly id?: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
             name?: string;
+            /** @description Short description of what the metric measures. */
             description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query?: unknown;
             readonly created_by?: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at?: string;
@@ -9443,6 +9466,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -11267,6 +11312,11 @@ export interface components {
              */
             timings: components["schemas"]["QueryTiming"][] | null;
             /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
              * Usedpreaggregatedtables
              * @default null
              */
@@ -11336,6 +11386,11 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
             /**
              * Usedpreaggregatedtables
              * @default null
@@ -11635,6 +11690,12 @@ export interface components {
              * @default count
              */
             aggregationType: components["schemas"]["AggregationType"] | null;
+            /**
+             * Cohortlabelstartindex
+             * @description Starting index used when labeling cohort columns (e.g. 0 for D0/D1/D2, 1 for D1/D2/D3). Display-only — does not affect retention calculations.
+             * @default 0
+             */
+            cohortLabelStartIndex: number | null;
             /**
              * Cumulative
              * @default null
@@ -13259,6 +13320,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -13328,7 +13411,20 @@ export interface components {
             };
             readonly available_setup_task_ids: components["schemas"]["AvailableSetupTaskIdsEnum"][];
         };
-        TeamCustomerAnalyticsConfig: Record<string, never>;
+        TeamCustomerAnalyticsConfig: {
+            /** @description Event used as the activity signal (DAU/WAU/MAU). */
+            activity_event?: unknown;
+            /** @description Event used to count signup pageviews on dashboards. */
+            signup_pageview_event?: unknown;
+            /** @description Event used to count signups on dashboards. */
+            signup_event?: unknown;
+            /** @description Event used to count subscriptions on dashboards. */
+            subscription_event?: unknown;
+            /** @description Event used to count payments on dashboards. */
+            payment_event?: unknown;
+            /** @description Index of the group type to treat as an Account in customer analytics. Must reference an existing group type configured for the project. */
+            account_group_type_index?: number | null;
+        };
         TeamMarketingAnalyticsConfig: {
             attribution_window_days?: number;
             attribution_mode?: components["schemas"]["AttributionModeEnum"];
@@ -14178,15 +14274,28 @@ export interface components {
         };
         /** TrendsFilter */
         TrendsFilter: {
-            /** @default numeric */
+            /**
+             * @description Y-axis value formatter. Picks a human-friendly unit per value at render time without changing the underlying series values.
+             *
+             *     - `numeric` (default): raw numbers, e.g. `1,234`.
+             *     - `duration`: values are in seconds; rendered as friendly units per value (`45s`, `2m 12s`, `1h 4m`). Use this whenever the series is in seconds (latency, session length, time-to-event) instead of dividing in `formula` to force minutes or hours.
+             *     - `duration_ms`: values are in milliseconds; rendered as friendly units (`850ms`, `1.5s`, `1m 4s`).
+             *     - `percentage`: values are already in the 0-100 range; appends `%`.
+             *     - `percentage_scaled`: values are a 0-1 ratio; multiplied and rendered as `%`.
+             *     - `currency`: values are in the project's base currency (set in project settings, defaults to USD); rendered with that currency symbol. For values pinned to a specific currency regardless of project base (e.g. `$ai_total_cost_usd` is always USD), use `aggregationAxisPrefix` instead.
+             *     - `short`: compact notation for large counts (`1.2K`, `3.4M`).
+             * @default numeric
+             */
             aggregationAxisFormat: components["schemas"]["AggregationAxisFormat"] | null;
             /**
              * Aggregationaxispostfix
+             * @description Literal suffix applied to every value (e.g. ` req`). Reserve for units that `aggregationAxisFormat` cannot express. Do not use ` mins`, ` s`, ` ms`, `%` etc. — pick the matching `aggregationAxisFormat` instead so the underlying values stay numerically correct for breakdowns, formulas, and alerts. Include any leading space yourself.
              * @default null
              */
             aggregationAxisPostfix: string | null;
             /**
              * Aggregationaxisprefix
+             * @description Literal prefix applied to every value (e.g. `$`). Use to pin a unit or currency symbol that does not depend on `aggregationAxisFormat` — for example, when values are denominated in a fixed currency regardless of the project's base currency. Include any trailing space yourself.
              * @default null
              */
             aggregationAxisPrefix: string | null;
@@ -14202,6 +14311,7 @@ export interface components {
             confidenceLevel: number | null;
             /**
              * Decimalplaces
+             * @description Maximum number of decimal places shown. 1 or 2 is usually right for percentages and currency.
              * @default null
              */
             decimalPlaces: number | null;
@@ -14967,6 +15077,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web_overview_query precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15022,6 +15138,11 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
             /**
              * Usedpreaggregatedtables
              * @default null
@@ -15142,6 +15263,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web stats table precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15212,6 +15339,11 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
             /**
              * Usedpreaggregatedtables
              * @default null
@@ -16261,6 +16393,10 @@ export interface operations {
     event_definitions_list: {
         parameters: {
             query?: {
+                /** @description When true, omit events that have been explicitly hidden by a team admin (Enterprise only). */
+                exclude_hidden?: boolean;
+                /** @description When true, omit events whose last ingested occurrence is older than 30 days. Events that have never been seen (`last_seen_at` is null) are kept so newly-defined events remain discoverable. Default false. If a search returns zero results with this filter on, retry with `exclude_stale=false` and tell the user the matches are stale. */
+                exclude_stale?: boolean;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
@@ -16747,6 +16883,8 @@ export interface operations {
                 offset?: number;
                 /** @description Field to order by. Prefix with '-' for descending. Allowlisted fields include name, created_at, updated_at, start_date, end_date, duration, and status. */
                 order?: string;
+                /** @description Filter to experiments created from an LLM prompt with this name. Matches experiments whose parameters.prompt_metadata.name equals the given value. */
+                prompt_name?: string;
                 /** @description Free-text search applied to the experiment name (case-insensitive). */
                 search?: string;
                 /** @description Filter by experiment status. "running" and "paused" are mutually exclusive: "running" returns launched experiments with an active feature flag, "paused" returns launched experiments whose feature flag is deactivated. "complete" is an alias for "stopped". "all" disables status filtering. */
