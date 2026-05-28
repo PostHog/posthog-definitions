@@ -779,9 +779,8 @@ export interface components {
             /** Id */
             id: number;
             /**
-             * Kind
-             * @default ActionsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ActionsNode";
             /**
@@ -986,10 +985,10 @@ export interface components {
          */
         AggregationAxisFormat: "numeric" | "duration" | "duration_ms" | "percentage" | "percentage_scaled" | "currency" | "short";
         /**
-         * AggregationPropertyType1
+         * AggregationPropertyType
          * @enum {string}
          */
-        AggregationPropertyType1: "event" | "person" | "data_warehouse";
+        AggregationPropertyType: "event" | "person" | "data_warehouse";
         /**
          * AggregationType
          * @enum {string}
@@ -1517,6 +1516,15 @@ export interface components {
          * @enum {string}
          */
         BusinessModelEnum: "b2b" | "b2c" | "other";
+        /** CalendarHeatmapFilter */
+        CalendarHeatmapFilter: {
+            /**
+             * Bucketbysessionstart
+             * @description When true and the series math is `dau`/`unique_users`, each user contributes to the (day-of-week, hour) bucket of their session's first event only — matching the web overview session-start attribution. When false (default), the user contributes to every bucket they have any event in. No effect on `total` math (event counts are unchanged either way).
+             * @default false
+             */
+            bucketBySessionStart: boolean | null;
+        };
         /**
          * CalendarHeatmapMathType
          * @enum {string}
@@ -1545,6 +1553,14 @@ export interface components {
             heatmap: components["schemas"]["HeatmapSettings"] | null;
             /** @default null */
             leftYAxisSettings: components["schemas"]["YAxisSettings"] | null;
+            /**
+             * Resultcustomizations
+             * @description Per-breakdown-value color customizations. Keyed by the raw breakdown column value.
+             * @default null
+             */
+            resultCustomizations: {
+                [key: string]: components["schemas"]["ResultCustomizationByValue"];
+            } | null;
             /** @default null */
             rightYAxisSettings: components["schemas"]["YAxisSettings"] | null;
             /**
@@ -2394,7 +2410,7 @@ export interface components {
              */
             response: {
                 [key: string]: unknown;
-            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response18"] | components["schemas"]["Response19"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | components["schemas"]["Response22"] | components["schemas"]["Response23"] | components["schemas"]["Response24"] | components["schemas"]["Response25"] | components["schemas"]["Response26"] | null;
+            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response7"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response18"] | components["schemas"]["Response19"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | components["schemas"]["Response22"] | components["schemas"]["Response23"] | components["schemas"]["Response24"] | components["schemas"]["Response25"] | components["schemas"]["Response26"] | null;
             /**
              * Showabsolutetime
              * @description Render date-time columns (timestamp, created_at, last_seen, last_seen_at, session_start, session_end) as absolute date+time instead of relative ("X ago"). The toggle is exposed in the column header menu only on EventsQuery / ActorsQuery sources.
@@ -2730,6 +2746,34 @@ export interface components {
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
         };
+        /** DataWarehouseSyncWarning */
+        DataWarehouseSyncWarning: {
+            /**
+             * Message
+             * @description Human-readable warning shown to the user
+             */
+            message: string;
+            /**
+             * Schema Name
+             * @description Name of the ExternalDataSchema responsible for syncing the table
+             */
+            schema_name: string;
+            /**
+             * Source Type
+             * @description Source type, e.g. "Stripe", "Hubspot"
+             */
+            source_type: string;
+            /**
+             * Status
+             * @description Sync status that triggered the warning, e.g. "Failed", "Paused", "BillingLimitReached"
+             */
+            status: string;
+            /**
+             * Table Name
+             * @description Name of the warehouse table the warning refers to
+             */
+            table_name: string;
+        };
         /**
          * @description * `is_date_exact` - is_date_exact
          *     * `is_date_before` - is_date_before
@@ -2922,6 +2966,8 @@ export interface components {
             } | null;
             /** @description Set to true to soft-delete this endpoint. */
             deleted?: boolean | null;
+            /** @description List of tag names to associate with this endpoint. Replaces any existing tags. */
+            tags?: string[] | null;
         };
         /** @description Full endpoint representation returned by list/retrieve/create/update. */
         EndpointResponse: {
@@ -2984,6 +3030,8 @@ export interface components {
             } | null;
             /** @description Column names and types from the query's SELECT clause. */
             columns: components["schemas"]["EndpointColumn"][];
+            /** @description Tag names associated with this endpoint. */
+            tags: string[];
         };
         /** @description Extended endpoint representation when viewing a specific version. */
         EndpointVersionResponse: {
@@ -3046,6 +3094,8 @@ export interface components {
             } | null;
             /** @description Column names and types from the query's SELECT clause. */
             columns: components["schemas"]["EndpointColumn"][];
+            /** @description Tag names associated with this endpoint. */
+            tags: string[];
             /** @description Version number. */
             version: number;
             /**
@@ -3856,9 +3906,8 @@ export interface components {
              */
             fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default EventsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "EventsNode";
             /**
@@ -4360,6 +4409,28 @@ export interface components {
             id: number | null;
             kind: components["schemas"]["Kind"];
             /**
+             * @description How to aggregate this source. Defaults to 'total' (event count). Use 'sum' together with math_property to aggregate a numeric property — e.g. a ratio numerator of revenue per order. Other options: 'avg', 'min', 'max', 'unique_session', 'dau', 'unique_group', 'hogql'.
+             * @default null
+             */
+            math: components["schemas"]["ExperimentMetricMathType"] | null;
+            /**
+             * @description Group type index to aggregate over. Required when math is 'unique_group'.
+             * @default null
+             */
+            math_group_type_index: components["schemas"]["MathGroupTypeIndex"] | null;
+            /**
+             * Math Hogql
+             * @description HogQL aggregation expression. Required when math is 'hogql' — without it the metric silently falls back to a plain count/sum.
+             * @default null
+             */
+            math_hogql: string | null;
+            /**
+             * Math Property
+             * @description Numeric event property to aggregate when math is 'sum', 'avg', 'min', or 'max' (e.g. 'revenue').
+             * @default null
+             */
+            math_property: string | null;
+            /**
              * Properties
              * @description Event property filters to narrow which events are counted.
              * @default null
@@ -4414,16 +4485,33 @@ export interface components {
              */
             denominator: components["schemas"]["ExperimentApiEventSource"] | null;
             /**
+             * @description For ratio metrics: winsorization applied to the denominator aggregate. Leave unset for a binomial-style denominator, which is never clamped.
+             * @default null
+             */
+            denominator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
+            /**
              * @description Whether higher or lower values indicate success.
              * @default null
              */
             goal: components["schemas"]["ExperimentMetricGoal"] | null;
+            /**
+             * Ignore Zeros
+             * @description For mean metrics: exclude zero values when computing the winsorization percentile thresholds.
+             * @default null
+             */
+            ignore_zeros: boolean | null;
             /**
              * Kind
              * @default ExperimentMetric
              * @constant
              */
             kind: "ExperimentMetric";
+            /**
+             * Lower Bound Percentile
+             * @description For mean metrics: winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile). Per-user values below this percentile are clamped to it before aggregation.
+             * @default null
+             */
+            lower_bound_percentile: number | null;
             metric_type: components["schemas"]["ExperimentMetricType"];
             /**
              * Name
@@ -4436,6 +4524,11 @@ export interface components {
              * @default null
              */
             numerator: components["schemas"]["ExperimentApiEventSource"] | null;
+            /**
+             * @description For ratio metrics: winsorization applied to the numerator aggregate, independently of the denominator and each with its own percentile thresholds.
+             * @default null
+             */
+            numerator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Retention Window End
              * @default null
@@ -4466,6 +4559,12 @@ export interface components {
             start_event: components["schemas"]["ExperimentApiEventSource"] | null;
             /** @default null */
             start_handling: components["schemas"]["StartHandling"] | null;
+            /**
+             * Upper Bound Percentile
+             * @description For mean metrics: winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile). Per-user values above this percentile are clamped to it before aggregation.
+             * @default null
+             */
+            upper_bound_percentile: number | null;
             /**
              * Uuid
              * @description Unique identifier. Auto-generated if omitted.
@@ -4506,9 +4605,8 @@ export interface components {
              */
             fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default ExperimentDataWarehouseNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ExperimentDataWarehouseNode";
             /**
@@ -4793,6 +4891,7 @@ export interface components {
             kind: "ExperimentMetric";
             /**
              * Lower Bound Percentile
+             * @description Winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile).
              * @default null
              */
             lower_bound_percentile: number | null;
@@ -4822,6 +4921,7 @@ export interface components {
             source: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
             /**
              * Upper Bound Percentile
+             * @description Winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile).
              * @default null
              */
             upper_bound_percentile: number | null;
@@ -4847,6 +4947,26 @@ export interface components {
          * @enum {string}
          */
         ExperimentMetricMathType: "total" | "sum" | "unique_session" | "min" | "max" | "avg" | "dau" | "unique_group" | "hogql";
+        /** ExperimentMetricOutlierHandling */
+        ExperimentMetricOutlierHandling: {
+            /**
+             * Ignore Zeros
+             * @default null
+             */
+            ignore_zeros: boolean | null;
+            /**
+             * Lower Bound Percentile
+             * @description Winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile).
+             * @default null
+             */
+            lower_bound_percentile: number | null;
+            /**
+             * Upper Bound Percentile
+             * @description Winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile).
+             * @default null
+             */
+            upper_bound_percentile: number | null;
+        };
         /**
          * ExperimentMetricType
          * @enum {string}
@@ -5010,6 +5130,8 @@ export interface components {
             conversion_window_unit: components["schemas"]["FunnelConversionWindowTimeUnit"] | null;
             /** Denominator */
             denominator: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
+            /** @default null */
+            denominator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Fingerprint
              * @default null
@@ -5040,6 +5162,8 @@ export interface components {
             name: string | null;
             /** Numerator */
             numerator: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
+            /** @default null */
+            numerator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Response
              * @default null
@@ -5140,8 +5264,12 @@ export interface components {
         /** @description Mixin for serializers to add user access control fields */
         ExperimentSavedMetric: {
             readonly id: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
             name: string;
+            /** @description Short description of what the metric measures. */
             description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query: unknown;
             readonly created_by: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at: string;
@@ -7309,6 +7437,11 @@ export interface components {
              * @default null
              */
             optimizeProjections: boolean | null;
+            /**
+             * @description HogQL parser backend; absent → `cpp_with_rust_py_shadow` (cpp is primary, rust-py runs as a sampled shadow). `*_shadow` modes return the primary result and sample-compare against the other parser, reporting divergences without failing the request. The `rust_py_*` modes drive the same hand-rolled Rust parser as `rust_*` but build `posthog.hogql.ast` dataclass instances directly via PyO3, skipping the JSON round-trip.
+             * @default null
+             */
+            parserMode: components["schemas"]["ParserMode"] | null;
             /** @default null */
             personsArgMaxVersion: components["schemas"]["PersonsArgMaxVersion"] | null;
             /** @default null */
@@ -7452,6 +7585,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** HogQLVariable */
         HogQLVariable: {
@@ -9019,6 +9158,11 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
         };
+        /**
+         * ParserMode
+         * @enum {string}
+         */
+        ParserMode: "cpp_only" | "cpp_with_rust_shadow" | "cpp_with_rust_py_shadow" | "rust_with_cpp_shadow" | "rust_only" | "rust_py_only" | "rust_py_with_cpp_shadow";
         /** @description Serializer mixin that handles tags for objects. */
         PatchedAction: {
             readonly id?: number;
@@ -9177,6 +9321,8 @@ export interface components {
             } | null;
             /** @description Set to true to soft-delete this endpoint. */
             deleted?: boolean | null;
+            /** @description List of tag names to associate with this endpoint. Replaces any existing tags. */
+            tags?: string[] | null;
         };
         /** @description Serializer mixin that handles tags for objects. */
         PatchedEnterpriseEventDefinition: {
@@ -9306,8 +9452,12 @@ export interface components {
         /** @description Mixin for serializers to add user access control fields */
         PatchedExperimentSavedMetric: {
             readonly id?: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
             name?: string;
+            /** @description Short description of what the metric measures. */
             description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query?: unknown;
             readonly created_by?: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at?: string;
@@ -9443,6 +9593,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -11216,6 +11388,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response4 */
         Response4: {
@@ -11266,6 +11444,11 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
             /**
              * Usedpreaggregatedtables
              * @default null
@@ -11337,6 +11520,11 @@ export interface components {
              */
             types: unknown[] | null;
             /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
              * Usedpreaggregatedtables
              * @default null
              */
@@ -11407,6 +11595,83 @@ export interface components {
              */
             types: unknown[] | null;
         };
+        /** Response7 */
+        Response7: {
+            /**
+             * Columns
+             * @default null
+             */
+            columns: unknown[] | null;
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             * @default null
+             */
+            hogql: string | null;
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: unknown[];
+            /** @default null */
+            samplingRate: components["schemas"]["SamplingRate"] | null;
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Types
+             * @default null
+             */
+            types: unknown[] | null;
+            /**
+             * Usedlazyprecompute
+             * @description Whether the response was served from the lazy precompute path.
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
+             * Usedpreaggregatedtables
+             * @description Whether the response was served from a precomputed table.
+             * @default null
+             */
+            usedPreAggregatedTables: boolean | null;
+        };
         /** Response8 */
         Response8: {
             /**
@@ -11444,6 +11709,11 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
         };
         /** Response9 */
         Response9: {
@@ -11629,12 +11899,18 @@ export interface components {
              * @description The type of property to aggregate on (event, person or data_warehouse). Defaults to event.
              * @default event
              */
-            aggregationPropertyType: components["schemas"]["AggregationPropertyType1"] | null;
+            aggregationPropertyType: components["schemas"]["AggregationPropertyType"] | null;
             /**
              * @description The aggregation type to use for retention
              * @default count
              */
             aggregationType: components["schemas"]["AggregationType"] | null;
+            /**
+             * Cohortlabelstartindex
+             * @description Starting index used when labeling cohort columns (e.g. 0 for D0/D1/D2, 1 for D1/D2/D3). Display-only — does not affect retention calculations.
+             * @default 0
+             */
+            cohortLabelStartIndex: number | null;
             /**
              * Cumulative
              * @default null
@@ -13259,6 +13535,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -13328,7 +13626,20 @@ export interface components {
             };
             readonly available_setup_task_ids: components["schemas"]["AvailableSetupTaskIdsEnum"][];
         };
-        TeamCustomerAnalyticsConfig: Record<string, never>;
+        TeamCustomerAnalyticsConfig: {
+            /** @description Event used as the activity signal (DAU/WAU/MAU). */
+            activity_event?: unknown;
+            /** @description Event used to count signup pageviews on dashboards. */
+            signup_pageview_event?: unknown;
+            /** @description Event used to count signups on dashboards. */
+            signup_event?: unknown;
+            /** @description Event used to count subscriptions on dashboards. */
+            subscription_event?: unknown;
+            /** @description Event used to count payments on dashboards. */
+            payment_event?: unknown;
+            /** @description Index of the group type to treat as an Account in customer analytics. Must reference an existing group type configured for the project. */
+            account_group_type_index?: number | null;
+        };
         TeamMarketingAnalyticsConfig: {
             attribution_window_days?: number;
             attribution_mode?: components["schemas"]["AttributionModeEnum"];
@@ -14178,15 +14489,28 @@ export interface components {
         };
         /** TrendsFilter */
         TrendsFilter: {
-            /** @default numeric */
+            /**
+             * @description Y-axis value formatter. Picks a human-friendly unit per value at render time without changing the underlying series values.
+             *
+             *     - `numeric` (default): raw numbers, e.g. `1,234`.
+             *     - `duration`: values are in seconds; rendered as friendly units per value (`45s`, `2m 12s`, `1h 4m`). Use this whenever the series is in seconds (latency, session length, time-to-event) instead of dividing in `formula` to force minutes or hours.
+             *     - `duration_ms`: values are in milliseconds; rendered as friendly units (`850ms`, `1.5s`, `1m 4s`).
+             *     - `percentage`: values are already in the 0-100 range; appends `%`.
+             *     - `percentage_scaled`: values are a 0-1 ratio; multiplied and rendered as `%`.
+             *     - `currency`: values are in the project's base currency (set in project settings, defaults to USD); rendered with that currency symbol. For values pinned to a specific currency regardless of project base (e.g. `$ai_total_cost_usd` is always USD), use `aggregationAxisPrefix` instead.
+             *     - `short`: compact notation for large counts (`1.2K`, `3.4M`).
+             * @default numeric
+             */
             aggregationAxisFormat: components["schemas"]["AggregationAxisFormat"] | null;
             /**
              * Aggregationaxispostfix
+             * @description Literal suffix applied to every value (e.g. ` req`). Reserve for units that `aggregationAxisFormat` cannot express. Do not use ` mins`, ` s`, ` ms`, `%` etc. — pick the matching `aggregationAxisFormat` instead so the underlying values stay numerically correct for breakdowns, formulas, and alerts. Include any leading space yourself.
              * @default null
              */
             aggregationAxisPostfix: string | null;
             /**
              * Aggregationaxisprefix
+             * @description Literal prefix applied to every value (e.g. `$`). Use to pin a unit or currency symbol that does not depend on `aggregationAxisFormat` — for example, when values are denominated in a fixed currency regardless of the project's base currency. Include any trailing space yourself.
              * @default null
              */
             aggregationAxisPrefix: string | null;
@@ -14202,6 +14526,7 @@ export interface components {
             confidenceLevel: number | null;
             /**
              * Decimalplaces
+             * @description Maximum number of decimal places shown. 1 or 2 is usually right for percentages and currency.
              * @default null
              */
             decimalPlaces: number | null;
@@ -14324,6 +14649,18 @@ export interface components {
              * @default 1
              */
             smoothingIntervals: number | null;
+            /**
+             * Xaxislabel
+             * @description Custom label rendered under the X axis.
+             * @default null
+             */
+            xAxisLabel: string | null;
+            /**
+             * Yaxislabel
+             * @description Custom label rendered alongside the Y axis.
+             * @default null
+             */
+            yAxisLabel: string | null;
             /** @default linear */
             yAxisScaleType: components["schemas"]["YAxisScaleType"] | null;
         };
@@ -14351,6 +14688,11 @@ export interface components {
              * @default null
              */
             breakdownFilter: components["schemas"]["BreakdownFilter"] | null;
+            /**
+             * @description Properties specific to the calendar heatmap display variant. Only consulted when `trendsFilter.display === ChartDisplayType.CalendarHeatmap`; ignored otherwise.
+             * @default null
+             */
+            calendarHeatmapFilter: components["schemas"]["CalendarHeatmapFilter"] | null;
             /**
              * @description Compare to date range
              * @default null
@@ -14787,6 +15129,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web_goals_query precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -14857,6 +15205,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Usedlazyprecompute
+             * @description Whether the response was served from the lazy precompute path.
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
+             * Usedpreaggregatedtables
+             * @description Whether the response was served from a precomputed table.
+             * @default null
+             */
+            usedPreAggregatedTables: boolean | null;
         };
         /** WebOverviewItem */
         WebOverviewItem: {
@@ -14967,6 +15327,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web_overview_query precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15022,6 +15388,11 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
             /**
              * Usedpreaggregatedtables
              * @default null
@@ -15142,6 +15513,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web stats table precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15212,6 +15589,11 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
             /**
              * Usedpreaggregatedtables
              * @default null
@@ -15306,6 +15688,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web vitals path breakdown precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15349,6 +15737,11 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
         };
         /** WebVitalsPathBreakdownResult */
         WebVitalsPathBreakdownResult: {
@@ -16261,6 +16654,10 @@ export interface operations {
     event_definitions_list: {
         parameters: {
             query?: {
+                /** @description When true, omit events that have been explicitly hidden by a team admin (Enterprise only). */
+                exclude_hidden?: boolean;
+                /** @description When true, omit events whose last ingested occurrence is older than 30 days. Events that have never been seen (`last_seen_at` is null) are kept so newly-defined events remain discoverable. Default false. If a search returns zero results with this filter on, retry with `exclude_stale=false` and tell the user the matches are stale. */
+                exclude_stale?: boolean;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
@@ -16747,6 +17144,8 @@ export interface operations {
                 offset?: number;
                 /** @description Field to order by. Prefix with '-' for descending. Allowlisted fields include name, created_at, updated_at, start_date, end_date, duration, and status. */
                 order?: string;
+                /** @description Filter to experiments created from an LLM prompt with this name. Matches experiments whose parameters.prompt_metadata.name equals the given value. */
+                prompt_name?: string;
                 /** @description Free-text search applied to the experiment name (case-insensitive). */
                 search?: string;
                 /** @description Filter by experiment status. "running" and "paused" are mutually exclusive: "running" returns launched experiments with an active feature flag, "paused" returns launched experiments whose feature flag is deactivated. "complete" is an alias for "stopped". "all" disables status filtering. */
