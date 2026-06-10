@@ -673,6 +673,168 @@ export interface components {
          * @enum {string}
          */
         AIEventType: "$ai_generation" | "$ai_embedding" | "$ai_span" | "$ai_trace" | "$ai_metric" | "$ai_feedback" | "$ai_evaluation" | "$ai_tag" | "$ai_trace_summary" | "$ai_generation_summary" | "$ai_trace_clusters" | "$ai_generation_clusters";
+        /** AccountsQuery */
+        AccountsQuery: {
+            /**
+             * Accountexecutive
+             * @description Match accounts whose account executive is any of these user ids (OR semantics).
+             * @default null
+             */
+            accountExecutive: number[] | null;
+            /**
+             * Accountowner
+             * @description Match accounts whose account owner is any of these user ids (OR semantics).
+             * @default null
+             */
+            accountOwner: number[] | null;
+            /**
+             * Allrolesunassigned
+             * @default null
+             */
+            allRolesUnassigned: boolean | null;
+            /**
+             * Csm
+             * @description Match accounts whose CSM is any of these user ids (OR semantics).
+             * @default null
+             */
+            csm: number[] | null;
+            /**
+             * Filterexpression
+             * @description Optional HogQL boolean expression AND-ed into the WHERE clause. Used by the overview tile click-to-filter affordance.
+             * @default null
+             */
+            filterExpression: string | null;
+            /**
+             * Kind
+             * @default AccountsQuery
+             * @constant
+             */
+            kind: "AccountsQuery";
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * Metrics
+             * @description Aggregation expressions evaluated against the filtered account set; one value per metric is returned in `metricsResults`. When `metrics` is set without a `select`, the runner skips the regular row fetch and returns only the aggregated values.
+             * @default null
+             */
+            metrics: string[] | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /**
+             * Orderby
+             * @default null
+             */
+            orderBy: string[] | null;
+            /** @default null */
+            response: components["schemas"]["AccountsQueryResponse"] | null;
+            /**
+             * Search
+             * @default null
+             */
+            search: string | null;
+            /**
+             * Select
+             * @default null
+             */
+            select: string[] | null;
+            /**
+             * Tagnames
+             * @default null
+             */
+            tagNames: string[] | null;
+            /** @default null */
+            tags: components["schemas"]["QueryLogTags"] | null;
+            /**
+             * Version
+             * @description version of the node, used for schema migrations
+             * @default null
+             */
+            version: number | null;
+        };
+        /** AccountsQueryResponse */
+        AccountsQueryResponse: {
+            /** Columns */
+            columns: unknown[];
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             */
+            hogql: string;
+            /**
+             * Kind
+             * @default AccountsQuery
+             * @constant
+             */
+            kind: "AccountsQuery";
+            /** Limit */
+            limit: number;
+            /**
+             * Metricsresults
+             * @description When `metrics` is set on the query, the aggregated values in the same order.
+             * @default null
+             */
+            metricsResults: (number | null)[] | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** Offset */
+            offset: number;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: unknown[][];
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /** Types */
+            types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
+        };
         /** @description Serializer mixin that handles tags for objects. */
         Action: {
             readonly id: number;
@@ -779,9 +941,8 @@ export interface components {
             /** Id */
             id: number;
             /**
-             * Kind
-             * @default ActionsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ActionsNode";
             /**
@@ -962,6 +1123,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -979,6 +1145,12 @@ export interface components {
              * @default null
              */
             types: string[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * AggregationAxisFormat
@@ -986,10 +1158,10 @@ export interface components {
          */
         AggregationAxisFormat: "numeric" | "duration" | "duration_ms" | "percentage" | "percentage_scaled" | "currency" | "short";
         /**
-         * AggregationPropertyType1
+         * AggregationPropertyType
          * @enum {string}
          */
-        AggregationPropertyType1: "event" | "person" | "data_warehouse";
+        AggregationPropertyType: "event" | "person" | "data_warehouse";
         /**
          * AggregationType
          * @enum {string}
@@ -1517,6 +1689,15 @@ export interface components {
          * @enum {string}
          */
         BusinessModelEnum: "b2b" | "b2c" | "other";
+        /** CalendarHeatmapFilter */
+        CalendarHeatmapFilter: {
+            /**
+             * Bucketbysessionstart
+             * @description When true and the series math is `dau`/`unique_users`, each user contributes to the (day-of-week, hour) bucket of their session's first event only — matching the web overview session-start attribution. When false (default), the user contributes to every bucket they have any event in. No effect on `total` math (event counts are unchanged either way).
+             * @default false
+             */
+            bucketBySessionStart: boolean | null;
+        };
         /**
          * CalendarHeatmapMathType
          * @enum {string}
@@ -1545,6 +1726,14 @@ export interface components {
             heatmap: components["schemas"]["HeatmapSettings"] | null;
             /** @default null */
             leftYAxisSettings: components["schemas"]["YAxisSettings"] | null;
+            /**
+             * Resultcustomizations
+             * @description Per-breakdown-value color customizations. Keyed by the raw breakdown column value.
+             * @default null
+             */
+            resultCustomizations: {
+                [key: string]: components["schemas"]["ResultCustomizationByValue"];
+            } | null;
             /** @default null */
             rightYAxisSettings: components["schemas"]["YAxisSettings"] | null;
             /**
@@ -2394,7 +2583,7 @@ export interface components {
              */
             response: {
                 [key: string]: unknown;
-            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response18"] | components["schemas"]["Response19"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | components["schemas"]["Response22"] | components["schemas"]["Response23"] | components["schemas"]["Response24"] | components["schemas"]["Response25"] | components["schemas"]["Response26"] | null;
+            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response7"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response18"] | components["schemas"]["Response19"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | components["schemas"]["Response22"] | components["schemas"]["Response23"] | components["schemas"]["Response24"] | components["schemas"]["Response25"] | components["schemas"]["Response26"] | components["schemas"]["Response27"] | null;
             /**
              * Showabsolutetime
              * @description Render date-time columns (timestamp, created_at, last_seen, last_seen_at, session_start, session_end) as absolute date+time instead of relative ("X ago"). The toggle is exposed in the column header menu only on EventsQuery / ActorsQuery sources.
@@ -2537,7 +2726,7 @@ export interface components {
              * Source
              * @description Source of the events
              */
-            source: components["schemas"]["EventsNode"] | components["schemas"]["EventsQuery"] | components["schemas"]["PersonsNode"] | components["schemas"]["ActorsQuery"] | components["schemas"]["GroupsQuery"] | components["schemas"]["HogQLQuery"] | components["schemas"]["WebOverviewQuery"] | components["schemas"]["WebStatsTableQuery"] | components["schemas"]["WebExternalClicksTableQuery"] | components["schemas"]["WebGoalsQuery"] | components["schemas"]["WebVitalsQuery"] | components["schemas"]["WebVitalsPathBreakdownQuery"] | components["schemas"]["SessionAttributionExplorerQuery"] | components["schemas"]["SessionsQuery"] | components["schemas"]["RevenueAnalyticsGrossRevenueQuery"] | components["schemas"]["RevenueAnalyticsMetricsQuery"] | components["schemas"]["RevenueAnalyticsMRRQuery"] | components["schemas"]["RevenueAnalyticsOverviewQuery"] | components["schemas"]["RevenueAnalyticsTopCustomersQuery"] | components["schemas"]["RevenueExampleEventsQuery"] | components["schemas"]["RevenueExampleDataWarehouseTablesQuery"] | components["schemas"]["MarketingAnalyticsTableQuery"] | components["schemas"]["MarketingAnalyticsAggregatedQuery"] | components["schemas"]["NonIntegratedConversionsTableQuery"] | components["schemas"]["ErrorTrackingQuery"] | components["schemas"]["ErrorTrackingIssueCorrelationQuery"] | components["schemas"]["ExperimentFunnelsQuery"] | components["schemas"]["ExperimentTrendsQuery"] | components["schemas"]["TracesQuery"] | components["schemas"]["TraceQuery"] | components["schemas"]["EndpointsUsageTableQuery"];
+            source: components["schemas"]["EventsNode"] | components["schemas"]["EventsQuery"] | components["schemas"]["PersonsNode"] | components["schemas"]["ActorsQuery"] | components["schemas"]["GroupsQuery"] | components["schemas"]["HogQLQuery"] | components["schemas"]["WebOverviewQuery"] | components["schemas"]["WebStatsTableQuery"] | components["schemas"]["WebExternalClicksTableQuery"] | components["schemas"]["WebGoalsQuery"] | components["schemas"]["WebVitalsQuery"] | components["schemas"]["WebVitalsPathBreakdownQuery"] | components["schemas"]["SessionAttributionExplorerQuery"] | components["schemas"]["SessionsQuery"] | components["schemas"]["RevenueAnalyticsGrossRevenueQuery"] | components["schemas"]["RevenueAnalyticsMetricsQuery"] | components["schemas"]["RevenueAnalyticsMRRQuery"] | components["schemas"]["RevenueAnalyticsOverviewQuery"] | components["schemas"]["RevenueAnalyticsTopCustomersQuery"] | components["schemas"]["RevenueExampleEventsQuery"] | components["schemas"]["RevenueExampleDataWarehouseTablesQuery"] | components["schemas"]["MarketingAnalyticsTableQuery"] | components["schemas"]["MarketingAnalyticsAggregatedQuery"] | components["schemas"]["NonIntegratedConversionsTableQuery"] | components["schemas"]["ErrorTrackingQuery"] | components["schemas"]["ErrorTrackingIssueCorrelationQuery"] | components["schemas"]["ExperimentFunnelsQuery"] | components["schemas"]["ExperimentTrendsQuery"] | components["schemas"]["TracesQuery"] | components["schemas"]["TraceQuery"] | components["schemas"]["EndpointsUsageTableQuery"] | components["schemas"]["AccountsQuery"];
             /** @default null */
             tags: components["schemas"]["QueryLogTags"] | null;
             /**
@@ -2729,6 +2918,40 @@ export interface components {
              * @default null
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        /** DataWarehouseSyncWarning */
+        DataWarehouseSyncWarning: {
+            /**
+             * Message
+             * @description Human-readable warning shown to the user
+             */
+            message: string;
+            /**
+             * Schema Name
+             * @description Name of the ExternalDataSchema responsible for syncing the table
+             */
+            schema_name: string;
+            /**
+             * Source Id
+             * @description ID of the ExternalDataSource, used to link to its management page. Null for self-managed tables.
+             * @default null
+             */
+            source_id: string | null;
+            /**
+             * Source Type
+             * @description Source type, e.g. "Stripe", "Hubspot"
+             */
+            source_type: string;
+            /**
+             * Status
+             * @description Sync status that triggered the warning, e.g. "Failed", "Paused", "BillingLimitReached"
+             */
+            status: string;
+            /**
+             * Table Name
+             * @description Name of the warehouse table the warning refers to
+             */
+            table_name: string;
         };
         /**
          * @description * `is_date_exact` - is_date_exact
@@ -2922,6 +3145,8 @@ export interface components {
             } | null;
             /** @description Set to true to soft-delete this endpoint. */
             deleted?: boolean | null;
+            /** @description List of tag names to associate with this endpoint. Replaces any existing tags. */
+            tags?: string[] | null;
         };
         /** @description Full endpoint representation returned by list/retrieve/create/update. */
         EndpointResponse: {
@@ -2940,7 +3165,7 @@ export interface components {
             is_active: boolean;
             /** @description How fresh the data is, in seconds. One of: 900, 1800, 3600, 21600, 43200, 86400, 604800. */
             data_freshness_seconds: number;
-            /** @description Relative API path to execute this endpoint (e.g. /api/environments/{team_id}/endpoints/{name}/run). */
+            /** @description Relative API path to execute this endpoint (e.g. /api/projects/{team_id}/endpoints/{name}/run). */
             endpoint_path: string;
             /** @description Absolute URL to execute this endpoint. */
             url: string | null;
@@ -2984,6 +3209,8 @@ export interface components {
             } | null;
             /** @description Column names and types from the query's SELECT clause. */
             columns: components["schemas"]["EndpointColumn"][];
+            /** @description Tag names associated with this endpoint. */
+            tags: string[];
         };
         /** @description Extended endpoint representation when viewing a specific version. */
         EndpointVersionResponse: {
@@ -3002,7 +3229,7 @@ export interface components {
             is_active: boolean;
             /** @description How fresh the data is, in seconds. One of: 900, 1800, 3600, 21600, 43200, 86400, 604800. */
             data_freshness_seconds: number;
-            /** @description Relative API path to execute this endpoint (e.g. /api/environments/{team_id}/endpoints/{name}/run). */
+            /** @description Relative API path to execute this endpoint (e.g. /api/projects/{team_id}/endpoints/{name}/run). */
             endpoint_path: string;
             /** @description Absolute URL to execute this endpoint. */
             url: string | null;
@@ -3035,7 +3262,7 @@ export interface components {
             derived_from_insight: string | null;
             /**
              * Format: date-time
-             * @description When this endpoint was last executed via the API (ISO 8601), or null if never executed.
+             * @description When this specific version was last executed via the API (ISO 8601), or null if it hasn't been executed. Per-version tracking is recent, so versions that predate it read null until their next run.
              */
             last_executed_at: string | null;
             /** @description Materialization status and configuration for the current version. */
@@ -3046,6 +3273,8 @@ export interface components {
             } | null;
             /** @description Column names and types from the query's SELECT clause. */
             columns: components["schemas"]["EndpointColumn"][];
+            /** @description Tag names associated with this endpoint. */
+            tags: string[];
             /** @description Version number. */
             version: number;
             /**
@@ -3175,6 +3404,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -3192,6 +3426,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `allow` - Allow
@@ -3462,6 +3702,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -3474,6 +3719,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** ErrorTrackingIssueFilter */
         ErrorTrackingIssueFilter: {
@@ -3714,6 +3965,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -3726,6 +3982,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `server` - Server
@@ -3856,9 +4118,8 @@ export interface components {
              */
             fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default EventsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "EventsNode";
             /**
@@ -4140,6 +4401,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -4154,6 +4420,12 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `is_set` - is_set
@@ -4219,14 +4491,12 @@ export interface components {
             end_date?: string | null;
             /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flags-get-all tool first — reuse an existing flag when possible. */
             feature_flag_key: string;
-            readonly feature_flag: {
-                [key: string]: unknown;
-            };
+            readonly feature_flag: components["schemas"]["MinimalFeatureFlag"];
             readonly holdout: components["schemas"]["ExperimentHoldout"];
             /** @description ID of a holdout group to exclude from the experiment. */
             holdout_id?: number | null;
             readonly exposure_cohort: number | null;
-            /** @description Variant definitions and rollout configuration. Set feature_flag_variants to customize the split (default: 50/50 control/test). Each variant needs a key and split_percent (the variant's share of traffic); percentages must sum to 100. Set rollout_percentage (0-100, default 100) to limit what fraction of users enter the experiment. Set minimum_detectable_effect (percentage, suggest 20-30) to control statistical power. */
+            /** @description Experiment parameters JSON. Supported keys include `feature_flag_variants`, `rollout_percentage`, `minimum_detectable_effect`, `recommended_running_time`, `recommended_sample_size`, `custom_exposure_filter`, and `excluded_variants` (list of variant keys to drop from statistical analysis; the baseline variant and holdout pseudo-variants cannot be excluded). */
             parameters?: components["schemas"]["ExperimentParameters"] | null;
             readonly saved_metrics: components["schemas"]["ExperimentToSavedMetric"][];
             /** @description IDs of shared saved metrics to attach to this experiment. Each item has 'id' (saved metric ID) and 'metadata' with 'type' (primary or secondary). */
@@ -4360,6 +4630,28 @@ export interface components {
             id: number | null;
             kind: components["schemas"]["Kind"];
             /**
+             * @description How to aggregate this source. Defaults to 'total' (event count). Use 'sum' together with math_property to aggregate a numeric property — e.g. a ratio numerator of revenue per order. Other options: 'avg', 'min', 'max', 'unique_session', 'dau', 'unique_group', 'hogql'.
+             * @default null
+             */
+            math: components["schemas"]["ExperimentMetricMathType"] | null;
+            /**
+             * @description Group type index to aggregate over. Required when math is 'unique_group'.
+             * @default null
+             */
+            math_group_type_index: components["schemas"]["MathGroupTypeIndex"] | null;
+            /**
+             * Math Hogql
+             * @description HogQL aggregation expression. Required when math is 'hogql' — without it the metric silently falls back to a plain count/sum.
+             * @default null
+             */
+            math_hogql: string | null;
+            /**
+             * Math Property
+             * @description Numeric event property to aggregate when math is 'sum', 'avg', 'min', or 'max' (e.g. 'revenue').
+             * @default null
+             */
+            math_property: string | null;
+            /**
              * Properties
              * @description Event property filters to narrow which events are counted.
              * @default null
@@ -4370,15 +4662,21 @@ export interface components {
         ExperimentApiExposureConfig: {
             /**
              * Event
-             * @description Custom exposure event name.
+             * @description Custom exposure event name. Required when kind is 'ExperimentEventExposureConfig'.
+             * @default null
              */
-            event: string;
+            event: string | null;
             /**
-             * Kind
-             * @default ExperimentEventExposureConfig
-             * @constant
+             * Id
+             * @description Action ID. Required when kind is 'ActionsNode'.
+             * @default null
              */
-            kind: "ExperimentEventExposureConfig";
+            id: number | null;
+            /**
+             * @description Defaults to 'ExperimentEventExposureConfig' when omitted. Pass 'ActionsNode' for an action-based exposure.
+             * @default null
+             */
+            kind: components["schemas"]["Kind1"] | null;
             /**
              * Properties
              * @description Event property filters. Pass an empty array if no filters needed.
@@ -4414,16 +4712,33 @@ export interface components {
              */
             denominator: components["schemas"]["ExperimentApiEventSource"] | null;
             /**
+             * @description For ratio metrics: winsorization applied to the denominator aggregate. Leave unset for a binomial-style denominator, which is never clamped.
+             * @default null
+             */
+            denominator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
+            /**
              * @description Whether higher or lower values indicate success.
              * @default null
              */
             goal: components["schemas"]["ExperimentMetricGoal"] | null;
+            /**
+             * Ignore Zeros
+             * @description For mean metrics: exclude zero values when computing the winsorization percentile thresholds.
+             * @default null
+             */
+            ignore_zeros: boolean | null;
             /**
              * Kind
              * @default ExperimentMetric
              * @constant
              */
             kind: "ExperimentMetric";
+            /**
+             * Lower Bound Percentile
+             * @description For mean metrics: winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile). Per-user values below this percentile are clamped to it before aggregation.
+             * @default null
+             */
+            lower_bound_percentile: number | null;
             metric_type: components["schemas"]["ExperimentMetricType"];
             /**
              * Name
@@ -4436,6 +4751,11 @@ export interface components {
              * @default null
              */
             numerator: components["schemas"]["ExperimentApiEventSource"] | null;
+            /**
+             * @description For ratio metrics: winsorization applied to the numerator aggregate, independently of the denominator and each with its own percentile thresholds.
+             * @default null
+             */
+            numerator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Retention Window End
              * @default null
@@ -4466,6 +4786,12 @@ export interface components {
             start_event: components["schemas"]["ExperimentApiEventSource"] | null;
             /** @default null */
             start_handling: components["schemas"]["StartHandling"] | null;
+            /**
+             * Upper Bound Percentile
+             * @description For mean metrics: winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile). Per-user values above this percentile are clamped to it before aggregation.
+             * @default null
+             */
+            upper_bound_percentile: number | null;
             /**
              * Uuid
              * @description Unique identifier. Auto-generated if omitted.
@@ -4506,9 +4832,8 @@ export interface components {
              */
             fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default ExperimentDataWarehouseNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ExperimentDataWarehouseNode";
             /**
@@ -4746,6 +5071,12 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantFunnelsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         ExperimentHoldout: {
             readonly id: number;
@@ -4793,6 +5124,7 @@ export interface components {
             kind: "ExperimentMetric";
             /**
              * Lower Bound Percentile
+             * @description Winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile).
              * @default null
              */
             lower_bound_percentile: number | null;
@@ -4822,6 +5154,7 @@ export interface components {
             source: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
             /**
              * Upper Bound Percentile
+             * @description Winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile).
              * @default null
              */
             upper_bound_percentile: number | null;
@@ -4847,6 +5180,26 @@ export interface components {
          * @enum {string}
          */
         ExperimentMetricMathType: "total" | "sum" | "unique_session" | "min" | "max" | "avg" | "dau" | "unique_group" | "hogql";
+        /** ExperimentMetricOutlierHandling */
+        ExperimentMetricOutlierHandling: {
+            /**
+             * Ignore Zeros
+             * @default null
+             */
+            ignore_zeros: boolean | null;
+            /**
+             * Lower Bound Percentile
+             * @description Winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile).
+             * @default null
+             */
+            lower_bound_percentile: number | null;
+            /**
+             * Upper Bound Percentile
+             * @description Winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile).
+             * @default null
+             */
+            upper_bound_percentile: number | null;
+        };
         /**
          * ExperimentMetricType
          * @enum {string}
@@ -4854,6 +5207,12 @@ export interface components {
         ExperimentMetricType: "funnel" | "mean" | "ratio" | "retention";
         /** ExperimentParameters */
         ExperimentParameters: {
+            /**
+             * Excluded Variants
+             * @description Variant keys to exclude from metric result calculations. Excluded variants are still served to users but omitted from statistical analysis.
+             * @default null
+             */
+            excluded_variants: string[] | null;
             /**
              * Feature Flag Variants
              * @description Experiment variants. If specified, must include a variant with key 'control' (lowercase). Defaults to a 50/50 control/test split when omitted. Minimum 2, maximum 20.
@@ -4996,6 +5355,12 @@ export interface components {
              * @default null
              */
             variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][] | components["schemas"]["ExperimentVariantFunnelsBaseStats"][] | null;
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** ExperimentRatioMetric */
         ExperimentRatioMetric: {
@@ -5010,6 +5375,8 @@ export interface components {
             conversion_window_unit: components["schemas"]["FunnelConversionWindowTimeUnit"] | null;
             /** Denominator */
             denominator: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
+            /** @default null */
+            denominator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Fingerprint
              * @default null
@@ -5040,6 +5407,8 @@ export interface components {
             name: string | null;
             /** Numerator */
             numerator: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
+            /** @default null */
+            numerator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Response
              * @default null
@@ -5140,8 +5509,12 @@ export interface components {
         /** @description Mixin for serializers to add user access control fields */
         ExperimentSavedMetric: {
             readonly id: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
             name: string;
+            /** @description Short description of what the metric measures. */
             description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query: unknown;
             readonly created_by: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at: string;
@@ -5311,6 +5684,12 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `web` - web
@@ -5626,6 +6005,8 @@ export interface components {
             tags?: string[];
             /** @description Evaluation contexts that control where this flag evaluates at runtime. */
             evaluation_contexts?: string[];
+            /** @description Whether this flag is a remote configuration flag that delivers a payload rather than gating a feature. */
+            is_remote_configuration?: boolean | null;
         };
         /**
          * @description * `feature_flags` - feature_flags
@@ -5889,12 +6270,13 @@ export interface components {
             payloads?: {
                 [key: string]: string;
             };
-            /** @description Additional super condition groups used by experiments. */
-            super_groups?: {
-                [key: string]: unknown;
-            }[];
             /** @description Whether this flag has early access feature enrollment enabled. When true, the flag is evaluated against the person property $feature_enrollment/{flag_key}. */
             feature_enrollment?: boolean | null;
+            /**
+             * @description When true, condition evaluation stops at the first matching condition set rather than continuing to evaluate subsequent groups.
+             * @default false
+             */
+            early_exit: boolean;
         };
         FeatureFlagMultivariateSchema: {
             /** @description Variant definitions for multivariate feature flags. */
@@ -6131,6 +6513,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -6147,6 +6534,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** FunnelCorrelationResult */
         FunnelCorrelationResult: {
@@ -6596,6 +6989,12 @@ export interface components {
              * @default null
              */
             hiddenLegendBreakdowns: string[] | null;
+            /**
+             * Hideincompleteconversionwindowperiods
+             * @description Trends only: hide periods whose conversion window has not fully elapsed yet, so the recent tail of the trend isn't dragged down by entrants who still have time to convert.
+             * @default false
+             */
+            hideIncompleteConversionWindowPeriods: boolean | null;
             /** @default vertical */
             layout: components["schemas"]["FunnelLayout"] | null;
             /**
@@ -6606,6 +7005,12 @@ export interface components {
             resultCustomizations: {
                 [key: string]: components["schemas"]["ResultCustomizationByValue"];
             } | null;
+            /**
+             * Showannotations
+             * @description Whether to render annotations on the chart. Only applies to historical-trends funnels.
+             * @default true
+             */
+            showAnnotations: boolean | null;
             /**
              * Showtrendlines
              * @description Display linear regression trend lines on the chart (only for historical trends viz)
@@ -6729,6 +7134,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -6741,6 +7151,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** GoalLine */
         GoalLine: {
@@ -6998,6 +7414,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -7012,6 +7433,12 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** HeatmapGradientStop */
         HeatmapGradientStop: {
@@ -7188,7 +7615,7 @@ export interface components {
         HogQLQuery: {
             /**
              * Connectionid
-             * @description Optional direct external data source id for running against a specific source
+             * @description Optional id of a direct external data source (access_method='direct') to run against instead of ClickHouse. Warehouse import sources are not valid here.
              * @default null
              */
             connectionId: string | null;
@@ -7309,6 +7736,11 @@ export interface components {
              * @default null
              */
             optimizeProjections: boolean | null;
+            /**
+             * @description HogQL parser backend; absent → `rust_py_with_cpp_shadow` (rust-py is primary, cpp runs as a sampled shadow). `*_shadow` modes return the primary result and sample-compare against the other parser, reporting divergences without failing the request. The `rust_py_*` modes drive the same hand-rolled Rust parser as `rust_*` but build `posthog.hogql.ast` dataclass instances directly via PyO3, skipping the JSON round-trip.
+             * @default null
+             */
+            parserMode: components["schemas"]["ParserMode"] | null;
             /** @default null */
             personsArgMaxVersion: components["schemas"]["PersonsArgMaxVersion"] | null;
             /** @default null */
@@ -7317,6 +7749,11 @@ export interface components {
             personsOnEventsMode: components["schemas"]["PersonsOnEventsMode"] | null;
             /** @default null */
             propertyGroupsMode: components["schemas"]["PropertyGroupsMode"] | null;
+            /**
+             * Pushdownpredicates
+             * @default null
+             */
+            pushDownPredicates: boolean | null;
             /**
              * S3Tableuseinvalidcolumns
              * @default null
@@ -7434,6 +7871,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -7452,6 +7894,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** HogQLVariable */
         HogQLVariable: {
@@ -7604,6 +8052,8 @@ export interface components {
             readonly alerts: unknown[];
             /** Format: date-time */
             readonly last_viewed_at: string | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match only). Results are ordered exact-first. Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
         };
         /** InsightActorsQuery */
         InsightActorsQuery: {
@@ -7757,7 +8207,7 @@ export interface components {
          * IntegrationKind
          * @enum {string}
          */
-        IntegrationKind: "slack" | "slack-posthog-code" | "salesforce" | "hubspot" | "google-pubsub" | "google-cloud-service-account" | "google-cloud-storage" | "google-ads" | "google-sheets" | "linkedin-ads" | "snapchat" | "stripe" | "intercom" | "email" | "twilio" | "linear" | "github" | "gitlab" | "meta-ads" | "clickup" | "reddit-ads" | "databricks" | "tiktok-ads" | "bing-ads" | "vercel" | "azure-blob" | "firebase" | "jira" | "pinterest-ads" | "customerio-app" | "customerio-webhook" | "customerio-track";
+        IntegrationKind: "slack" | "salesforce" | "hubspot" | "google-pubsub" | "google-cloud-service-account" | "google-cloud-storage" | "google-ads" | "google-search-console" | "google-sheets" | "linkedin-ads" | "snapchat" | "stripe" | "intercom" | "email" | "twilio" | "linear" | "github" | "gitlab" | "meta-ads" | "clickup" | "reddit-ads" | "databricks" | "tiktok-ads" | "bing-ads" | "vercel" | "azure-blob" | "firebase" | "jira" | "pinterest-ads" | "customerio-app" | "customerio-webhook" | "customerio-track";
         /**
          * IntervalType
          * @enum {string}
@@ -7773,6 +8223,11 @@ export interface components {
          * @enum {string}
          */
         Kind: "EventsNode" | "ActionsNode";
+        /**
+         * Kind1
+         * @enum {string}
+         */
+        Kind1: "ExperimentEventExposureConfig" | "ActionsNode";
         /** LLMTrace */
         LLMTrace: {
             /**
@@ -8116,6 +8571,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8130,6 +8590,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * LifecycleToggle
@@ -8307,6 +8773,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8323,6 +8794,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * MarketingAnalyticsDrillDownLevel
@@ -8534,6 +9011,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8553,6 +9035,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * MaterializationMode
@@ -8579,6 +9067,35 @@ export interface components {
          * @enum {string}
          */
         MeanRetentionCalculation: "simple" | "weighted" | "none";
+        MinimalFeatureFlag: {
+            readonly id: number;
+            readonly team_id: number;
+            name?: string;
+            key: string;
+            filters?: {
+                [key: string]: unknown;
+            };
+            deleted?: boolean;
+            active?: boolean;
+            ensure_experience_continuity?: boolean | null;
+            version?: number | null;
+            /**
+             * @description Specifies where this feature flag should be evaluated
+             *
+             *     * `server` - Server
+             *     * `client` - Client
+             *     * `all` - All
+             */
+            evaluation_runtime?: components["schemas"]["EvaluationRuntimeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description Identifier used for bucketing users into rollout and variants
+             *
+             *     * `distinct_id` - User ID (default)
+             *     * `device_id` - Device ID
+             */
+            bucketing_identifier?: components["schemas"]["BucketingIdentifierEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            readonly evaluation_contexts: string[];
+        };
         /**
          * MultipleBreakdownType
          * @enum {string}
@@ -8748,6 +9265,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8767,6 +9289,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         NullEnum: null;
         /** @description Matches numeric values with comparison operators. */
@@ -9019,6 +9547,11 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
         };
+        /**
+         * ParserMode
+         * @enum {string}
+         */
+        ParserMode: "cpp_only" | "cpp_with_rust_shadow" | "cpp_with_rust_py_shadow" | "rust_with_cpp_shadow" | "rust_only" | "rust_py_only" | "rust_py_with_cpp_shadow";
         /** @description Serializer mixin that handles tags for objects. */
         PatchedAction: {
             readonly id?: number;
@@ -9177,6 +9710,8 @@ export interface components {
             } | null;
             /** @description Set to true to soft-delete this endpoint. */
             deleted?: boolean | null;
+            /** @description List of tag names to associate with this endpoint. Replaces any existing tags. */
+            tags?: string[] | null;
         };
         /** @description Serializer mixin that handles tags for objects. */
         PatchedEnterpriseEventDefinition: {
@@ -9227,14 +9762,12 @@ export interface components {
             end_date?: string | null;
             /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flags-get-all tool first — reuse an existing flag when possible. */
             feature_flag_key?: string;
-            readonly feature_flag?: {
-                [key: string]: unknown;
-            };
+            readonly feature_flag?: components["schemas"]["MinimalFeatureFlag"];
             readonly holdout?: components["schemas"]["ExperimentHoldout"];
             /** @description ID of a holdout group to exclude from the experiment. */
             holdout_id?: number | null;
             readonly exposure_cohort?: number | null;
-            /** @description Variant definitions and rollout configuration. Set feature_flag_variants to customize the split (default: 50/50 control/test). Each variant needs a key and split_percent (the variant's share of traffic); percentages must sum to 100. Set rollout_percentage (0-100, default 100) to limit what fraction of users enter the experiment. Set minimum_detectable_effect (percentage, suggest 20-30) to control statistical power. */
+            /** @description Experiment parameters JSON. Supported keys include `feature_flag_variants`, `rollout_percentage`, `minimum_detectable_effect`, `recommended_running_time`, `recommended_sample_size`, `custom_exposure_filter`, and `excluded_variants` (list of variant keys to drop from statistical analysis; the baseline variant and holdout pseudo-variants cannot be excluded). */
             parameters?: components["schemas"]["ExperimentParameters"] | null;
             readonly saved_metrics?: components["schemas"]["ExperimentToSavedMetric"][];
             /** @description IDs of shared saved metrics to attach to this experiment. Each item has 'id' (saved metric ID) and 'metadata' with 'type' (primary or secondary). */
@@ -9306,8 +9839,12 @@ export interface components {
         /** @description Mixin for serializers to add user access control fields */
         PatchedExperimentSavedMetric: {
             readonly id?: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
             name?: string;
+            /** @description Short description of what the metric measures. */
             description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query?: unknown;
             readonly created_by?: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at?: string;
@@ -9330,6 +9867,8 @@ export interface components {
             tags?: string[];
             /** @description Evaluation contexts that control where this flag evaluates at runtime. */
             evaluation_contexts?: string[];
+            /** @description Whether this flag is a remote configuration flag that delivers a payload rather than gating a feature. */
+            is_remote_configuration?: boolean | null;
         };
         /** @description Simplified serializer to speed response times when loading large amounts of objects. */
         PatchedInsight: {
@@ -9402,6 +9941,8 @@ export interface components {
             readonly alerts?: unknown[];
             /** Format: date-time */
             readonly last_viewed_at?: string | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match only). Results are ordered exact-first. Null when the list is not filtered by `search`. */
+            readonly search_match_type?: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
         };
         PatchedSchemaPropertyGroup: {
             /** Format: uuid */
@@ -9443,6 +9984,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -9498,6 +10061,7 @@ export interface components {
             business_model?: components["schemas"]["BusinessModelEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
             conversations_enabled?: boolean | null;
             proactive_tasks_enabled?: boolean | null;
+            workflows_config?: components["schemas"]["TeamWorkflowsConfig"];
             readonly effective_membership_level?: components["schemas"]["EffectiveMembershipLevelEnum"];
             readonly has_group_types?: boolean;
             readonly group_types?: {
@@ -9725,6 +10289,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -9737,6 +10306,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** PersonFilter */
         PersonFilter: {
@@ -10190,6 +10765,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10204,6 +10784,12 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response1 */
         Response1: {
@@ -10245,6 +10831,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10262,6 +10853,12 @@ export interface components {
              * @default null
              */
             types: string[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response10 */
         Response10: {
@@ -10304,6 +10901,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10318,6 +10920,12 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response11 */
         Response11: {
@@ -10349,6 +10957,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10361,6 +10974,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response12 */
         Response12: {
@@ -10392,6 +11011,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10404,6 +11028,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response13 */
         Response13: {
@@ -10435,6 +11065,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10447,6 +11082,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response14 */
         Response14: {
@@ -10473,6 +11114,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10485,6 +11131,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response15 */
         Response15: {
@@ -10516,6 +11168,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10528,6 +11185,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response16 */
         Response16: {
@@ -10574,6 +11237,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10591,6 +11259,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response18 */
         Response18: {
@@ -10637,6 +11311,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10656,6 +11335,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response19 */
         Response19: {
@@ -10682,6 +11367,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10698,6 +11388,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response2 */
         Response2: {
@@ -10740,6 +11436,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10754,6 +11455,12 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response20 */
         Response20: {
@@ -10800,6 +11507,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10819,6 +11531,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response21 */
         Response21: {
@@ -10865,6 +11583,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10877,6 +11600,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response22 */
         Response22: {
@@ -10923,6 +11652,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10935,6 +11669,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response23 */
         Response23: {
@@ -10970,6 +11710,12 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantFunnelsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response24 */
         Response24: {
@@ -11007,6 +11753,12 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response25 */
         Response25: {
@@ -11053,6 +11805,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11065,6 +11822,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response26 */
         Response26: {
@@ -11111,6 +11874,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11128,6 +11896,85 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
+        };
+        /** Response27 */
+        Response27: {
+            /** Columns */
+            columns: unknown[];
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             */
+            hogql: string;
+            /**
+             * Kind
+             * @default AccountsQuery
+             * @constant
+             */
+            kind: "AccountsQuery";
+            /** Limit */
+            limit: number;
+            /**
+             * Metricsresults
+             * @description When `metrics` is set on the query, the aggregated values in the same order.
+             * @default null
+             */
+            metricsResults: (number | null)[] | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** Offset */
+            offset: number;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: unknown[][];
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /** Types */
+            types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response3 */
         Response3: {
@@ -11198,6 +12045,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11216,6 +12068,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response4 */
         Response4: {
@@ -11252,6 +12110,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11267,10 +12130,21 @@ export interface components {
              */
             timings: components["schemas"]["QueryTiming"][] | null;
             /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
              * Usedpreaggregatedtables
              * @default null
              */
             usedPreAggregatedTables: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response5 */
         Response5: {
@@ -11317,6 +12191,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11337,10 +12216,21 @@ export interface components {
              */
             types: unknown[] | null;
             /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
              * Usedpreaggregatedtables
              * @default null
              */
             usedPreAggregatedTables: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response6 */
         Response6: {
@@ -11387,6 +12277,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11406,6 +12301,100 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
+        };
+        /** Response7 */
+        Response7: {
+            /**
+             * Columns
+             * @default null
+             */
+            columns: unknown[] | null;
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             * @default null
+             */
+            hogql: string | null;
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: unknown[];
+            /** @default null */
+            samplingRate: components["schemas"]["SamplingRate"] | null;
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Types
+             * @default null
+             */
+            types: unknown[] | null;
+            /**
+             * Usedlazyprecompute
+             * @description Whether the response was served from the lazy precompute path.
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
+             * Usedpreaggregatedtables
+             * @description Whether the response was served from a precomputed table.
+             * @default null
+             */
+            usedPreAggregatedTables: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response8 */
         Response8: {
@@ -11432,6 +12421,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11444,6 +12438,17 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response9 */
         Response9: {
@@ -11490,6 +12495,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11507,6 +12517,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `21` - Everyone in the project can edit
@@ -11629,12 +12645,18 @@ export interface components {
              * @description The type of property to aggregate on (event, person or data_warehouse). Defaults to event.
              * @default event
              */
-            aggregationPropertyType: components["schemas"]["AggregationPropertyType1"] | null;
+            aggregationPropertyType: components["schemas"]["AggregationPropertyType"] | null;
             /**
              * @description The aggregation type to use for retention
              * @default count
              */
             aggregationType: components["schemas"]["AggregationType"] | null;
+            /**
+             * Cohortlabelstartindex
+             * @description Starting index used when labeling cohort columns (e.g. 0 for D0/D1/D2, 1 for D1/D2/D3). Display-only — does not affect retention calculations.
+             * @default 0
+             */
+            cohortLabelStartIndex: number | null;
             /**
              * Cumulative
              * @default null
@@ -11804,6 +12826,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11816,6 +12843,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * RetentionReference
@@ -11932,6 +12965,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11944,6 +12982,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** RevenueAnalyticsMRRQuery */
         RevenueAnalyticsMRRQuery: {
@@ -12006,6 +13050,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12018,6 +13067,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** RevenueAnalyticsMRRQueryResultItem */
         RevenueAnalyticsMRRQueryResultItem: {
@@ -12093,6 +13148,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12105,6 +13165,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** RevenueAnalyticsOverviewItem */
         RevenueAnalyticsOverviewItem: {
@@ -12170,6 +13236,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12182,6 +13253,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** RevenueAnalyticsPropertyFilter */
         RevenueAnalyticsPropertyFilter: {
@@ -12269,6 +13346,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12281,6 +13363,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** RevenueCurrencyPropertyConfig */
         RevenueCurrencyPropertyConfig: {
@@ -12371,6 +13459,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12388,6 +13481,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** RevenueExampleEventsQuery */
         RevenueExampleEventsQuery: {
@@ -12468,6 +13567,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12485,6 +13589,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `engineering` - Engineering
@@ -12548,6 +13658,8 @@ export interface components {
          * @enum {string}
          */
         SchemaPropertyGroupPropertyPropertyTypeEnum: "DateTime" | "String" | "Numeric" | "Boolean" | "Object";
+        /** @enum {string} */
+        SearchMatchTypeEnum: "exact" | "similar";
         /** SessionAttributionExplorerQuery */
         SessionAttributionExplorerQuery: {
             /** @default null */
@@ -12631,6 +13743,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12648,6 +13765,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * SessionAttributionGroupBy
@@ -12848,6 +13971,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12862,6 +13990,12 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * SessionsV2JoinMode
@@ -13122,6 +14256,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -13136,6 +14275,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `exact` - exact
@@ -13259,6 +14404,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -13314,6 +14481,7 @@ export interface components {
             business_model?: components["schemas"]["BusinessModelEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
             conversations_enabled?: boolean | null;
             proactive_tasks_enabled?: boolean | null;
+            workflows_config?: components["schemas"]["TeamWorkflowsConfig"];
             readonly effective_membership_level: components["schemas"]["EffectiveMembershipLevelEnum"];
             readonly has_group_types: boolean;
             readonly group_types: {
@@ -13328,7 +14496,20 @@ export interface components {
             };
             readonly available_setup_task_ids: components["schemas"]["AvailableSetupTaskIdsEnum"][];
         };
-        TeamCustomerAnalyticsConfig: Record<string, never>;
+        TeamCustomerAnalyticsConfig: {
+            /** @description Event used as the activity signal (DAU/WAU/MAU). */
+            activity_event?: unknown;
+            /** @description Event used to count signup pageviews on dashboards. */
+            signup_pageview_event?: unknown;
+            /** @description Event used to count signups on dashboards. */
+            signup_event?: unknown;
+            /** @description Event used to count subscriptions on dashboards. */
+            subscription_event?: unknown;
+            /** @description Event used to count payments on dashboards. */
+            payment_event?: unknown;
+            /** @description Index of the group type to treat as an Account in customer analytics. Must reference an existing group type configured for the project. */
+            account_group_type_index?: number | null;
+        };
         TeamMarketingAnalyticsConfig: {
             attribution_window_days?: number;
             attribution_mode?: components["schemas"]["AttributionModeEnum"];
@@ -13336,6 +14517,10 @@ export interface components {
         TeamRevenueAnalyticsConfig: {
             base_currency?: components["schemas"]["BaseCurrencyEnum"];
             filter_test_accounts?: boolean;
+        };
+        TeamWorkflowsConfig: {
+            /** @description When enabled, workflows engagement activity (email sends, opens, clicks, bounces, spam reports, unsubscribes) is captured as standard PostHog events ($workflows_email_*) alongside the existing workflow metrics. */
+            capture_workflows_engagement_events?: boolean;
         };
         /**
          * TextMatching
@@ -14026,6 +15211,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14038,6 +15228,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** TracesQuery */
         TracesQuery: {
@@ -14163,6 +15359,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14175,18 +15376,37 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** TrendsFilter */
         TrendsFilter: {
-            /** @default numeric */
+            /**
+             * @description Y-axis value formatter. Picks a human-friendly unit per value at render time without changing the underlying series values.
+             *
+             *     - `numeric` (default): raw numbers, e.g. `1,234`.
+             *     - `duration`: values are in seconds; rendered as friendly units per value (`45s`, `2m 12s`, `1h 4m`). Use this whenever the series is in seconds (latency, session length, time-to-event) instead of dividing in `formula` to force minutes or hours.
+             *     - `duration_ms`: values are in milliseconds; rendered as friendly units (`850ms`, `1.5s`, `1m 4s`).
+             *     - `percentage`: values are already in the 0-100 range; appends `%`.
+             *     - `percentage_scaled`: values are a 0-1 ratio; multiplied and rendered as `%`.
+             *     - `currency`: values are in the project's base currency (set in project settings, defaults to USD); rendered with that currency symbol. For values pinned to a specific currency regardless of project base (e.g. `$ai_total_cost_usd` is always USD), use `aggregationAxisPrefix` instead.
+             *     - `short`: compact notation for large counts (`1.2K`, `3.4M`).
+             * @default numeric
+             */
             aggregationAxisFormat: components["schemas"]["AggregationAxisFormat"] | null;
             /**
              * Aggregationaxispostfix
+             * @description Literal suffix applied to every value (e.g. ` req`). Reserve for units that `aggregationAxisFormat` cannot express. Do not use ` mins`, ` s`, ` ms`, `%` etc. — pick the matching `aggregationAxisFormat` instead so the underlying values stay numerically correct for breakdowns, formulas, and alerts. Include any leading space yourself.
              * @default null
              */
             aggregationAxisPostfix: string | null;
             /**
              * Aggregationaxisprefix
+             * @description Literal prefix applied to every value (e.g. `$`). Use to pin a unit or currency symbol that does not depend on `aggregationAxisFormat` — for example, when values are denominated in a fixed currency regardless of the project's base currency. Include any trailing space yourself.
              * @default null
              */
             aggregationAxisPrefix: string | null;
@@ -14202,6 +15422,7 @@ export interface components {
             confidenceLevel: number | null;
             /**
              * Decimalplaces
+             * @description Maximum number of decimal places shown. 1 or 2 is usually right for percentages and currency.
              * @default null
              */
             decimalPlaces: number | null;
@@ -14280,6 +15501,11 @@ export interface components {
              */
             showAlertThresholdLines: boolean | null;
             /**
+             * Showannotations
+             * @default true
+             */
+            showAnnotations: boolean | null;
+            /**
              * Showconfidenceintervals
              * @default null
              */
@@ -14324,6 +15550,24 @@ export interface components {
              * @default 1
              */
             smoothingIntervals: number | null;
+            /**
+             * Stackbreakdownvalues
+             * @description On the horizontal bar-value chart, stack a series' breakdown values into a single bar instead of rendering one bar per breakdown value.
+             * @default false
+             */
+            stackBreakdownValues: boolean | null;
+            /**
+             * Xaxislabel
+             * @description Custom label rendered under the X axis.
+             * @default null
+             */
+            xAxisLabel: string | null;
+            /**
+             * Yaxislabel
+             * @description Custom label rendered alongside the Y axis.
+             * @default null
+             */
+            yAxisLabel: string | null;
             /** @default linear */
             yAxisScaleType: components["schemas"]["YAxisScaleType"] | null;
         };
@@ -14351,6 +15595,11 @@ export interface components {
              * @default null
              */
             breakdownFilter: components["schemas"]["BreakdownFilter"] | null;
+            /**
+             * @description Properties specific to the calendar heatmap display variant. Only consulted when `trendsFilter.display === ChartDisplayType.CalendarHeatmap`; ignored otherwise.
+             * @default null
+             */
+            calendarHeatmapFilter: components["schemas"]["CalendarHeatmapFilter"] | null;
             /**
              * @description Compare to date range
              * @default null
@@ -14466,6 +15715,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14480,6 +15734,12 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * UrlMatching
@@ -14683,6 +15943,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14702,6 +15967,12 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** WebGoalsQuery */
         WebGoalsQuery: {
@@ -14787,6 +16058,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web_goals_query precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -14838,6 +16115,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14857,6 +16139,24 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Usedlazyprecompute
+             * @description Whether the response was served from the lazy precompute path.
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
+             * Usedpreaggregatedtables
+             * @description Whether the response was served from a precomputed table.
+             * @default null
+             */
+            usedPreAggregatedTables: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** WebOverviewItem */
         WebOverviewItem: {
@@ -14967,6 +16267,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web_overview_query precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15008,6 +16314,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -15023,10 +16334,21 @@ export interface components {
              */
             timings: components["schemas"]["QueryTiming"][] | null;
             /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
              * Usedpreaggregatedtables
              * @default null
              */
             usedPreAggregatedTables: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * WebStatsBreakdown
@@ -15142,6 +16464,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web stats table precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15193,6 +16521,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -15213,10 +16546,21 @@ export interface components {
              */
             types: unknown[] | null;
             /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
              * Usedpreaggregatedtables
              * @default null
              */
             usedPreAggregatedTables: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * WebVitalsMetric
@@ -15306,6 +16650,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web vitals path breakdown precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15337,6 +16687,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -15349,6 +16704,17 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Usedlazyprecompute
+             * @default null
+             */
+            usedLazyPrecompute: boolean | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** WebVitalsPathBreakdownResult */
         WebVitalsPathBreakdownResult: {
@@ -15714,10 +17080,12 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "csv" | "json";
-                /** @description Number of results to return per page. */
+                /** @description Maximum number of actions to return. Omit to return all. */
                 limit?: number;
-                /** @description The initial index from which to return the results. */
+                /** @description Number of actions to skip before returning results. */
                 offset?: number;
+                /** @description Case-insensitive substring match on the action name. */
+                search?: string;
             };
             header?: never;
             path: {
@@ -15891,6 +17259,10 @@ export interface operations {
     cohorts_list: {
         parameters: {
             query?: {
+                /** @description Return a basic payload that omits the heavy `filters`, `query`, and `groups` fields. Useful for pickers that only need id/name/count. */
+                basic?: boolean;
+                /** @description Set true to exclude behavioral (event-based) cohorts, which can't be used in feature flags or batch workflow audiences. */
+                hide_behavioral_cohorts?: boolean;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
@@ -16261,6 +17633,10 @@ export interface operations {
     event_definitions_list: {
         parameters: {
             query?: {
+                /** @description When true, omit events that have been explicitly hidden by a team admin (Enterprise only). */
+                exclude_hidden?: boolean;
+                /** @description When true, omit events whose last ingested occurrence is older than 30 days. Events that have never been seen (`last_seen_at` is null) are kept so newly-defined events remain discoverable. Default false. If a search returns zero results with this filter on, retry with `exclude_stale=false` and tell the user the matches are stale. */
+                exclude_stale?: boolean;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
@@ -16607,6 +17983,8 @@ export interface operations {
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path: {
@@ -16739,6 +18117,8 @@ export interface operations {
                 archived?: boolean;
                 /** @description Filter to experiments created by the given user ID. */
                 created_by_id?: number;
+                /** @description Filter to experiments whose metrics reference this event name. Matches events used directly in metric queries as well as events behind any actions those metrics reference. */
+                event?: string;
                 /** @description Filter to experiments linked to the given feature flag ID. */
                 feature_flag_id?: number;
                 /** @description Number of results to return per page. */
@@ -16747,6 +18127,8 @@ export interface operations {
                 offset?: number;
                 /** @description Field to order by. Prefix with '-' for descending. Allowlisted fields include name, created_at, updated_at, start_date, end_date, duration, and status. */
                 order?: string;
+                /** @description Filter to experiments created from an LLM prompt with this name. Matches experiments whose parameters.prompt_metadata.name equals the given value. */
+                prompt_name?: string;
                 /** @description Free-text search applied to the experiment name (case-insensitive). */
                 search?: string;
                 /** @description Filter by experiment status. "running" and "paused" are mutually exclusive: "running" returns launched experiments with an active feature flag, "paused" returns launched experiments whose feature flag is deactivated. "complete" is an alias for "stopped". "all" disables status filtering. */
@@ -17245,7 +18627,7 @@ export interface operations {
                 refresh?: "async" | "async_except_on_cache_miss" | "blocking" | "force_async" | "force_blocking" | "force_cache" | "lazy_async";
                 /** @description When truthy, restricts results to insights that are saved (or attached to a visible dashboard). When falsy, only unsaved insights. */
                 saved?: boolean;
-                /** @description Case-insensitive substring match across name, derived_name, description, and tag names. */
+                /** @description Search term matched across name, derived_name, description, and tag names. Returns case-insensitive substring matches and fuzzy trigram matches together in one list, ordered exact-first; each result's `search_match_type` is `exact` or `similar`. */
                 search?: string;
                 short_id?: string;
                 /** @description JSON-encoded array of tag names. Returns insights with any of the listed tags. */
