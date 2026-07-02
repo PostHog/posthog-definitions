@@ -56,7 +56,7 @@ export type ExperimentUpdate = Partial<Omit<ExperimentCreate, "feature_flag_key"
 
 type ExperimentBody = components["schemas"]["Experiment"];
 type PatchedBody = components["schemas"]["PatchedExperiment"];
-type GeneratedPaginatedList = components["schemas"]["PaginatedExperimentList"];
+type GeneratedPaginatedList = components["schemas"]["PaginatedExperimentBasicList"];
 
 function paginatedFrom(raw: GeneratedPaginatedList): Paginated<unknown> {
   return {
