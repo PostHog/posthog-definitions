@@ -1,60 +1,4 @@
 export interface paths {
-    "/api/environments/{environment_id}/endpoints/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @deprecated
-         * @description List all endpoints for the team.
-         */
-        get: operations["environments_endpoints_list"];
-        put?: never;
-        /**
-         * @deprecated
-         * @description Create a new endpoint.
-         */
-        post: operations["environments_endpoints_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/environments/{environment_id}/endpoints/{name}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @deprecated
-         * @description Retrieve an endpoint, or a specific version via ?version=N.
-         */
-        get: operations["environments_endpoints_retrieve"];
-        /**
-         * @deprecated
-         * @description Update an existing endpoint. Parameters are optional. Pass version in body or ?version=N query param to target a specific version.
-         */
-        put: operations["environments_endpoints_update"];
-        post?: never;
-        /**
-         * @deprecated
-         * @description Delete an endpoint and clean up materialized query.
-         */
-        delete: operations["environments_endpoints_destroy"];
-        options?: never;
-        head?: never;
-        /**
-         * @deprecated
-         * @description Update an existing endpoint.
-         */
-        patch: operations["environments_endpoints_partial_update"];
-        trace?: never;
-    };
     "/api/projects/{project_id}/actions/": {
         parameters: {
             query?: never;
@@ -152,6 +96,44 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["dashboards_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/endpoints/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all endpoints for the team. */
+        get: operations["endpoints_list"];
+        put?: never;
+        /** @description Create a new endpoint. */
+        post: operations["endpoints_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/endpoints/{name}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Retrieve an endpoint, or a specific version via ?version=N. */
+        get: operations["endpoints_retrieve"];
+        /** @description Update an existing endpoint. Parameters are optional. Pass version in body or ?version=N query param to target a specific version. */
+        put: operations["endpoints_update"];
+        post?: never;
+        /** @description Delete an endpoint and clean up materialized query. */
+        delete: operations["endpoints_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Update an existing endpoint. */
+        patch: operations["endpoints_partial_update"];
         trace?: never;
     };
     "/api/projects/{project_id}/environments/{id}/": {
@@ -339,7 +321,7 @@ export interface paths {
         delete: operations["experiments_destroy"];
         options?: never;
         head?: never;
-        /** @description Update an experiment. Use this to modify experiment properties such as name, description, metrics, variants, and configuration. Metrics can be added, changed and removed at any time. */
+        /** @description Update an experiment. Use this to modify experiment properties such as name, description, metrics, variants, and configuration. Metrics can be added, changed and removed at any time. Feature-flag config (variants, rollout, payloads) is sent via the feature_flag object. */
         patch: operations["experiments_partial_update"];
         trace?: never;
     };
@@ -356,8 +338,10 @@ export interface paths {
          * @description Archive an ended experiment.
          *
          *     Hides the experiment from the default list view. The experiment can be
-         *     restored at any time by updating archived=false. Returns 400 if the
-         *     experiment is already archived or has not ended yet.
+         *     restored at any time by updating archived=false. When the linked feature
+         *     flag is still enabled, pass disable_feature_flag=true to also disable and
+         *     archive it. Returns 400 if the experiment is already archived or has not
+         *     ended yet.
          */
         post: operations["experiments_archive_create"];
         delete?: never;
@@ -421,7 +405,7 @@ export interface paths {
          *     Validates the experiment is in draft state, activates its linked feature flag,
          *     sets start_date to the current server time, and transitions the experiment to running.
          *     Returns 400 if the experiment has already been launched or if the feature flag
-         *     configuration is invalid (e.g. missing "control" variant or fewer than 2 variants).
+         *     configuration is invalid (e.g. fewer than 2 variants).
          */
         post: operations["experiments_launch_create"];
         delete?: never;
@@ -673,6 +657,205 @@ export interface components {
          * @enum {string}
          */
         AIEventType: "$ai_generation" | "$ai_embedding" | "$ai_span" | "$ai_trace" | "$ai_metric" | "$ai_feedback" | "$ai_evaluation" | "$ai_tag" | "$ai_trace_summary" | "$ai_generation_summary" | "$ai_trace_clusters" | "$ai_generation_clusters";
+        /** AccessControlFilterWarning */
+        AccessControlFilterWarning: {
+            /**
+             * Message
+             * @description Human-readable warning shown to the user
+             */
+            message: string;
+            /**
+             * Resources
+             * @description Resource types the user has access restrictions on, referenced by the query, e.g. ["insight", "dashboard"]
+             */
+            resources: string[];
+            /**
+             * Type
+             * @description Tells warning kinds apart in the shared `warnings` list
+             * @default access_control
+             * @constant
+             */
+            type: "access_control";
+        };
+        /** AccountCustomPropertyFilter */
+        AccountCustomPropertyFilter: {
+            /** Key */
+            key: string;
+            /**
+             * Label
+             * @default null
+             */
+            label: string | null;
+            operator: components["schemas"]["PropertyOperator"];
+            /**
+             * Type
+             * @description Customer analytics account custom property — the key is the property definition id
+             * @default account_custom_property
+             * @constant
+             */
+            type: "account_custom_property";
+            /**
+             * Value
+             * @default null
+             */
+            value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        /** AccountsQuery */
+        AccountsQuery: {
+            /**
+             * Allrolesunassigned
+             * @description Match accounts with no active relationship of any definition.
+             * @default null
+             */
+            allRolesUnassigned: boolean | null;
+            /**
+             * Assignedtouserids
+             * @description Match accounts where any of these user ids actively holds any relationship (CSM, Account executive, or a custom definition). Drives the "My accounts" shortcut (the current user's id) and the shareable "Assigned to" filter — the ids are explicit so a shared URL resolves identically for every viewer.
+             * @default null
+             */
+            assignedToUserIds: number[] | null;
+            /**
+             * Filterexpression
+             * @description Optional HogQL boolean expression AND-ed into the WHERE clause. Used by the overview tile click-to-filter affordance.
+             * @default null
+             */
+            filterExpression: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "AccountsQuery";
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * Metrics
+             * @description Aggregation expressions evaluated against the filtered account set; one value per metric is returned in `metricsResults`. When `metrics` is set without a `select`, the runner skips the regular row fetch and returns only the aggregated values.
+             * @default null
+             */
+            metrics: string[] | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /**
+             * Orderby
+             * @default null
+             */
+            orderBy: string[] | null;
+            /** @default null */
+            response: components["schemas"]["AccountsQueryResponse"] | null;
+            /**
+             * Search
+             * @default null
+             */
+            search: string | null;
+            /**
+             * Select
+             * @default null
+             */
+            select: string[] | null;
+            /**
+             * Tagnames
+             * @default null
+             */
+            tagNames: string[] | null;
+            /** @default null */
+            tags: components["schemas"]["QueryLogTags"] | null;
+            /**
+             * Version
+             * @description version of the node, used for schema migrations
+             * @default null
+             */
+            version: number | null;
+        };
+        /** AccountsQueryResponse */
+        AccountsQueryResponse: {
+            /** Columns */
+            columns: unknown[];
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             */
+            hogql: string;
+            /**
+             * Kind
+             * @default AccountsQuery
+             * @constant
+             */
+            kind: "AccountsQuery";
+            /** Limit */
+            limit: number;
+            /**
+             * Metricsresults
+             * @description When `metrics` is set on the query, the aggregated values in the same order.
+             * @default null
+             */
+            metricsResults: (number | null)[] | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** Offset */
+            offset: number;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: unknown[][];
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /** Types */
+            types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
         /** @description Serializer mixin that handles tags for objects. */
         Action: {
             readonly id: number;
@@ -775,13 +958,12 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Id */
             id: number;
             /**
-             * Kind
-             * @default ActionsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ActionsNode";
             /**
@@ -828,7 +1010,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -863,11 +1045,10 @@ export interface components {
              * @description Currently only person filters supported. No filters for querying groups. See `filter_conditions()` in actor_strategies.py.
              * @default null
              */
-            fixedProperties: (components["schemas"]["PersonPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default ActorsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ActorsQuery";
             /**
@@ -895,7 +1076,7 @@ export interface components {
              * @description Currently only person filters supported. No filters for querying groups. See `filter_conditions()` in actor_strategies.py.
              * @default null
              */
-            properties: (components["schemas"]["PersonPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"])[] | components["schemas"]["PropertyGroupFilterValue"] | null;
+            properties: (components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"])[] | components["schemas"]["PropertyGroupFilterValue"] | null;
             /** @default null */
             response: components["schemas"]["ActorsQueryResponse"] | null;
             /**
@@ -962,6 +1143,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -979,22 +1165,41 @@ export interface components {
              * @default null
              */
             types: string[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * AggregationAxisFormat
          * @enum {string}
          */
-        AggregationAxisFormat: "numeric" | "duration" | "duration_ms" | "percentage" | "percentage_scaled" | "currency" | "short";
+        AggregationAxisFormat: "numeric" | "duration" | "duration_ms" | "duration_ns" | "percentage" | "percentage_scaled" | "currency" | "short";
         /**
-         * AggregationPropertyType1
+         * AggregationPropertyType
          * @enum {string}
          */
-        AggregationPropertyType1: "event" | "person" | "data_warehouse";
+        AggregationPropertyType: "event" | "person" | "data_warehouse";
         /**
          * AggregationType
          * @enum {string}
          */
         AggregationType: "count" | "sum" | "avg";
+        ArchiveExperiment: {
+            /**
+             * @description When the linked feature flag is still enabled, also disable and archive it along with the experiment. Has no effect if the flag is already disabled (it is archived either way).
+             * @default false
+             */
+            disable_feature_flag: boolean;
+        };
         /** @description Matches against a list of values (OR semantics for exact/is_not, set membership for in/not_in). */
         ArrayPropertyFilter: {
             /** @description Key of the property you're filtering on. For example `email` or `$current_url`. */
@@ -1006,6 +1211,7 @@ export interface components {
              *     * `event_metadata` - event_metadata
              *     * `feature` - feature
              *     * `person` - person
+             *     * `person_metadata` - person_metadata
              *     * `cohort` - cohort
              *     * `element` - element
              *     * `static-cohort` - static-cohort
@@ -1023,10 +1229,12 @@ export interface components {
              *     * `log` - log
              *     * `log_attribute` - log_attribute
              *     * `log_resource_attribute` - log_resource_attribute
+             *     * `metric_attribute` - metric_attribute
              *     * `span` - span
              *     * `span_attribute` - span_attribute
              *     * `span_resource_attribute` - span_resource_attribute
              *     * `revenue_analytics` - revenue_analytics
+             *     * `account_custom_property` - account_custom_property
              *     * `flag` - flag
              *     * `workflow_variable` - workflow_variable
              * @default event
@@ -1128,9 +1336,13 @@ export interface components {
          *     * `test_endpoint` - test_endpoint
          *     * `create_early_access_feature` - create_early_access_feature
          *     * `update_feature_stage` - update_feature_stage
+         *     * `use_posthog_ai` - use_posthog_ai
+         *     * `use_posthog_code` - use_posthog_code
+         *     * `use_posthog_mcp` - use_posthog_mcp
+         *     * `use_posthog_in_slack` - use_posthog_in_slack
          * @enum {string}
          */
-        AvailableSetupTaskIdsEnum: "ingest_first_event" | "set_up_reverse_proxy" | "create_first_insight" | "create_first_dashboard" | "track_custom_events" | "define_actions" | "set_up_cohorts" | "explore_trends_insight" | "create_funnel" | "explore_retention_insight" | "explore_paths_insight" | "explore_stickiness_insight" | "explore_lifecycle_insight" | "add_authorized_domain" | "set_up_web_vitals" | "review_web_analytics_dashboard" | "filter_web_analytics" | "set_up_web_analytics_conversion_goals" | "visit_web_vitals_dashboard" | "setup_session_recordings" | "watch_session_recording" | "configure_recording_settings" | "create_recording_playlist" | "enable_console_logs" | "create_feature_flag" | "implement_flag_in_code" | "update_feature_flag_release_conditions" | "create_multivariate_flag" | "set_up_flag_payloads" | "set_up_flag_evaluation_runtimes" | "create_experiment" | "implement_experiment_variants" | "launch_experiment" | "review_experiment_results" | "create_survey" | "launch_survey" | "collect_survey_responses" | "connect_source" | "run_first_query" | "join_external_data" | "create_saved_view" | "enable_error_tracking" | "upload_source_maps" | "view_first_error" | "resolve_first_error" | "ingest_first_llm_event" | "view_first_trace" | "track_costs" | "set_up_llm_evaluation" | "run_ai_playground" | "enable_revenue_analytics_viewset" | "connect_revenue_source" | "set_up_revenue_goal" | "enable_log_capture" | "view_first_logs" | "create_first_workflow" | "set_up_first_workflow_channel" | "configure_workflow_trigger" | "add_workflow_action" | "launch_workflow" | "create_first_endpoint" | "configure_endpoint" | "test_endpoint" | "create_early_access_feature" | "update_feature_stage";
+        AvailableSetupTaskIdsEnum: "ingest_first_event" | "set_up_reverse_proxy" | "create_first_insight" | "create_first_dashboard" | "track_custom_events" | "define_actions" | "set_up_cohorts" | "explore_trends_insight" | "create_funnel" | "explore_retention_insight" | "explore_paths_insight" | "explore_stickiness_insight" | "explore_lifecycle_insight" | "add_authorized_domain" | "set_up_web_vitals" | "review_web_analytics_dashboard" | "filter_web_analytics" | "set_up_web_analytics_conversion_goals" | "visit_web_vitals_dashboard" | "setup_session_recordings" | "watch_session_recording" | "configure_recording_settings" | "create_recording_playlist" | "enable_console_logs" | "create_feature_flag" | "implement_flag_in_code" | "update_feature_flag_release_conditions" | "create_multivariate_flag" | "set_up_flag_payloads" | "set_up_flag_evaluation_runtimes" | "create_experiment" | "implement_experiment_variants" | "launch_experiment" | "review_experiment_results" | "create_survey" | "launch_survey" | "collect_survey_responses" | "connect_source" | "run_first_query" | "join_external_data" | "create_saved_view" | "enable_error_tracking" | "upload_source_maps" | "view_first_error" | "resolve_first_error" | "ingest_first_llm_event" | "view_first_trace" | "track_costs" | "set_up_llm_evaluation" | "run_ai_playground" | "enable_revenue_analytics_viewset" | "connect_revenue_source" | "set_up_revenue_goal" | "enable_log_capture" | "view_first_logs" | "create_first_workflow" | "set_up_first_workflow_channel" | "configure_workflow_trigger" | "add_workflow_action" | "launch_workflow" | "create_first_endpoint" | "configure_endpoint" | "test_endpoint" | "create_early_access_feature" | "update_feature_stage" | "use_posthog_ai" | "use_posthog_code" | "use_posthog_mcp" | "use_posthog_in_slack";
         /**
          * @description * `AED` - AED
          *     * `AFN` - AFN
@@ -1517,6 +1729,15 @@ export interface components {
          * @enum {string}
          */
         BusinessModelEnum: "b2b" | "b2c" | "other";
+        /** CalendarHeatmapFilter */
+        CalendarHeatmapFilter: {
+            /**
+             * Bucketbysessionstart
+             * @description When true and the series math is `dau`/`unique_users`, each user contributes to the (day-of-week, hour) bucket of their session's first event only — matching the web overview session-start attribution. When false (default), the user contributes to every bucket they have any event in. No effect on `total` math (event counts are unchanged either way).
+             * @default false
+             */
+            bucketBySessionStart: boolean | null;
+        };
         /**
          * CalendarHeatmapMathType
          * @enum {string}
@@ -1533,7 +1754,7 @@ export interface components {
          * ChartDisplayType
          * @enum {string}
          */
-        ChartDisplayType: "Auto" | "ActionsLineGraph" | "ActionsBar" | "ActionsUnstackedBar" | "ActionsStackedBar" | "ActionsAreaGraph" | "ActionsLineGraphCumulative" | "BoldNumber" | "ActionsPie" | "ActionsBarValue" | "ActionsTable" | "WorldMap" | "CalendarHeatmap" | "TwoDimensionalHeatmap" | "BoxPlot";
+        ChartDisplayType: "Auto" | "ActionsLineGraph" | "ActionsBar" | "ActionsUnstackedBar" | "ActionsStackedBar" | "ActionsAreaGraph" | "ActionsLineGraphCumulative" | "BoldNumber" | "Metric" | "ActionsPie" | "ActionsBarValue" | "ActionsTable" | "WorldMap" | "CalendarHeatmap" | "TwoDimensionalHeatmap" | "BoxPlot" | "SlopeGraph";
         /** ChartSettings */
         ChartSettings: {
             /**
@@ -1545,6 +1766,16 @@ export interface components {
             heatmap: components["schemas"]["HeatmapSettings"] | null;
             /** @default null */
             leftYAxisSettings: components["schemas"]["YAxisSettings"] | null;
+            /** @default null */
+            pie: components["schemas"]["PieChartSettings"] | null;
+            /**
+             * Resultcustomizations
+             * @description Per-breakdown-value color customizations. Keyed by the raw breakdown column value.
+             * @default null
+             */
+            resultCustomizations: {
+                [key: string]: components["schemas"]["ResultCustomizationByValue"];
+            } | null;
             /** @default null */
             rightYAxisSettings: components["schemas"]["YAxisSettings"] | null;
             /**
@@ -1659,6 +1890,14 @@ export interface components {
              */
             suffix: string | null;
         };
+        /** ChartStyle */
+        ChartStyle: {
+            /**
+             * @description Line interpolation: straight segments or a smoothed curve through the points.
+             * @default null
+             */
+            curve: components["schemas"]["Curve"] | null;
+        };
         /** ClickhouseQueryProgress */
         ClickhouseQueryProgress: {
             /** Active Cpu Time */
@@ -1702,7 +1941,11 @@ export interface components {
              *     * `analytical` - analytical
              */
             cohort_type?: components["schemas"]["CohortTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            /** @description Flags describing which kinds of conditions the cohort's filters contain. Null when the cohort has no filters to classify. */
+            readonly condition_type: components["schemas"]["CohortConditionTypeFlags"] | null;
             readonly experiment_set: number[];
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
             /** create in folder */
             _create_in_folder?: string;
             /**
@@ -1710,6 +1953,29 @@ export interface components {
              * @default []
              */
             _create_static_person_ids: string[];
+        };
+        /** CohortConditionTypeFlags */
+        CohortConditionTypeFlags: {
+            /**
+             * Person Properties
+             * @description The filters include a person property or person_metadata condition.
+             */
+            person_properties: boolean;
+            /**
+             * Behavioral
+             * @description The filters include a behavioral condition that is not lifecycle-style (e.g. performed_event, performed_event_multiple, performed_event_sequence, or their negations).
+             */
+            behavioral: boolean;
+            /**
+             * Lifecycle
+             * @description The filters include a lifecycle-style behavioral condition (first-seen/regularly/stopped/restarted performing an event).
+             */
+            lifecycle: boolean;
+            /**
+             * Cohorts
+             * @description The filters include a nested reference to another cohort.
+             */
+            cohorts: boolean;
         };
         /** CohortFilter */
         CohortFilter: {
@@ -1757,7 +2023,7 @@ export interface components {
              */
             type: "AND" | "OR";
             /** Values */
-            values: (components["schemas"]["BehavioralFilter"] | components["schemas"]["CohortFilter"] | components["schemas"]["PersonFilter"] | components["schemas"]["CohortFilterGroup"])[];
+            values: (components["schemas"]["BehavioralFilter"] | components["schemas"]["CohortFilter"] | components["schemas"]["PersonFilter"] | components["schemas"]["PersonMetadataFilter"] | components["schemas"]["CohortFilterGroup"])[];
         };
         /** CohortFilters */
         CohortFilters: {
@@ -1874,7 +2140,7 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Kind
              * @default EventsNode
@@ -1936,7 +2202,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -1971,7 +2237,7 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Id */
             id: number;
             /**
@@ -2024,7 +2290,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -2066,7 +2332,7 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Id */
             id: string;
             /** Id Field */
@@ -2121,7 +2387,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -2144,6 +2410,11 @@ export interface components {
              */
             version: number | null;
         };
+        /**
+         * ConversionRateInputType
+         * @enum {string}
+         */
+        ConversionRateInputType: "manual" | "automatic";
         /**
          * @description * `0` - Disabled
          *     * `1` - Stateless
@@ -2174,6 +2445,11 @@ export interface components {
          * @enum {string}
          */
         CurrencyCode: "AED" | "AFN" | "ALL" | "AMD" | "ANG" | "AOA" | "ARS" | "AUD" | "AWG" | "AZN" | "BAM" | "BBD" | "BDT" | "BGN" | "BHD" | "BIF" | "BMD" | "BND" | "BOB" | "BRL" | "BSD" | "BTC" | "BTN" | "BWP" | "BYN" | "BZD" | "CAD" | "CDF" | "CHF" | "CLP" | "CNY" | "COP" | "CRC" | "CVE" | "CZK" | "DJF" | "DKK" | "DOP" | "DZD" | "EGP" | "ERN" | "ETB" | "EUR" | "FJD" | "GBP" | "GEL" | "GHS" | "GIP" | "GMD" | "GNF" | "GTQ" | "GYD" | "HKD" | "HNL" | "HRK" | "HTG" | "HUF" | "IDR" | "ILS" | "INR" | "IQD" | "IRR" | "ISK" | "JMD" | "JOD" | "JPY" | "KES" | "KGS" | "KHR" | "KMF" | "KRW" | "KWD" | "KYD" | "KZT" | "LAK" | "LBP" | "LKR" | "LRD" | "LTL" | "LVL" | "LSL" | "LYD" | "MAD" | "MDL" | "MGA" | "MKD" | "MMK" | "MNT" | "MOP" | "MRU" | "MTL" | "MUR" | "MVR" | "MWK" | "MXN" | "MYR" | "MZN" | "NAD" | "NGN" | "NIO" | "NOK" | "NPR" | "NZD" | "OMR" | "PAB" | "PEN" | "PGK" | "PHP" | "PKR" | "PLN" | "PYG" | "QAR" | "RON" | "RSD" | "RUB" | "RWF" | "SAR" | "SBD" | "SCR" | "SDG" | "SEK" | "SGD" | "SRD" | "SSP" | "STN" | "SYP" | "SZL" | "THB" | "TJS" | "TMT" | "TND" | "TOP" | "TRY" | "TTD" | "TWD" | "TZS" | "UAH" | "UGX" | "USD" | "UYU" | "UZS" | "VES" | "VND" | "VUV" | "WST" | "XAF" | "XCD" | "XOF" | "XPF" | "YER" | "ZAR" | "ZMW";
+        /**
+         * Curve
+         * @enum {string}
+         */
+        Curve: "linear" | "smooth";
         /** CustomChannelCondition */
         CustomChannelCondition: {
             /** Id */
@@ -2224,6 +2500,8 @@ export interface components {
             last_accessed_at?: string | null;
             /** Format: date-time */
             readonly last_viewed_at: string | null;
+            /** @description Path of the project-tree folder this dashboard is filed under in the file system, e.g. 'Unfiled/Dashboards'. An empty string means the project root; null means the dashboard has no file system entry. The dashboard's own name is not part of the path. */
+            readonly folder: string | null;
             readonly is_shared: boolean;
             deleted?: boolean;
             readonly creation_mode: components["schemas"]["CreationModeEnum"];
@@ -2286,6 +2564,8 @@ export interface components {
             readonly last_accessed_at: string | null;
             /** Format: date-time */
             readonly last_viewed_at: string | null;
+            /** @description Path of the project-tree folder this dashboard is filed under in the file system, e.g. 'Unfiled/Dashboards'. An empty string means the project root; null means the dashboard has no file system entry. The dashboard's own name is not part of the path. */
+            readonly folder: string | null;
             readonly is_shared: boolean;
             readonly deleted: boolean;
             readonly creation_mode: components["schemas"]["CreationModeEnum"];
@@ -2305,12 +2585,108 @@ export interface components {
             /** Format: date-time */
             readonly last_refresh: string | null;
             readonly team_id: number;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
         };
+        /** DashboardFilter */
+        DashboardFilter: {
+            /** @default null */
+            breakdown_filter: components["schemas"]["BreakdownFilter"] | null;
+            /**
+             * Date From
+             * @default null
+             */
+            date_from: string | null;
+            /**
+             * Date To
+             * @default null
+             */
+            date_to: string | null;
+            /**
+             * Explicitdate
+             * @default null
+             */
+            explicitDate: boolean | null;
+            /**
+             * Filtertestaccounts
+             * @description Tri-state test-account override. Null/absent = inherit; true = force on; false = force off.
+             * @default null
+             */
+            filterTestAccounts: boolean | null;
+            /**
+             * @description Time granularity forced onto every insight that supports one. Absent/null = inherit.
+             * @default null
+             */
+            interval: components["schemas"]["IntervalType"] | null;
+            /**
+             * Properties
+             * @default null
+             */
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+        };
+        /**
+         * @description OpenAPI-only shape for a dashboard's filters object (agents/MCP).
+         *
+         *     Documents the dashboard-level filters that act as the single source of truth for the
+         *     dashboard's tiles. Runtime persistence reads the raw ``filters`` dict from the request body, so
+         *     extra keys are accepted, but these are the ones agents should set.
+         */
+        DashboardFiltersOpenApi: {
+            /** @description Dashboard-level start of the date range, e.g. '-30d', '-7d', or an ISO date. Applies to all tiles. */
+            date_from?: string | null;
+            /** @description Dashboard-level end of the date range, e.g. '-1d' or an ISO date. Null/omitted means up to now. */
+            date_to?: string | null;
+            /** @description Dashboard-level property filters applied to every tile (PostHog property filter group). */
+            properties?: unknown;
+        };
+        DashboardPatchTileOpenApi: {
+            /** @description Dashboard tile ID to update. */
+            id?: number;
+            /** @description Nested widget row updates. */
+            widget?: components["schemas"]["DashboardPatchWidgetOpenApi"];
+        };
+        DashboardPatchWidgetOpenApi: {
+            /**
+             * Format: uuid
+             * @description Existing widget row ID when updating a widget tile via dashboard PATCH.
+             */
+            id?: string;
+            /**
+             * @description Widget type identifier (cannot be changed on update).
+             *
+             *     * `activity_events_list` - activity_events_list
+             *     * `error_tracking_list` - error_tracking_list
+             *     * `experiment_results` - experiment_results
+             *     * `experiments_list` - experiments_list
+             *     * `logs_list` - logs_list
+             *     * `session_replay_list` - session_replay_list
+             *     * `survey_results` - survey_results
+             */
+            widget_type?: components["schemas"]["DashboardPatchWidgetOpenApiWidgetTypeEnum"];
+            /** @description Widget-specific configuration. Shape depends on the tile's widget_type. */
+            config?: components["schemas"]["DashboardWidgetConfig"];
+            /** @description Optional custom display name for the widget tile. */
+            name?: string | null;
+            /** @description Optional markdown description shown when show_description is enabled. */
+            description?: string;
+        };
+        /**
+         * @description * `activity_events_list` - activity_events_list
+         *     * `error_tracking_list` - error_tracking_list
+         *     * `experiment_results` - experiment_results
+         *     * `experiments_list` - experiments_list
+         *     * `logs_list` - logs_list
+         *     * `session_replay_list` - session_replay_list
+         *     * `survey_results` - survey_results
+         * @enum {string}
+         */
+        DashboardPatchWidgetOpenApiWidgetTypeEnum: "activity_events_list" | "error_tracking_list" | "experiment_results" | "experiments_list" | "logs_list" | "session_replay_list" | "survey_results";
         DashboardTileBasic: {
             readonly id: number;
             readonly dashboard_id: number;
             deleted?: boolean | null;
         };
+        DashboardWidgetConfig: components["schemas"]["ActivityEventsListWidgetConfig"] | components["schemas"]["ErrorTrackingListWidgetConfig"] | components["schemas"]["SessionReplayListWidgetConfig"] | components["schemas"]["ExperimentsListWidgetConfig"] | components["schemas"]["ExperimentResultsWidgetConfig"] | components["schemas"]["SurveyResultsWidgetConfig"] | components["schemas"]["LogsListWidgetConfig"];
         /**
          * DataColorToken
          * @enum {string}
@@ -2394,7 +2770,7 @@ export interface components {
              */
             response: {
                 [key: string]: unknown;
-            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response18"] | components["schemas"]["Response19"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | components["schemas"]["Response22"] | components["schemas"]["Response23"] | components["schemas"]["Response24"] | components["schemas"]["Response25"] | components["schemas"]["Response26"] | null;
+            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response7"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response18"] | components["schemas"]["Response19"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | components["schemas"]["Response22"] | components["schemas"]["Response23"] | components["schemas"]["Response24"] | components["schemas"]["Response25"] | components["schemas"]["Response27"] | components["schemas"]["Response28"] | null;
             /**
              * Showabsolutetime
              * @description Render date-time columns (timestamp, created_at, last_seen, last_seen_at, session_start, session_end) as absolute date+time instead of relative ("X ago"). The toggle is exposed in the column header menu only on EventsQuery / ActorsQuery sources.
@@ -2537,7 +2913,7 @@ export interface components {
              * Source
              * @description Source of the events
              */
-            source: components["schemas"]["EventsNode"] | components["schemas"]["EventsQuery"] | components["schemas"]["PersonsNode"] | components["schemas"]["ActorsQuery"] | components["schemas"]["GroupsQuery"] | components["schemas"]["HogQLQuery"] | components["schemas"]["WebOverviewQuery"] | components["schemas"]["WebStatsTableQuery"] | components["schemas"]["WebExternalClicksTableQuery"] | components["schemas"]["WebGoalsQuery"] | components["schemas"]["WebVitalsQuery"] | components["schemas"]["WebVitalsPathBreakdownQuery"] | components["schemas"]["SessionAttributionExplorerQuery"] | components["schemas"]["SessionsQuery"] | components["schemas"]["RevenueAnalyticsGrossRevenueQuery"] | components["schemas"]["RevenueAnalyticsMetricsQuery"] | components["schemas"]["RevenueAnalyticsMRRQuery"] | components["schemas"]["RevenueAnalyticsOverviewQuery"] | components["schemas"]["RevenueAnalyticsTopCustomersQuery"] | components["schemas"]["RevenueExampleEventsQuery"] | components["schemas"]["RevenueExampleDataWarehouseTablesQuery"] | components["schemas"]["MarketingAnalyticsTableQuery"] | components["schemas"]["MarketingAnalyticsAggregatedQuery"] | components["schemas"]["NonIntegratedConversionsTableQuery"] | components["schemas"]["ErrorTrackingQuery"] | components["schemas"]["ErrorTrackingIssueCorrelationQuery"] | components["schemas"]["ExperimentFunnelsQuery"] | components["schemas"]["ExperimentTrendsQuery"] | components["schemas"]["TracesQuery"] | components["schemas"]["TraceQuery"] | components["schemas"]["EndpointsUsageTableQuery"];
+            source: components["schemas"]["EventsNode"] | components["schemas"]["EventsQuery"] | components["schemas"]["PersonsNode"] | components["schemas"]["ActorsQuery"] | components["schemas"]["GroupsQuery"] | components["schemas"]["HogQLQuery"] | components["schemas"]["WebOverviewQuery"] | components["schemas"]["WebStatsTableQuery"] | components["schemas"]["WebExternalClicksTableQuery"] | components["schemas"]["WebGoalsQuery"] | components["schemas"]["WebVitalsQuery"] | components["schemas"]["WebVitalsPathBreakdownQuery"] | components["schemas"]["SessionAttributionExplorerQuery"] | components["schemas"]["SessionsQuery"] | components["schemas"]["RevenueAnalyticsGrossRevenueQuery"] | components["schemas"]["RevenueAnalyticsMetricsQuery"] | components["schemas"]["RevenueAnalyticsMRRQuery"] | components["schemas"]["RevenueAnalyticsOverviewQuery"] | components["schemas"]["RevenueAnalyticsTopCustomersQuery"] | components["schemas"]["RevenueExampleEventsQuery"] | components["schemas"]["RevenueExampleDataWarehouseTablesQuery"] | components["schemas"]["MarketingAnalyticsTableQuery"] | components["schemas"]["MarketingAnalyticsAggregatedQuery"] | components["schemas"]["NonIntegratedConversionsTableQuery"] | components["schemas"]["ErrorTrackingQuery"] | components["schemas"]["ErrorTrackingIssueCorrelationQuery"] | components["schemas"]["ExperimentFunnelsQuery"] | components["schemas"]["ExperimentTrendsQuery"] | components["schemas"]["TracesQuery"] | components["schemas"]["TraceQuery"] | components["schemas"]["SessionQuery"] | components["schemas"]["EndpointsUsageTableQuery"] | components["schemas"]["AccountsQuery"];
             /** @default null */
             tags: components["schemas"]["QueryLogTags"] | null;
             /**
@@ -2612,15 +2988,14 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Id */
             id: string;
             /** Id Field */
             id_field: string;
             /**
-             * Kind
-             * @default DataWarehouseNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "DataWarehouseNode";
             /**
@@ -2667,7 +3042,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -2730,6 +3105,66 @@ export interface components {
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
         };
+        /** DataWarehouseSourceUsage */
+        DataWarehouseSourceUsage: {
+            /**
+             * Id
+             * @description ExternalDataSource id
+             */
+            id: string;
+            /**
+             * Source Type
+             * @description Connector type of the source (e.g. Stripe, Postgres), if known
+             * @default null
+             */
+            source_type: string | null;
+            /**
+             * Table Name
+             * @description Warehouse table name that was referenced
+             */
+            table_name: string;
+        };
+        /** DataWarehouseSyncWarning */
+        DataWarehouseSyncWarning: {
+            /**
+             * Message
+             * @description Human-readable warning shown to the user
+             */
+            message: string;
+            /**
+             * Schema Name
+             * @description Name of the ExternalDataSchema responsible for syncing the table
+             */
+            schema_name: string;
+            /**
+             * Source Id
+             * @description ID of the ExternalDataSource, used to link to its management page. Null for self-managed tables.
+             * @default null
+             */
+            source_id: string | null;
+            /**
+             * Source Type
+             * @description Source type, e.g. "Stripe", "Hubspot"
+             */
+            source_type: string;
+            /**
+             * Status
+             * @description Sync status that triggered the warning, e.g. "Failed", "Paused", "BillingLimitReached"
+             */
+            status: string;
+            /**
+             * Table Name
+             * @description Name of the warehouse table the warning refers to
+             */
+            table_name: string;
+            /**
+             * Type
+             * @description Tells warning kinds apart in the shared `warnings` list
+             * @default warehouse_sync
+             * @constant
+             */
+            type: "warehouse_sync";
+        };
         /**
          * @description * `is_date_exact` - is_date_exact
          *     * `is_date_before` - is_date_before
@@ -2748,6 +3183,7 @@ export interface components {
              *     * `event_metadata` - event_metadata
              *     * `feature` - feature
              *     * `person` - person
+             *     * `person_metadata` - person_metadata
              *     * `cohort` - cohort
              *     * `element` - element
              *     * `static-cohort` - static-cohort
@@ -2765,10 +3201,12 @@ export interface components {
              *     * `log` - log
              *     * `log_attribute` - log_attribute
              *     * `log_resource_attribute` - log_resource_attribute
+             *     * `metric_attribute` - metric_attribute
              *     * `span` - span
              *     * `span_attribute` - span_attribute
              *     * `span_resource_attribute` - span_resource_attribute
              *     * `revenue_analytics` - revenue_analytics
+             *     * `account_custom_property` - account_custom_property
              *     * `flag` - flag
              *     * `workflow_variable` - workflow_variable
              * @default event
@@ -2802,12 +3240,29 @@ export interface components {
              */
             date_to: string | null;
             /**
+             * Daysofweek
+             * @description Restrict the query to events occurring on these ISO days of week (1=Monday to 7=Sunday), evaluated in the project timezone. Omit or empty for all days. Only applied by insight queries.
+             * @default null
+             */
+            daysOfWeek: components["schemas"]["DaysOfWeekEnum"][] | null;
+            /**
+             * Excludeincompleteperiods
+             * @description Exclude the current, still-collecting period by clipping date_to to the end of the last complete interval (evaluated in the project timezone). No-op when the range contains no complete interval. Only applied by insight queries.
+             * @default false
+             */
+            excludeIncompletePeriods: boolean | null;
+            /**
              * Explicitdate
              * @description Whether the date_from and date_to should be used verbatim. Disables rounding to the start and end of period.
              * @default false
              */
             explicitDate: boolean | null;
         };
+        /**
+         * DaysOfWeekEnum
+         * @enum {number}
+         */
+        DaysOfWeekEnum: 1 | 2 | 3 | 4 | 5 | 6 | 7;
         /**
          * DetailedResultsAggregationType
          * @enum {string}
@@ -2870,6 +3325,11 @@ export interface components {
             conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
             /** @description Optional comment about the experiment conclusion. */
             conclusion_comment?: string | null;
+            /**
+             * @description When true, open a draft pull request that removes the experiment's feature-flag code from the linked repository. Requires the requesting user to have access to PostHog Code (403 otherwise). Only acts for allowlisted teams; ignored otherwise.
+             * @default false
+             */
+            open_cleanup_pr: boolean;
         };
         /** @description A column in the endpoint's query result. */
         EndpointColumn: {
@@ -2922,6 +3382,10 @@ export interface components {
             } | null;
             /** @description Set to true to soft-delete this endpoint. */
             deleted?: boolean | null;
+            /** @description List of tag names to associate with this endpoint. Replaces any existing tags. */
+            tags?: string[] | null;
+            /** @description Breakdown property names that may be omitted on /run. Omitted ones return data aggregated across all values of that breakdown. Defaults to [] — every breakdown variable is required. */
+            optional_breakdown_properties?: string[] | null;
         };
         /** @description Full endpoint representation returned by list/retrieve/create/update. */
         EndpointResponse: {
@@ -2940,7 +3404,7 @@ export interface components {
             is_active: boolean;
             /** @description How fresh the data is, in seconds. One of: 900, 1800, 3600, 21600, 43200, 86400, 604800. */
             data_freshness_seconds: number;
-            /** @description Relative API path to execute this endpoint (e.g. /api/environments/{team_id}/endpoints/{name}/run). */
+            /** @description Relative API path to execute this endpoint (e.g. /api/projects/{team_id}/endpoints/{name}/run). */
             endpoint_path: string;
             /** @description Absolute URL to execute this endpoint. */
             url: string | null;
@@ -2984,6 +3448,10 @@ export interface components {
             } | null;
             /** @description Column names and types from the query's SELECT clause. */
             columns: components["schemas"]["EndpointColumn"][];
+            /** @description Tag names associated with this endpoint. */
+            tags: string[];
+            /** @description Breakdown property names that may be omitted on /run. Omitted ones return data aggregated across all values of that breakdown. */
+            optional_breakdown_properties: string[];
         };
         /** @description Extended endpoint representation when viewing a specific version. */
         EndpointVersionResponse: {
@@ -3002,7 +3470,7 @@ export interface components {
             is_active: boolean;
             /** @description How fresh the data is, in seconds. One of: 900, 1800, 3600, 21600, 43200, 86400, 604800. */
             data_freshness_seconds: number;
-            /** @description Relative API path to execute this endpoint (e.g. /api/environments/{team_id}/endpoints/{name}/run). */
+            /** @description Relative API path to execute this endpoint (e.g. /api/projects/{team_id}/endpoints/{name}/run). */
             endpoint_path: string;
             /** @description Absolute URL to execute this endpoint. */
             url: string | null;
@@ -3035,7 +3503,7 @@ export interface components {
             derived_from_insight: string | null;
             /**
              * Format: date-time
-             * @description When this endpoint was last executed via the API (ISO 8601), or null if never executed.
+             * @description When this specific version was last executed via the API (ISO 8601), or null if it hasn't been executed. Per-version tracking is recent, so versions that predate it read null until their next run.
              */
             last_executed_at: string | null;
             /** @description Materialization status and configuration for the current version. */
@@ -3046,6 +3514,10 @@ export interface components {
             } | null;
             /** @description Column names and types from the query's SELECT clause. */
             columns: components["schemas"]["EndpointColumn"][];
+            /** @description Tag names associated with this endpoint. */
+            tags: string[];
+            /** @description Breakdown property names that may be omitted on /run. Omitted ones return data aggregated across all values of that breakdown. */
+            optional_breakdown_properties: string[];
             /** @description Version number. */
             version: number;
             /**
@@ -3089,9 +3561,8 @@ export interface components {
              */
             endpointNames: string[] | null;
             /**
-             * Kind
-             * @default EndpointsUsageTableQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "EndpointsUsageTableQuery";
             /**
@@ -3175,6 +3646,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -3192,6 +3668,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `allow` - Allow
@@ -3396,9 +3884,8 @@ export interface components {
             /** Events */
             events: string[];
             /**
-             * Kind
-             * @default ErrorTrackingIssueCorrelationQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ErrorTrackingIssueCorrelationQuery";
             /**
@@ -3462,6 +3949,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -3474,6 +3966,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** ErrorTrackingIssueFilter */
         ErrorTrackingIssueFilter: {
@@ -3579,9 +4083,8 @@ export interface components {
              */
             issueId: string | null;
             /**
-             * Kind
-             * @default ErrorTrackingQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ErrorTrackingQuery";
             /**
@@ -3608,7 +4111,7 @@ export interface components {
             orderDirection: components["schemas"]["OrderDirection2"] | null;
             /**
              * Pendingfingerprintissuestateupdates
-             * @description Pending fingerprint issue state updates UNIONed into the fingerprint issue state subquery (V3 only). The backend caps the list at 50 entries; extras are dropped silently.
+             * @description Pending fingerprint issue state updates UNIONed into the fingerprint issue state subquery. The backend caps the list at 50 entries; extras are dropped silently.
              * @default null
              */
             pendingFingerprintIssueStateUpdates: components["schemas"]["ErrorTrackingPendingFingerprintIssueStateUpdate"][] | null;
@@ -3635,13 +4138,11 @@ export interface components {
             tags: components["schemas"]["QueryLogTags"] | null;
             /**
              * Usequeryv2
-             * @description Use V2 query path (ClickHouse postgres connector join instead of separate Postgres queries)
              * @default null
              */
             useQueryV2: boolean | null;
             /**
              * Usequeryv3
-             * @description Use V3 query path (denormalized ClickHouse table, no Postgres joins)
              * @default null
              */
             useQueryV3: boolean | null;
@@ -3714,6 +4215,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -3726,6 +4232,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `server` - Server
@@ -3854,11 +4372,10 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default EventsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "EventsNode";
             /**
@@ -3916,7 +4433,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -3980,11 +4497,10 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["PropertyGroupFilter"] | components["schemas"]["PropertyGroupFilterValue"] | components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["PropertyGroupFilter"] | components["schemas"]["PropertyGroupFilterValue"] | (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"]))[] | null;
             /**
-             * Kind
-             * @default EventsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "EventsQuery";
             /**
@@ -4021,7 +4537,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** @default null */
             response: components["schemas"]["EventsQueryResponse"] | null;
             /**
@@ -4067,7 +4583,7 @@ export interface components {
              * Properties
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Selector
              * @default null
@@ -4140,6 +4656,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -4154,6 +4675,18 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `is_set` - is_set
@@ -4172,6 +4705,7 @@ export interface components {
              *     * `event_metadata` - event_metadata
              *     * `feature` - feature
              *     * `person` - person
+             *     * `person_metadata` - person_metadata
              *     * `cohort` - cohort
              *     * `element` - element
              *     * `static-cohort` - static-cohort
@@ -4189,10 +4723,12 @@ export interface components {
              *     * `log` - log
              *     * `log_attribute` - log_attribute
              *     * `log_resource_attribute` - log_resource_attribute
+             *     * `metric_attribute` - metric_attribute
              *     * `span` - span
              *     * `span_attribute` - span_attribute
              *     * `span_resource_attribute` - span_resource_attribute
              *     * `revenue_analytics` - revenue_analytics
+             *     * `account_custom_property` - account_custom_property
              *     * `flag` - flag
              *     * `workflow_variable` - workflow_variable
              * @default event
@@ -4206,7 +4742,14 @@ export interface components {
              */
             operator: components["schemas"]["ExistenceOperatorEnum"];
         };
-        /** @description Mixin for serializers to add user access control fields */
+        /**
+         * @description Full experiment representation for the detail, create, and update endpoints.
+         *
+         *     Extends the shared read-side fields in ``ExperimentBaseSerializer`` with the metric
+         *     definitions (``metrics``/``metrics_secondary``/``saved_metrics``) and the write-side
+         *     fields, and refreshes stale action names while serializing. The list endpoint uses the
+         *     leaner ``ExperimentBasicSerializer`` instead.
+         */
         Experiment: {
             readonly id: number;
             /** @description Name of the experiment. */
@@ -4217,17 +4760,19 @@ export interface components {
             start_date?: string | null;
             /** Format: date-time */
             end_date?: string | null;
-            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flags-get-all tool first — reuse an existing flag when possible. */
+            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flag-get-all tool first — reuse an existing flag when possible. */
             feature_flag_key: string;
-            readonly feature_flag: {
-                [key: string]: unknown;
-            };
+            readonly feature_flag: components["schemas"]["MinimalFeatureFlag"];
             readonly holdout: components["schemas"]["ExperimentHoldout"];
             /** @description ID of a holdout group to exclude from the experiment. */
             holdout_id?: number | null;
             readonly exposure_cohort: number | null;
-            /** @description Variant definitions and rollout configuration. Set feature_flag_variants to customize the split (default: 50/50 control/test). Each variant needs a key and split_percent (the variant's share of traffic); percentages must sum to 100. Set rollout_percentage (0-100, default 100) to limit what fraction of users enter the experiment. Set minimum_detectable_effect (percentage, suggest 20-30) to control statistical power. */
+            /** @description Experiment parameters JSON. Supported keys include `custom_exposure_filter` and `variant_notes` (free-text notes per variant, keyed by variant key). Flag config (variants, rollout, aggregation, payloads, experience continuity) belongs on the `feature_flag` object; send it there. For backward compatibility, config still sent through these deprecated keys is copied onto the linked flag rather than rejected, and reads project the flag's current config back into this field. Excluded variants live on the top-level `excluded_variants` field, not here. */
             parameters?: components["schemas"]["ExperimentParameters"] | null;
+            /** @description Running-time calculator state: `minimum_detectable_effect`, `recommended_running_time`, `recommended_sample_size`, and `exposure_estimate_config`. Canonical home for these keys, which historically lived in `parameters`. */
+            running_time_calculation?: components["schemas"]["ExperimentRunningTimeCalculation"] | null;
+            /** @description Variant keys to exclude from metric result calculations. Excluded variants are still served to users but omitted from statistical analysis. The baseline variant and holdout pseudo-variants cannot be excluded. Canonical home for what historically lived in `parameters.excluded_variants`. */
+            excluded_variants?: string[] | null;
             readonly saved_metrics: components["schemas"]["ExperimentToSavedMetric"][];
             /** @description IDs of shared saved metrics to attach to this experiment. Each item has 'id' (saved metric ID) and 'metadata' with 'type' (primary or secondary). */
             saved_metrics_ids?: unknown[] | null;
@@ -4251,7 +4796,7 @@ export interface components {
             type?: components["schemas"]["ExperimentTypeEnum"] | components["schemas"]["NullEnum"];
             /** @description Exposure configuration including filter test accounts and custom exposure events. */
             exposure_criteria?: components["schemas"]["ExperimentApiExposureCriteria"] | null;
-            /** @description Primary experiment metrics. Each metric must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Use the event-definitions-list tool to find available events in the project. */
+            /** @description Primary experiment metrics. Each metric must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Use the read-data-schema tool with query kind 'events' to find available events in the project. */
             metrics?: components["schemas"]["_ExperimentApiMetricsList"] | null;
             /** @description Secondary metrics for additional measurements. Same format as primary metrics. */
             metrics_secondary?: components["schemas"]["_ExperimentApiMetricsList"] | null;
@@ -4274,14 +4819,23 @@ export interface components {
             conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
             /** @description Comment about the experiment conclusion. */
             conclusion_comment?: string | null;
+            /**
+             * Format: uuid
+             * @description ID of the Code task opened to remove the experiment's feature-flag code, when one was requested via open_cleanup_pr on end/ship_variant. Read its status via the flag_cleanup_task action.
+             */
+            readonly flag_cleanup_task_id: string | null;
             only_count_matured_users?: boolean;
             /**
-             * @description When true, sync feature flag configuration from parameters to the linked feature flag. Draft experiments always sync regardless of update_feature_flag_params, so only required for non-drafts.
+             * @description When true, sync the flag config sent in this request (via the `feature_flag` object) to the linked feature flag. Draft experiments always sync regardless. On a running experiment, `feature_flag` config without this flag is rejected.
              * @default false
              */
             update_feature_flag_params: boolean;
-            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'stopped' (ended). */
+            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'exposure_frozen' (running with enrollment frozen to the already-exposed cohort while metrics keep flowing — virtual state derived from the flag's release groups, not stored), 'stopped' (ended). */
             readonly status: components["schemas"]["ExperimentStatusEnum"];
+            /** @description Whether the experiment uses any legacy-engine metrics (ExperimentTrendsQuery or ExperimentFunnelsQuery). Used to flag legacy experiments and gate actions that don't support them, such as duplicate and copy-to-project. */
+            readonly is_legacy: boolean;
+            /** @description Whether enrollment can be frozen right now: the experiment must be running (not draft, paused, stopped, or already frozen) and its feature flag must have release conditions that a person cohort can narrow (no group aggregation, no holdout, no early access conditions). */
+            readonly can_freeze_exposure: boolean;
             /** @description The effective access level the user has for this object */
             readonly user_access_level: string | null;
         };
@@ -4360,6 +4914,28 @@ export interface components {
             id: number | null;
             kind: components["schemas"]["Kind"];
             /**
+             * @description How to aggregate this source. Defaults to 'total' (event count). Use 'sum' together with math_property to aggregate a numeric property — e.g. a ratio numerator of revenue per order. Other options: 'avg', 'min', 'max', 'unique_session', 'dau', 'unique_group', 'hogql'.
+             * @default null
+             */
+            math: components["schemas"]["ExperimentMetricMathType"] | null;
+            /**
+             * @description Group type index to aggregate over. Required when math is 'unique_group'.
+             * @default null
+             */
+            math_group_type_index: components["schemas"]["MathGroupTypeIndex"] | null;
+            /**
+             * Math Hogql
+             * @description HogQL aggregation expression. Required when math is 'hogql' — without it the metric silently falls back to a plain count/sum.
+             * @default null
+             */
+            math_hogql: string | null;
+            /**
+             * Math Property
+             * @description Numeric event property to aggregate when math is 'sum', 'avg', 'min', or 'max' (e.g. 'revenue').
+             * @default null
+             */
+            math_property: string | null;
+            /**
              * Properties
              * @description Event property filters to narrow which events are counted.
              * @default null
@@ -4370,20 +4946,26 @@ export interface components {
         ExperimentApiExposureConfig: {
             /**
              * Event
-             * @description Custom exposure event name.
+             * @description Custom exposure event name. Required when kind is 'ExperimentEventExposureConfig'.
+             * @default null
              */
-            event: string;
+            event: string | null;
             /**
-             * Kind
-             * @default ExperimentEventExposureConfig
-             * @constant
+             * Id
+             * @description Action ID. Required when kind is 'ActionsNode'.
+             * @default null
              */
-            kind: "ExperimentEventExposureConfig";
+            id: number | null;
+            /**
+             * @description Defaults to 'ExperimentEventExposureConfig' when omitted. Pass 'ActionsNode' for an action-based exposure.
+             * @default null
+             */
+            kind: components["schemas"]["Kind1"] | null;
             /**
              * Properties
-             * @description Event property filters. Pass an empty array if no filters needed.
+             * @description Property filters (event, person, and other supported types). Pass an empty array if no filters needed.
              */
-            properties: components["schemas"]["EventPropertyFilter"][];
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[];
         };
         /** ExperimentApiExposureCriteria */
         ExperimentApiExposureCriteria: {
@@ -4394,6 +4976,11 @@ export interface components {
              * @default null
              */
             filterTestAccounts: boolean | null;
+            /**
+             * @description How to handle entities exposed to multiple variants. 'exclude' (default) drops them from the analysis; 'first_seen' assigns them to the variant from their earliest exposure.
+             * @default null
+             */
+            multiple_variant_handling: components["schemas"]["MultipleVariantHandling"] | null;
         };
         /** ExperimentApiMetric */
         ExperimentApiMetric: {
@@ -4414,16 +5001,33 @@ export interface components {
              */
             denominator: components["schemas"]["ExperimentApiEventSource"] | null;
             /**
+             * @description For ratio metrics: winsorization applied to the denominator aggregate. Leave unset for a binomial-style denominator, which is never clamped.
+             * @default null
+             */
+            denominator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
+            /**
              * @description Whether higher or lower values indicate success.
              * @default null
              */
             goal: components["schemas"]["ExperimentMetricGoal"] | null;
+            /**
+             * Ignore Zeros
+             * @description For mean metrics: exclude zero values when computing the winsorization percentile thresholds.
+             * @default null
+             */
+            ignore_zeros: boolean | null;
             /**
              * Kind
              * @default ExperimentMetric
              * @constant
              */
             kind: "ExperimentMetric";
+            /**
+             * Lower Bound Percentile
+             * @description For mean metrics: winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile). Per-user values below this percentile are clamped to it before aggregation.
+             * @default null
+             */
+            lower_bound_percentile: number | null;
             metric_type: components["schemas"]["ExperimentMetricType"];
             /**
              * Name
@@ -4436,6 +5040,11 @@ export interface components {
              * @default null
              */
             numerator: components["schemas"]["ExperimentApiEventSource"] | null;
+            /**
+             * @description For ratio metrics: winsorization applied to the numerator aggregate, independently of the denominator and each with its own percentile thresholds.
+             * @default null
+             */
+            numerator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Retention Window End
              * @default null
@@ -4467,11 +5076,97 @@ export interface components {
             /** @default null */
             start_handling: components["schemas"]["StartHandling"] | null;
             /**
+             * Threshold
+             * @description For mean metrics: when set, reports the percentage of users whose per-user summed/counted value reaches or exceeds this threshold. Only meaningful for sum/count math types.
+             * @default null
+             */
+            threshold: number | null;
+            /**
+             * Upper Bound Percentile
+             * @description For mean metrics: winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile). Per-user values above this percentile are clamped to it before aggregation.
+             * @default null
+             */
+            upper_bound_percentile: number | null;
+            /**
              * Uuid
              * @description Unique identifier. Auto-generated if omitted.
              * @default null
              */
             uuid: string | null;
+        };
+        /**
+         * @description Lightweight, read-only serializer for the experiment list endpoint.
+         *
+         *     The list view (and the MCP list tool) render only the scalar and feature-flag fields
+         *     shared via ``ExperimentBaseSerializer`` — never the metric definitions. Omitting
+         *     ``metrics``/``metrics_secondary``/``saved_metrics`` lets the list query defer the large
+         *     JSON columns and skip the saved-metric prefetch plus per-row fingerprinting; that work
+         *     belongs to the detail response served by ``ExperimentSerializer``.
+         *
+         *     Because the metric fields, the write-side machinery, and the action-name-refreshing
+         *     ``to_representation`` all live on ``ExperimentSerializer`` rather than the shared base,
+         *     this serializer needs no overrides: it gets DRF's default ``get_fields`` (no write-only
+         *     ``holdout_id`` to configure), default ``to_representation`` (no metrics to normalize), and
+         *     a plain ``ListSerializer`` that never touches the deferred columns. See
+         *     ``EnterpriseExperimentsViewSet.safely_get_queryset``.
+         */
+        ExperimentBasic: {
+            readonly id: number;
+            /** @description Name of the experiment. */
+            name: string;
+            /** @description Description of the experiment hypothesis and expected outcomes. */
+            description?: string | null;
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flag-get-all tool first — reuse an existing flag when possible. */
+            feature_flag_key: string;
+            readonly feature_flag: components["schemas"]["MinimalFeatureFlag"];
+            readonly holdout: components["schemas"]["ExperimentHoldout"];
+            readonly exposure_cohort: number | null;
+            /** @description Experiment parameters JSON. Supported keys include `custom_exposure_filter` and `variant_notes` (free-text notes per variant, keyed by variant key). Flag config (variants, rollout, aggregation, payloads, experience continuity) belongs on the `feature_flag` object; send it there. For backward compatibility, config still sent through these deprecated keys is copied onto the linked flag rather than rejected, and reads project the flag's current config back into this field. Excluded variants live on the top-level `excluded_variants` field, not here. */
+            parameters?: components["schemas"]["ExperimentParameters"] | null;
+            /** @description Running-time calculator state: `minimum_detectable_effect`, `recommended_running_time`, `recommended_sample_size`, and `exposure_estimate_config`. Canonical home for these keys, which historically lived in `parameters`. */
+            running_time_calculation?: components["schemas"]["ExperimentRunningTimeCalculation"] | null;
+            /** @description Variant keys to exclude from metric result calculations. Excluded variants are still served to users but omitted from statistical analysis. The baseline variant and holdout pseudo-variants cannot be excluded. Canonical home for what historically lived in `parameters.excluded_variants`. */
+            excluded_variants?: string[] | null;
+            /**
+             * @description Whether the experiment is archived.
+             * @default false
+             */
+            archived: boolean;
+            deleted?: boolean | null;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /**
+             * @description Experiment type: web for frontend UI changes, product for backend/API changes.
+             *
+             *     * `web` - web
+             *     * `product` - product
+             */
+            type?: components["schemas"]["ExperimentTypeEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description Experiment conclusion: won, lost, inconclusive, stopped_early, or invalid.
+             *
+             *     * `won` - won
+             *     * `lost` - lost
+             *     * `inconclusive` - inconclusive
+             *     * `stopped_early` - stopped_early
+             *     * `invalid` - invalid
+             */
+            conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
+            /** @description Comment about the experiment conclusion. */
+            conclusion_comment?: string | null;
+            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'exposure_frozen' (running with enrollment frozen to the already-exposed cohort while metrics keep flowing — virtual state derived from the flag's release groups, not stored), 'stopped' (ended). */
+            readonly status: components["schemas"]["ExperimentStatusEnum"];
+            /** @description Whether the experiment uses any legacy-engine metrics (ExperimentTrendsQuery or ExperimentFunnelsQuery). Used to flag legacy experiments and gate actions that don't support them, such as duplicate and copy-to-project. */
+            readonly is_legacy: boolean;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
         };
         /** ExperimentBreakdownResult */
         ExperimentBreakdownResult: {
@@ -4504,11 +5199,10 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default ExperimentDataWarehouseNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ExperimentDataWarehouseNode";
             /**
@@ -4555,7 +5249,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -4585,7 +5279,7 @@ export interface components {
              */
             kind: "ExperimentEventExposureConfig";
             /** Properties */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[];
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[];
             /**
              * Response
              * @default null
@@ -4599,6 +5293,82 @@ export interface components {
              * @default null
              */
             version: number | null;
+        };
+        /** ExperimentExposureEstimateConfig */
+        ExperimentExposureEstimateConfig: {
+            /** @description 'manual' when the baseline value and exposure rate were entered by hand, 'automatic' when derived from live experiment data. */
+            conversionRateInputType: components["schemas"]["ConversionRateInputType"];
+            /**
+             * Manualbaselinevalue
+             * @description Manually entered baseline metric value (a conversion percentage for funnel metrics). Only used in manual mode.
+             * @default null
+             */
+            manualBaselineValue: number | null;
+            /**
+             * Manualexposurerate
+             * @description Manually entered estimate of users exposed to the experiment per day. Only used in manual mode.
+             * @default null
+             */
+            manualExposureRate: number | null;
+            /**
+             * @description Metric type the manual baseline value refers to. Only used in manual mode.
+             * @default null
+             */
+            manualMetricType: components["schemas"]["ManualMetricType"] | null;
+        };
+        /**
+         * @description Feature-flag filters accepted by the experiment endpoints: the flag's own filters shape,
+         *     minus the keys experiments don't apply.
+         */
+        ExperimentFeatureFlagFilters: {
+            /** @description Overall rollout as a single group: [{"properties": [], "rollout_percentage": N}]. */
+            groups?: components["schemas"]["ExperimentFlagRolloutGroup"][];
+            /** @description Multivariate variant configuration. */
+            multivariate?: components["schemas"]["ExperimentFlagMultivariate"] | null;
+            /** @description Group type index for group-based feature flags. */
+            aggregation_group_type_index?: number | null;
+            /** @description Optional payload values keyed by variant key. */
+            payloads?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * @description Flag config for experiment create/update, sent through the linked feature flag's own shape.
+         *
+         *     Validated both as the OpenAPI request field (via ``ExperimentWriteSerializer``) and at runtime
+         *     (``ExperimentSerializer._normalize_feature_flag_input`` runs it against the raw feature_flag
+         *     object). Echoed read-only flag objects (carrying a non-null id) are handled upstream and never
+         *     reach this validation.
+         */
+        ExperimentFeatureFlagInput: {
+            /** @description Flag config to apply: `multivariate.variants` (2 to 20 variants; the baseline defaults to the variant keyed 'control' when present, else the first variant), `groups` (a single group with `rollout_percentage` only; release conditions are not supported here, edit the feature flag directly), `aggregation_group_type_index`, and `payloads` (JSON-encoded strings keyed by variant key). On update, config this object omits is preserved from the linked flag's current state. */
+            filters?: components["schemas"]["ExperimentFeatureFlagFilters"];
+            /** @description Whether the flag persists variant assignment across authentication steps. */
+            ensure_experience_continuity?: boolean | null;
+        };
+        /** @description Multivariate config for the experiment's feature flag. */
+        ExperimentFlagMultivariate: {
+            /** @description Variant definitions (2 to 20). The baseline defaults to the variant keyed 'control' when present, else the first variant. */
+            variants: components["schemas"]["ExperimentFlagVariant"][];
+        };
+        /**
+         * @description A single release-condition group carrying only the overall rollout percentage, the one
+         *     groups entry the experiment input applies.
+         */
+        ExperimentFlagRolloutGroup: {
+            /** @description Percentage of users who enter the experiment (0-100). */
+            rollout_percentage?: number | null;
+            /** @description Must be empty or omitted: release-condition properties are not supported via the experiment input. Edit the feature flag directly for targeting. */
+            properties?: unknown[];
+        };
+        /** @description A single multivariate variant. Extra per-variant keys are dropped. */
+        ExperimentFlagVariant: {
+            /** @description Unique variant key. The baseline defaults to the variant keyed 'control' when present, else the first variant. */
+            key: string;
+            /** @description Human-readable variant name. */
+            name?: string;
+            /** @description Variant rollout percentage (0-100). Across variants these must sum to 100. */
+            rollout_percentage: number;
         };
         /** ExperimentFunnelMetric */
         ExperimentFunnelMetric: {
@@ -4681,9 +5451,8 @@ export interface components {
             fingerprint: string | null;
             funnels_query: components["schemas"]["FunnelsQuery"];
             /**
-             * Kind
-             * @default ExperimentFunnelsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ExperimentFunnelsQuery";
             /**
@@ -4746,16 +5515,29 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantFunnelsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
+        /** @description A holdout group — a stable slice of users excluded from experiment exposure. */
         ExperimentHoldout: {
             readonly id: number;
+            /** @description Human-readable name for the holdout group. */
             name: string;
+            /** @description Optional description of what this holdout reserves and why. */
             description?: string | null;
+            /** @description Non-empty list of release-condition groups defining the held-out population, using the same shape as feature-flag release conditions. Each element's `rollout_percentage` (0–100, may be fractional) is the **exclusion** percentage — the share of users held back from all experiments that reference this holdout. `properties` optionally narrows the group by person/group properties. Do not set `variant`: the server normalizes it to `holdout-{id}`. Note that only the first element's `rollout_percentage` is embedded into each linked experiment's feature flag, and this population is shared across every experiment using the holdout. */
+            filters?: components["schemas"]["FeatureFlagConditionGroupSchema"][];
             readonly created_by: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
         };
         /** ExperimentMeanMetric */
         ExperimentMeanMetric: {
@@ -4793,6 +5575,7 @@ export interface components {
             kind: "ExperimentMetric";
             /**
              * Lower Bound Percentile
+             * @description Winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile).
              * @default null
              */
             lower_bound_percentile: number | null;
@@ -4821,7 +5604,14 @@ export interface components {
             /** Source */
             source: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
             /**
+             * Threshold
+             * @description When set, reports the percentage of users whose per-user summed/counted value reaches or exceeds this threshold. Only meaningful for sum/count math types.
+             * @default null
+             */
+            threshold: number | null;
+            /**
              * Upper Bound Percentile
+             * @description Winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile).
              * @default null
              */
             upper_bound_percentile: number | null;
@@ -4847,6 +5637,26 @@ export interface components {
          * @enum {string}
          */
         ExperimentMetricMathType: "total" | "sum" | "unique_session" | "min" | "max" | "avg" | "dau" | "unique_group" | "hogql";
+        /** ExperimentMetricOutlierHandling */
+        ExperimentMetricOutlierHandling: {
+            /**
+             * Ignore Zeros
+             * @default null
+             */
+            ignore_zeros: boolean | null;
+            /**
+             * Lower Bound Percentile
+             * @description Winsorization lower percentile bound, as a fraction in [0, 1] (e.g. 0.01 for the 1st percentile).
+             * @default null
+             */
+            lower_bound_percentile: number | null;
+            /**
+             * Upper Bound Percentile
+             * @description Winsorization upper percentile bound, as a fraction in [0, 1] (e.g. 0.99 for the 99th percentile).
+             * @default null
+             */
+            upper_bound_percentile: number | null;
+        };
         /**
          * ExperimentMetricType
          * @enum {string}
@@ -4855,23 +5665,19 @@ export interface components {
         /** ExperimentParameters */
         ExperimentParameters: {
             /**
-             * Feature Flag Variants
-             * @description Experiment variants. If specified, must include a variant with key 'control' (lowercase). Defaults to a 50/50 control/test split when omitted. Minimum 2, maximum 20.
-             * @default null
-             */
-            feature_flag_variants: components["schemas"]["ExperimentVariant"][] | null;
-            /**
              * Minimum Detectable Effect
              * @description Minimum detectable effect as a percentage. Lower values need more users but catch smaller changes. Suggest 20–30% for most experiments.
              * @default null
              */
             minimum_detectable_effect: number | null;
             /**
-             * Rollout Percentage
-             * @description Overall rollout percentage (0-100). Controls what fraction of all users enter the experiment. Users outside the rollout never see any variant and are excluded from analysis. Default: 100.
+             * Variant Notes
+             * @description Free-text notes per variant, keyed by variant key. Use to document what each variant does or its reroute URL.
              * @default null
              */
-            rollout_percentage: number | null;
+            variant_notes: {
+                [key: string]: string;
+            } | null;
         };
         /** ExperimentQuery */
         ExperimentQuery: {
@@ -4996,6 +5802,12 @@ export interface components {
              * @default null
              */
             variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][] | components["schemas"]["ExperimentVariantFunnelsBaseStats"][] | null;
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** ExperimentRatioMetric */
         ExperimentRatioMetric: {
@@ -5010,6 +5822,8 @@ export interface components {
             conversion_window_unit: components["schemas"]["FunnelConversionWindowTimeUnit"] | null;
             /** Denominator */
             denominator: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
+            /** @default null */
+            denominator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Fingerprint
              * @default null
@@ -5040,6 +5854,8 @@ export interface components {
             name: string | null;
             /** Numerator */
             numerator: components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["ExperimentDataWarehouseNode"];
+            /** @default null */
+            numerator_outlier_handling: components["schemas"]["ExperimentMetricOutlierHandling"] | null;
             /**
              * Response
              * @default null
@@ -5137,11 +5953,41 @@ export interface components {
              */
             version: number | null;
         };
+        /** ExperimentRunningTimeCalculation */
+        ExperimentRunningTimeCalculation: {
+            /**
+             * @description How the exposure estimate is configured: manual user-entered values or automatic from live experiment data.
+             * @default null
+             */
+            exposure_estimate_config: components["schemas"]["ExperimentExposureEstimateConfig"] | null;
+            /**
+             * Minimum Detectable Effect
+             * @description Minimum detectable effect as a percentage. Lower values need more users but catch smaller changes.
+             * @default null
+             */
+            minimum_detectable_effect: number | null;
+            /**
+             * Recommended Running Time
+             * @description Estimated number of days needed to reach the recommended sample size.
+             * @default null
+             */
+            recommended_running_time: number | null;
+            /**
+             * Recommended Sample Size
+             * @description Recommended number of exposed users needed for statistical significance.
+             * @default null
+             */
+            recommended_sample_size: number | null;
+        };
         /** @description Mixin for serializers to add user access control fields */
         ExperimentSavedMetric: {
             readonly id: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
             name: string;
+            /** @description Short description of what the metric measures. */
             description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query: unknown;
             readonly created_by: components["schemas"]["UserBasic"];
             /** Format: date-time */
             readonly created_at: string;
@@ -5218,7 +6064,7 @@ export interface components {
          */
         ExperimentStatsValidationFailure: "not-enough-exposures" | "baseline-mean-is-zero" | "not-enough-metric-data";
         /** @enum {string} */
-        ExperimentStatusEnum: "draft" | "running" | "paused" | "stopped";
+        ExperimentStatusEnum: "draft" | "running" | "paused" | "exposure_frozen" | "stopped";
         ExperimentToSavedMetric: {
             readonly id: number;
             experiment: number;
@@ -5244,9 +6090,8 @@ export interface components {
              */
             fingerprint: string | null;
             /**
-             * Kind
-             * @default ExperimentTrendsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ExperimentTrendsQuery";
             /**
@@ -5311,6 +6156,12 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /**
          * @description * `web` - web
@@ -5318,31 +6169,6 @@ export interface components {
          * @enum {string}
          */
         ExperimentTypeEnum: "web" | "product";
-        /** ExperimentVariant */
-        ExperimentVariant: {
-            /**
-             * Key
-             * @description Variant key. Exactly one variant in feature_flag_variants must use key 'control' (lowercase, exactly) — that is the baseline used for analysis and the special key the experiment runtime expects. Other variants use keys like 'test', 'variant_a', 'variant_b'. Map natural-language names ('original', 'A', 'baseline') to 'control'.
-             */
-            key: string;
-            /**
-             * Name
-             * @description Human-readable variant name.
-             * @default null
-             */
-            name: string | null;
-            /**
-             * Rollout Percentage
-             * @default null
-             */
-            rollout_percentage: number | null;
-            /**
-             * Split Percent
-             * @description Percentage of users assigned to this variant (0–100). All variants must sum to 100. One of split_percent (recommended) or rollout_percentage must be provided.
-             * @default null
-             */
-            split_percent: number | null;
-        };
         /** ExperimentVariantFunnelsBaseStats */
         ExperimentVariantFunnelsBaseStats: {
             /** Failure Count */
@@ -5517,6 +6343,97 @@ export interface components {
             /** Key */
             key: string;
         };
+        /** @description Experiment write payload. Identical to Experiment, plus the writable `feature_flag` config input. */
+        ExperimentWrite: {
+            readonly id: number;
+            /** @description Name of the experiment. */
+            name: string;
+            /** @description Description of the experiment hypothesis and expected outcomes. */
+            description?: string | null;
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flag-get-all tool first — reuse an existing flag when possible. */
+            feature_flag_key: string;
+            /** @description Feature-flag config for the experiment, in the flag's own filters shape. The linked flag is the source of truth for variants, rollout, aggregation, payloads, and experience continuity: send config here instead of the deprecated `parameters` keys. On a running experiment, also send `update_feature_flag_params=true`. Cannot be combined with the key of a pre-existing feature flag on create (the experiment links to it as-is). */
+            feature_flag?: components["schemas"]["ExperimentFeatureFlagInput"];
+            readonly holdout: components["schemas"]["ExperimentHoldout"];
+            /** @description ID of a holdout group to exclude from the experiment. */
+            holdout_id?: number | null;
+            readonly exposure_cohort: number | null;
+            /** @description Experiment parameters JSON. Supported keys include `custom_exposure_filter` and `variant_notes` (free-text notes per variant, keyed by variant key). Flag config (variants, rollout, aggregation, payloads, experience continuity) belongs on the `feature_flag` object; send it there. For backward compatibility, config still sent through these deprecated keys is copied onto the linked flag rather than rejected, and reads project the flag's current config back into this field. Excluded variants live on the top-level `excluded_variants` field, not here. */
+            parameters?: components["schemas"]["ExperimentParameters"] | null;
+            /** @description Running-time calculator state: `minimum_detectable_effect`, `recommended_running_time`, `recommended_sample_size`, and `exposure_estimate_config`. Canonical home for these keys, which historically lived in `parameters`. */
+            running_time_calculation?: components["schemas"]["ExperimentRunningTimeCalculation"] | null;
+            /** @description Variant keys to exclude from metric result calculations. Excluded variants are still served to users but omitted from statistical analysis. The baseline variant and holdout pseudo-variants cannot be excluded. Canonical home for what historically lived in `parameters.excluded_variants`. */
+            excluded_variants?: string[] | null;
+            readonly saved_metrics: components["schemas"]["ExperimentToSavedMetric"][];
+            /** @description IDs of shared saved metrics to attach to this experiment. Each item has 'id' (saved metric ID) and 'metadata' with 'type' (primary or secondary). */
+            saved_metrics_ids?: unknown[] | null;
+            /**
+             * @description Whether the experiment is archived.
+             * @default false
+             */
+            archived: boolean;
+            deleted?: boolean | null;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /**
+             * @description Experiment type: web for frontend UI changes, product for backend/API changes.
+             *
+             *     * `web` - web
+             *     * `product` - product
+             */
+            type?: components["schemas"]["ExperimentTypeEnum"] | components["schemas"]["NullEnum"];
+            /** @description Exposure configuration including filter test accounts and custom exposure events. */
+            exposure_criteria?: components["schemas"]["ExperimentApiExposureCriteria"] | null;
+            /** @description Primary experiment metrics. Each metric must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Use the read-data-schema tool with query kind 'events' to find available events in the project. */
+            metrics?: components["schemas"]["_ExperimentApiMetricsList"] | null;
+            /** @description Secondary metrics for additional measurements. Same format as primary metrics. */
+            metrics_secondary?: components["schemas"]["_ExperimentApiMetricsList"] | null;
+            /**
+             * @description Suppresses the validation that rejects metrics referencing events not yet ingested by this project. REQUIRES explicit user confirmation before being set to true — never flip this silently to retry a failed call. The default validation catches typo'd event names and missing instrumentation. Set this to true only when the user has confirmed the event is intentional (e.g. they are about to instrument it).
+             * @default false
+             */
+            allow_unknown_events: boolean;
+            /** create in folder */
+            _create_in_folder?: string;
+            /**
+             * @description Experiment conclusion: won, lost, inconclusive, stopped_early, or invalid.
+             *
+             *     * `won` - won
+             *     * `lost` - lost
+             *     * `inconclusive` - inconclusive
+             *     * `stopped_early` - stopped_early
+             *     * `invalid` - invalid
+             */
+            conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
+            /** @description Comment about the experiment conclusion. */
+            conclusion_comment?: string | null;
+            /**
+             * Format: uuid
+             * @description ID of the Code task opened to remove the experiment's feature-flag code, when one was requested via open_cleanup_pr on end/ship_variant. Read its status via the flag_cleanup_task action.
+             */
+            readonly flag_cleanup_task_id: string | null;
+            only_count_matured_users?: boolean;
+            /**
+             * @description When true, sync the flag config sent in this request (via the `feature_flag` object) to the linked feature flag. Draft experiments always sync regardless. On a running experiment, `feature_flag` config without this flag is rejected.
+             * @default false
+             */
+            update_feature_flag_params: boolean;
+            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'exposure_frozen' (running with enrollment frozen to the already-exposed cohort while metrics keep flowing — virtual state derived from the flag's release groups, not stored), 'stopped' (ended). */
+            readonly status: components["schemas"]["ExperimentStatusEnum"];
+            /** @description Whether the experiment uses any legacy-engine metrics (ExperimentTrendsQuery or ExperimentFunnelsQuery). Used to flag legacy experiments and gate actions that don't support them, such as duplicate and copy-to-project. */
+            readonly is_legacy: boolean;
+            /** @description Whether enrollment can be frozen right now: the experiment must be running (not draft, paused, stopped, or already frozen) and its feature flag must have release conditions that a person cohort can narrow (no group aggregation, no holdout, no early access conditions). */
+            readonly can_freeze_exposure: boolean;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+        };
         /** @description Serializer mixin that handles tags for objects. */
         FeatureFlag: {
             readonly id: number;
@@ -5528,6 +6445,8 @@ export interface components {
             };
             deleted?: boolean;
             active?: boolean;
+            /** @description Whether the flag is archived. Archived flags are hidden from the flag list by default and must be disabled (`active: false`). */
+            archived?: boolean;
             readonly created_by: components["schemas"]["UserBasic"];
             /** Format: date-time */
             created_at?: string;
@@ -5538,16 +6457,13 @@ export interface components {
             readonly last_modified_by: components["schemas"]["UserBasic"];
             ensure_experience_continuity?: boolean | null;
             readonly experiment_set: number[];
-            readonly experiment_set_metadata: {
-                [key: string]: unknown;
-            }[];
+            readonly experiment_set_metadata: components["schemas"]["FeatureFlagExperimentSetMetadata"][];
             readonly surveys: {
                 [key: string]: unknown;
             };
             readonly features: {
                 [key: string]: unknown;
             };
-            performed_rollback?: boolean | null;
             readonly can_edit: boolean;
             tags?: unknown[];
             evaluation_contexts?: unknown[];
@@ -5599,6 +6515,8 @@ export interface components {
             _should_create_usage_dashboard: boolean;
             /** @description Check if this feature flag is used in any team's session recording linked flag setting. */
             readonly is_used_in_replay_settings: boolean;
+            /** @description Whether this flag can back an experiment: multivariate with 2 to 20 variants. */
+            readonly is_eligible_for_experiment: boolean;
         };
         FeatureFlagConditionGroupSchema: {
             /** @description Property conditions for this release condition group. */
@@ -5622,10 +6540,31 @@ export interface components {
             filters?: components["schemas"]["FeatureFlagFiltersSchema"];
             /** @description Whether the feature flag is active. */
             active?: boolean;
+            /** @description Whether the flag is archived. Archived flags are hidden from the flag list by default and must be disabled (`active: false`). */
+            archived?: boolean;
             /** @description Organizational tags for this feature flag. */
             tags?: string[];
             /** @description Evaluation contexts that control where this flag evaluates at runtime. */
             evaluation_contexts?: string[];
+            /** @description Whether this flag is a remote configuration flag that delivers a payload rather than gating a feature. */
+            is_remote_configuration?: boolean | null;
+            /** @description Whether to persist a user's flag value across the anonymous-to-identified transition (the 'persist across authentication steps' option). Incompatible with device_id bucketing. */
+            ensure_experience_continuity?: boolean | null;
+            /**
+             * @description Where this flag is allowed to evaluate: 'server' (server-side SDKs only), 'client' (client-side SDKs only), or 'all' (both). Defaults to 'all'.
+             *
+             *     * `server` - Server
+             *     * `client` - Client
+             *     * `all` - All
+             */
+            evaluation_runtime?: components["schemas"]["EvaluationRuntimeEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description Identifier used to bucket users into rollout percentages and variants: 'distinct_id' (user ID, the default) or 'device_id'. Using 'device_id' is incompatible with ensure_experience_continuity=True.
+             *
+             *     * `distinct_id` - User ID (default)
+             *     * `device_id` - Device ID
+             */
+            bucketing_identifier?: components["schemas"]["BucketingIdentifierEnum"] | components["schemas"]["NullEnum"];
         };
         /**
          * @description * `feature_flags` - feature_flags
@@ -5637,6 +6576,14 @@ export interface components {
          * @enum {string}
          */
         FeatureFlagCreationContextEnum: "feature_flags" | "experiments" | "surveys" | "early_access_features" | "web_experiments" | "product_tours";
+        FeatureFlagExperimentSetMetadata: {
+            /** @description ID of the experiment linked to this flag. */
+            id: number;
+            /** @description Name of the experiment linked to this flag. */
+            name: string;
+            /** @description Whether the experiment is currently running (started and not yet stopped). A running experiment blocks deletion of the linked flag. */
+            is_running: boolean;
+        };
         FeatureFlagFilterPropertyCohortInSchema: {
             /** @description Property key used in this feature flag condition. */
             key: string;
@@ -5889,12 +6836,13 @@ export interface components {
             payloads?: {
                 [key: string]: string;
             };
-            /** @description Additional super condition groups used by experiments. */
-            super_groups?: {
-                [key: string]: unknown;
-            }[];
             /** @description Whether this flag has early access feature enrollment enabled. When true, the flag is evaluated against the person property $feature_enrollment/{flag_key}. */
             feature_enrollment?: boolean | null;
+            /**
+             * @description When true, condition evaluation stops at the first matching condition set rather than continuing to evaluate subsequent groups.
+             * @default false
+             */
+            early_exit: boolean;
         };
         FeatureFlagMultivariateSchema: {
             /** @description Variant definitions for multivariate feature flags. */
@@ -6013,7 +6961,7 @@ export interface components {
              * Funnelcorrelationpropertyvalues
              * @default null
              */
-            funnelCorrelationPropertyValues: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            funnelCorrelationPropertyValues: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Includerecordings
              * @default null
@@ -6131,6 +7079,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -6147,6 +7100,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** FunnelCorrelationResult */
         FunnelCorrelationResult: {
@@ -6172,7 +7137,7 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Funnelfromstep */
             funnelFromStep: number;
             /** Funneltostep */
@@ -6180,9 +7145,8 @@ export interface components {
             /** Id */
             id: number;
             /**
-             * Kind
-             * @default ActionsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "ActionsNode";
             /**
@@ -6229,7 +7193,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -6262,15 +7226,14 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Funnelfromstep */
             funnelFromStep: number;
             /** Funneltostep */
             funnelToStep: number;
             /**
-             * Kind
-             * @default EventsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "EventsNode";
             /**
@@ -6328,7 +7291,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -6381,6 +7344,11 @@ export interface components {
         FunnelVizType: "steps" | "time_to_convert" | "trends" | "flow";
         /** FunnelsActorsQuery */
         FunnelsActorsQuery: {
+            /**
+             * @description When the source funnel has compare-to-previous enabled, scopes the actors to a single period. The runner resolves `'previous'` to the shifted date range; `'current'` (or unset) uses the source's own date range.
+             * @default null
+             */
+            compare: components["schemas"]["Compare"] | null;
             /**
              * Funnelstep
              * @description Index of the step for which we want to get the timestamp for, per person. Positive for converted persons, negative for dropped of persons.
@@ -6451,15 +7419,14 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Id */
             id: string;
             /** Id Field */
             id_field: string;
             /**
-             * Kind
-             * @default FunnelsDataWarehouseNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "FunnelsDataWarehouseNode";
             /**
@@ -6506,7 +7473,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -6545,6 +7512,11 @@ export interface components {
              * @default null
              */
             breakdownSorting: string | null;
+            /**
+             * @description Chart rendering style overrides (line shape). Only applies to historical-trends funnels.
+             * @default null
+             */
+            chartStyle: components["schemas"]["ChartStyle"] | null;
             /**
              * Customaggregationtarget
              * @description For data warehouse based funnel insights when the aggregation target can't be mapped to persons or groups.
@@ -6596,8 +7568,19 @@ export interface components {
              * @default null
              */
             hiddenLegendBreakdowns: string[] | null;
+            /**
+             * Hideincompleteconversionwindowperiods
+             * @description Trends only: hide periods whose conversion window has not fully elapsed yet, so the recent tail of the trend isn't dragged down by entrants who still have time to convert.
+             * @default false
+             */
+            hideIncompleteConversionWindowPeriods: boolean | null;
             /** @default vertical */
             layout: components["schemas"]["FunnelLayout"] | null;
+            /**
+             * @description Where the in-chart legend sits relative to the plot. Only applies to the in-chart legend.
+             * @default bottom
+             */
+            legendPosition: components["schemas"]["LegendPosition"] | null;
             /**
              * Resultcustomizations
              * @description Customizations for the appearance of result datasets.
@@ -6606,6 +7589,18 @@ export interface components {
             resultCustomizations: {
                 [key: string]: components["schemas"]["ResultCustomizationByValue"];
             } | null;
+            /**
+             * Showannotations
+             * @description Whether to render annotations on the chart. Only applies to historical-trends funnels.
+             * @default true
+             */
+            showAnnotations: boolean | null;
+            /**
+             * Showlegend
+             * @description Whether to show a legend describing the series. The legend only renders when the funnel has multiple series. Only applies to historical-trends funnels.
+             * @default false
+             */
+            showLegend: boolean | null;
             /**
              * Showtrendlines
              * @description Display linear regression trend lines on the chart (only for historical trends viz)
@@ -6636,6 +7631,11 @@ export interface components {
              * @default null
              */
             breakdownFilter: components["schemas"]["BreakdownFilter"] | null;
+            /**
+             * @description Compare to date range
+             * @default null
+             */
+            compareFilter: components["schemas"]["CompareFilter"] | null;
             /**
              * Datacolortheme
              * @description Colors used in the insight's visualization
@@ -6678,7 +7678,7 @@ export interface components {
              * @description Property filters for all series
              * @default []
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
             /** @default null */
             response: components["schemas"]["FunnelsQueryResponse"] | null;
             /**
@@ -6691,7 +7691,7 @@ export interface components {
              * Series
              * @description Events and actions to include
              */
-            series: (components["schemas"]["GroupNode"] | components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["FunnelsDataWarehouseNode"])[];
+            series: (components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["FunnelsDataWarehouseNode"] | components["schemas"]["GroupNode"])[];
             /**
              * @description Tags that will be added to the Query log comment
              * @default null
@@ -6729,6 +7729,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -6741,6 +7746,24 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Total Median Conversion Time
+             * @description Median total conversion time across all completers, computed breakdown-agnostically for the Steps viz header.
+             * @default null
+             */
+            total_median_conversion_time: number | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** GoalLine */
         GoalLine: {
@@ -6783,11 +7806,10 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default GroupNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "GroupNode";
             /**
@@ -6852,7 +7874,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -6906,9 +7928,8 @@ export interface components {
             /** Group Type Index */
             group_type_index: number;
             /**
-             * Kind
-             * @default GroupsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "GroupsQuery";
             /**
@@ -6998,6 +8019,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -7012,6 +8038,18 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** HeatmapGradientStop */
         HeatmapGradientStop: {
@@ -7110,7 +8148,7 @@ export interface components {
              * Properties
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
         };
         /** HogQLMetadataResponse */
         HogQLMetadataResponse: {
@@ -7188,7 +8226,7 @@ export interface components {
         HogQLQuery: {
             /**
              * Connectionid
-             * @description Optional direct external data source id for running against a specific source
+             * @description Optional id of a direct-query-capable external data source to run against instead of ClickHouse — a pure-direct source, or a synced source with direct query enabled.
              * @default null
              */
             connectionId: string | null;
@@ -7200,9 +8238,8 @@ export interface components {
             /** @default null */
             filters: components["schemas"]["HogQLFilters"] | null;
             /**
-             * Kind
-             * @default HogQLQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "HogQLQuery";
             /**
@@ -7309,6 +8346,11 @@ export interface components {
              * @default null
              */
             optimizeProjections: boolean | null;
+            /**
+             * @description HogQL parser backend; absent → `rust_py_with_cpp_shadow` (rust-py is primary, cpp runs as a sampled shadow). `*_shadow` modes return the primary result and sample-compare against the other parser, reporting divergences without failing the request. The `rust_py_*` modes drive the same hand-rolled Rust parser as `rust_*` but build `posthog.hogql.ast` dataclass instances directly via PyO3, skipping the JSON round-trip.
+             * @default null
+             */
+            parserMode: components["schemas"]["ParserMode"] | null;
             /** @default null */
             personsArgMaxVersion: components["schemas"]["PersonsArgMaxVersion"] | null;
             /** @default null */
@@ -7317,6 +8359,11 @@ export interface components {
             personsOnEventsMode: components["schemas"]["PersonsOnEventsMode"] | null;
             /** @default null */
             propertyGroupsMode: components["schemas"]["PropertyGroupsMode"] | null;
+            /**
+             * Pushdownpredicates
+             * @default null
+             */
+            pushDownPredicates: boolean | null;
             /**
              * S3Tableuseinvalidcolumns
              * @default null
@@ -7434,6 +8481,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -7452,6 +8504,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** HogQLVariable */
         HogQLVariable: {
@@ -7543,8 +8607,12 @@ export interface components {
             order?: number | null;
             deleted?: boolean;
             /**
+             * @deprecated
              * @description DEPRECATED. Will be removed in a future release. Use dashboard_tiles instead.
              *             A dashboard ID for each of the dashboards that this insight is displayed on.
+             *             This field may be omitted from responses: once opt-in enforcement is enabled, API-token
+             *             callers (personal API keys, OAuth) only receive it when passing the
+             *             `include_dashboards=true` query parameter. Do not rely on it being present.
              */
             dashboards?: number[];
             /** @description A dashboard tile ID and dashboard_id for each of the dashboards that this insight is displayed on. */
@@ -7602,8 +8670,12 @@ export interface components {
             /** create in folder */
             _create_in_folder?: string;
             readonly alerts: unknown[];
+            /** @description Resolved dashboard and tile filter layers used to explain filter precedence in the UI. */
+            readonly filter_override_context: components["schemas"]["InsightFilterOverrideContext"] | null;
             /** Format: date-time */
             readonly last_viewed_at: string | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
         };
         /** InsightActorsQuery */
         InsightActorsQuery: {
@@ -7663,6 +8735,24 @@ export interface components {
              * @default null
              */
             version: number | null;
+        };
+        /** InsightFilterOverrideContext */
+        InsightFilterOverrideContext: {
+            /**
+             * @description Dashboard filters that remain active after applying tile precedence.
+             * @default null
+             */
+            dashboard: components["schemas"]["DashboardFilter"] | null;
+            /**
+             * @description Tile filters applied above the dashboard filters.
+             * @default null
+             */
+            tile: components["schemas"]["TileFilters"] | null;
+            /**
+             * @description Dashboard filters replaced by the tile filters.
+             * @default null
+             */
+            overridden_dashboard: components["schemas"]["DashboardFilter"] | null;
         };
         /** InsightVizNode */
         InsightVizNode: {
@@ -7757,12 +8847,12 @@ export interface components {
          * IntegrationKind
          * @enum {string}
          */
-        IntegrationKind: "slack" | "slack-posthog-code" | "salesforce" | "hubspot" | "google-pubsub" | "google-cloud-service-account" | "google-cloud-storage" | "google-ads" | "google-sheets" | "linkedin-ads" | "snapchat" | "stripe" | "intercom" | "email" | "twilio" | "linear" | "github" | "gitlab" | "meta-ads" | "clickup" | "reddit-ads" | "databricks" | "tiktok-ads" | "bing-ads" | "vercel" | "azure-blob" | "firebase" | "jira" | "pinterest-ads" | "customerio-app" | "customerio-webhook" | "customerio-track";
+        IntegrationKind: "slack" | "salesforce" | "hubspot" | "google-pubsub" | "google-cloud-service-account" | "google-cloud-storage" | "google-ads" | "google-analytics" | "google-search-console" | "google-sheets" | "linkedin-ads" | "snapchat" | "stripe" | "intercom" | "email" | "twilio" | "linear" | "github" | "gitlab" | "meta-ads" | "clickup" | "reddit-ads" | "databricks" | "tiktok-ads" | "bing-ads" | "vercel" | "azure-blob" | "firebase" | "jira" | "pinterest-ads" | "customerio-app" | "customerio-webhook" | "customerio-track" | "apns" | "postgresql" | "aws-s3" | "s3-compatible" | "snowflake";
         /**
          * IntervalType
          * @enum {string}
          */
-        IntervalType: "second" | "minute" | "hour" | "day" | "week" | "month";
+        IntervalType: "second" | "minute" | "hour" | "day" | "week" | "month" | "quarter" | "year";
         /**
          * Key10
          * @enum {string}
@@ -7773,6 +8863,51 @@ export interface components {
          * @enum {string}
          */
         Kind: "EventsNode" | "ActionsNode";
+        /**
+         * Kind1
+         * @enum {string}
+         */
+        Kind1: "ExperimentEventExposureConfig" | "ActionsNode";
+        /** LLMSentimentMessage */
+        LLMSentimentMessage: {
+            /** Label */
+            label: string;
+            /** Score */
+            score: number;
+            /**
+             * Scores
+             * @default null
+             */
+            scores: {
+                [key: string]: number;
+            } | null;
+        };
+        /** LLMSentimentResult */
+        LLMSentimentResult: {
+            /** Label */
+            label: string;
+            /**
+             * Message Count
+             * @default null
+             */
+            message_count: number | null;
+            /**
+             * Messages
+             * @default null
+             */
+            messages: {
+                [key: string]: components["schemas"]["LLMSentimentMessage"];
+            } | null;
+            /** Score */
+            score: number;
+            /**
+             * Scores
+             * @default null
+             */
+            scores: {
+                [key: string]: number;
+            } | null;
+        };
         /** LLMTrace */
         LLMTrace: {
             /**
@@ -7835,6 +8970,8 @@ export interface components {
              * @default null
              */
             requestCost: number | null;
+            /** @default null */
+            sentiment: components["schemas"]["LLMSentimentResult"] | null;
             /**
              * Tools
              * @default null
@@ -7873,6 +9010,8 @@ export interface components {
             properties: {
                 [key: string]: unknown;
             };
+            /** @default null */
+            sentiment: components["schemas"]["LLMSentimentResult"] | null;
         };
         /** LLMTracePerson */
         LLMTracePerson: {
@@ -7898,6 +9037,11 @@ export interface components {
             /** Uuid */
             uuid: string;
         };
+        /**
+         * LegendPosition
+         * @enum {string}
+         */
+        LegendPosition: "top" | "bottom" | "left" | "right";
         /** LifecycleDataWarehouseNode */
         LifecycleDataWarehouseNode: {
             /** Aggregation Target Field */
@@ -7914,13 +9058,12 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** Id */
             id: string;
             /**
-             * Kind
-             * @default LifecycleDataWarehouseNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "LifecycleDataWarehouseNode";
             /**
@@ -7967,7 +9110,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -7989,10 +9132,21 @@ export interface components {
         /** LifecycleFilter */
         LifecycleFilter: {
             /**
+             * @description Where the in-chart legend sits relative to the plot. Only applies to the in-chart legend.
+             * @default bottom
+             */
+            legendPosition: components["schemas"]["LegendPosition"] | null;
+            /**
              * Showlegend
              * @default false
              */
             showLegend: boolean | null;
+            /**
+             * Showpercentagesonseries
+             * @description Append per-band percentage to each value label (e.g. `580 (42%)`). Requires `showValuesOnSeries` — on its own it has no visible effect.
+             * @default null
+             */
+            showPercentagesOnSeries: boolean | null;
             /**
              * Showvaluesonseries
              * @default null
@@ -8065,7 +9219,7 @@ export interface components {
              * @description Property filters for all series
              * @default []
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
             /** @default null */
             response: components["schemas"]["LifecycleQueryResponse"] | null;
             /**
@@ -8116,6 +9270,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8130,6 +9289,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * LifecycleToggle
@@ -8180,6 +9351,11 @@ export interface components {
          * @enum {string}
          */
         LogPropertyFilterType: "log" | "log_attribute" | "log_resource_attribute";
+        /**
+         * ManualMetricType
+         * @enum {string}
+         */
+        ManualMetricType: "funnel" | "mean_count" | "mean_sum_or_avg";
         /** MarketingAnalyticsAggregatedQuery */
         MarketingAnalyticsAggregatedQuery: {
             /**
@@ -8240,9 +9416,8 @@ export interface components {
              */
             interval: components["schemas"]["IntervalType"] | null;
             /**
-             * Kind
-             * @default MarketingAnalyticsAggregatedQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "MarketingAnalyticsAggregatedQuery";
             /**
@@ -8307,6 +9482,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8323,6 +9503,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * MarketingAnalyticsDrillDownLevel
@@ -8429,9 +9621,8 @@ export interface components {
              */
             interval: components["schemas"]["IntervalType"] | null;
             /**
-             * Kind
-             * @default MarketingAnalyticsTableQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "MarketingAnalyticsTableQuery";
             /**
@@ -8534,6 +9725,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8553,6 +9749,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * MaterializationMode
@@ -8579,6 +9787,62 @@ export interface components {
          * @enum {string}
          */
         MeanRetentionCalculation: "simple" | "weighted" | "none";
+        /** MetricPropertyFilter */
+        MetricPropertyFilter: {
+            /** Key */
+            key: string;
+            /**
+             * Label
+             * @default null
+             */
+            label: string | null;
+            operator: components["schemas"]["PropertyOperator"];
+            /**
+             * Type
+             * @default metric_attribute
+             * @constant
+             */
+            type: "metric_attribute";
+            /**
+             * Value
+             * @default null
+             */
+            value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        /**
+         * MetricSummary
+         * @enum {string}
+         */
+        MetricSummary: "total" | "average" | "latest";
+        MinimalFeatureFlag: {
+            readonly id: number;
+            readonly team_id: number;
+            name?: string;
+            key: string;
+            filters?: {
+                [key: string]: unknown;
+            };
+            deleted?: boolean;
+            active?: boolean;
+            ensure_experience_continuity?: boolean | null;
+            version?: number | null;
+            /**
+             * @description Specifies where this feature flag should be evaluated
+             *
+             *     * `server` - Server
+             *     * `client` - Client
+             *     * `all` - All
+             */
+            evaluation_runtime?: components["schemas"]["EvaluationRuntimeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description Identifier used for bucketing users into rollout and variants
+             *
+             *     * `distinct_id` - User ID (default)
+             *     * `device_id` - Device ID
+             */
+            bucketing_identifier?: components["schemas"]["BucketingIdentifierEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            readonly evaluation_contexts: string[];
+        };
         /**
          * MultipleBreakdownType
          * @enum {string}
@@ -8643,9 +9907,8 @@ export interface components {
              */
             interval: components["schemas"]["IntervalType"] | null;
             /**
-             * Kind
-             * @default NonIntegratedConversionsTableQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "NonIntegratedConversionsTableQuery";
             /**
@@ -8748,6 +10011,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -8767,6 +10035,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         NullEnum: null;
         /** @description Matches numeric values with comparison operators. */
@@ -8780,6 +10060,7 @@ export interface components {
              *     * `event_metadata` - event_metadata
              *     * `feature` - feature
              *     * `person` - person
+             *     * `person_metadata` - person_metadata
              *     * `cohort` - cohort
              *     * `element` - element
              *     * `static-cohort` - static-cohort
@@ -8797,10 +10078,12 @@ export interface components {
              *     * `log` - log
              *     * `log_attribute` - log_attribute
              *     * `log_resource_attribute` - log_resource_attribute
+             *     * `metric_attribute` - metric_attribute
              *     * `span` - span
              *     * `span_attribute` - span_attribute
              *     * `span_resource_attribute` - span_resource_attribute
              *     * `revenue_analytics` - revenue_analytics
+             *     * `account_custom_property` - account_custom_property
              *     * `flag` - flag
              *     * `workflow_variable` - workflow_variable
              * @default event
@@ -8929,6 +10212,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["EventSchema"][];
         };
+        PaginatedExperimentBasicList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["ExperimentBasic"][];
+        };
         PaginatedExperimentHoldoutList: {
             /** @example 123 */
             count: number;
@@ -8943,21 +10241,6 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["ExperimentHoldout"][];
-        };
-        PaginatedExperimentList: {
-            /** @example 123 */
-            count: number;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?offset=400&limit=100
-             */
-            next?: string | null;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?offset=200&limit=100
-             */
-            previous?: string | null;
-            results: components["schemas"]["Experiment"][];
         };
         PaginatedExperimentSavedMetricList: {
             /** @example 123 */
@@ -9019,6 +10302,11 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
         };
+        /**
+         * ParserMode
+         * @enum {string}
+         */
+        ParserMode: "cpp_only" | "cpp_with_rust_shadow" | "cpp_with_rust_py_shadow" | "rust_with_cpp_shadow" | "rust_only" | "rust_py_only" | "rust_py_with_cpp_shadow";
         /** @description Serializer mixin that handles tags for objects. */
         PatchedAction: {
             readonly id?: number;
@@ -9085,7 +10373,11 @@ export interface components {
              *     * `analytical` - analytical
              */
             cohort_type?: components["schemas"]["CohortTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            /** @description Flags describing which kinds of conditions the cohort's filters contain. Null when the cohort has no filters to classify. */
+            readonly condition_type?: components["schemas"]["CohortConditionTypeFlags"] | null;
             readonly experiment_set?: number[];
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type?: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
             /** create in folder */
             _create_in_folder?: string;
             /**
@@ -9093,65 +10385,6 @@ export interface components {
              * @default []
              */
             _create_static_person_ids: string[];
-        };
-        /** @description Serializer mixin that handles tags for objects. */
-        PatchedDashboard: {
-            readonly id?: number;
-            name?: string | null;
-            description?: string;
-            pinned?: boolean;
-            /** Format: date-time */
-            readonly created_at?: string;
-            readonly created_by?: components["schemas"]["UserBasic"];
-            /** Format: date-time */
-            last_accessed_at?: string | null;
-            /** Format: date-time */
-            readonly last_viewed_at?: string | null;
-            readonly is_shared?: boolean;
-            deleted?: boolean;
-            readonly creation_mode?: components["schemas"]["CreationModeEnum"];
-            readonly filters?: {
-                [key: string]: unknown;
-            };
-            readonly variables?: {
-                [key: string]: unknown;
-            } | null;
-            /** @description Custom color mapping for breakdown values. */
-            breakdown_colors?: unknown;
-            /** @description ID of the color theme used for chart visualizations. */
-            data_color_theme_id?: number | null;
-            tags?: unknown[];
-            restriction_level?: components["schemas"]["RestrictionLevelEnum"];
-            readonly effective_restriction_level?: components["schemas"]["EffectivePrivilegeLevelEnum"];
-            readonly effective_privilege_level?: components["schemas"]["EffectivePrivilegeLevelEnum"];
-            /** @description The effective access level the user has for this object */
-            readonly user_access_level?: string | null;
-            readonly access_control_version?: string;
-            /** Format: date-time */
-            last_refresh?: string | null;
-            readonly persisted_filters?: {
-                [key: string]: unknown;
-            } | null;
-            readonly persisted_variables?: {
-                [key: string]: unknown;
-            } | null;
-            readonly team_id?: number;
-            /** @description List of quick filter IDs associated with this dashboard */
-            quick_filter_ids?: string[] | null;
-            readonly tiles?: {
-                [key: string]: unknown;
-            }[] | null;
-            /** @description Template key to create the dashboard from a predefined template. */
-            use_template?: string;
-            /** @description ID of an existing dashboard to duplicate. */
-            use_dashboard?: number | null;
-            /**
-             * @description When deleting, also delete insights that are only on this dashboard.
-             * @default false
-             */
-            delete_insights: boolean;
-            /** create in folder */
-            _create_in_folder?: string;
         };
         /** @description Schema for creating/updating endpoints. OpenAPI docs only — validation uses Pydantic. */
         PatchedEndpointRequest: {
@@ -9177,6 +10410,10 @@ export interface components {
             } | null;
             /** @description Set to true to soft-delete this endpoint. */
             deleted?: boolean | null;
+            /** @description List of tag names to associate with this endpoint. Replaces any existing tags. */
+            tags?: string[] | null;
+            /** @description Breakdown property names that may be omitted on /run. Omitted ones return data aggregated across all values of that breakdown. Defaults to [] — every breakdown variable is required. */
+            optional_breakdown_properties?: string[] | null;
         };
         /** @description Serializer mixin that handles tags for objects. */
         PatchedEnterpriseEventDefinition: {
@@ -9214,8 +10451,43 @@ export interface components {
             default_columns?: string[];
             readonly media_preview_urls?: string[];
         };
+        /** @description A holdout group — a stable slice of users excluded from experiment exposure. */
+        PatchedExperimentHoldout: {
+            readonly id?: number;
+            /** @description Human-readable name for the holdout group. */
+            name?: string;
+            /** @description Optional description of what this holdout reserves and why. */
+            description?: string | null;
+            /** @description Non-empty list of release-condition groups defining the held-out population, using the same shape as feature-flag release conditions. Each element's `rollout_percentage` (0–100, may be fractional) is the **exclusion** percentage — the share of users held back from all experiments that reference this holdout. `properties` optionally narrows the group by person/group properties. Do not set `variant`: the server normalizes it to `holdout-{id}`. Note that only the first element's `rollout_percentage` is embedded into each linked experiment's feature flag, and this population is shared across every experiment using the holdout. */
+            filters?: components["schemas"]["FeatureFlagConditionGroupSchema"][];
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level?: string | null;
+        };
         /** @description Mixin for serializers to add user access control fields */
-        PatchedExperiment: {
+        PatchedExperimentSavedMetric: {
+            readonly id?: number;
+            /** @description Name of the shared metric. Must be unique within the project (case-insensitive). */
+            name?: string;
+            /** @description Short description of what the metric measures. */
+            description?: string | null;
+            /** @description ExperimentMetric JSON. Must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Legacy kinds (ExperimentTrendsQuery, ExperimentFunnelsQuery) are rejected for new shared metrics. */
+            query?: unknown;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            tags?: unknown[];
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level?: string | null;
+        };
+        /** @description Experiment write payload. Identical to Experiment, plus the writable `feature_flag` config input. */
+        PatchedExperimentWrite: {
             readonly id?: number;
             /** @description Name of the experiment. */
             name?: string;
@@ -9225,17 +10497,20 @@ export interface components {
             start_date?: string | null;
             /** Format: date-time */
             end_date?: string | null;
-            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flags-get-all tool first — reuse an existing flag when possible. */
+            /** @description Unique key for the experiment's feature flag. Letters, numbers, hyphens, and underscores only. Search existing flags with the feature-flag-get-all tool first — reuse an existing flag when possible. */
             feature_flag_key?: string;
-            readonly feature_flag?: {
-                [key: string]: unknown;
-            };
+            /** @description Feature-flag config for the experiment, in the flag's own filters shape. The linked flag is the source of truth for variants, rollout, aggregation, payloads, and experience continuity: send config here instead of the deprecated `parameters` keys. On a running experiment, also send `update_feature_flag_params=true`. Cannot be combined with the key of a pre-existing feature flag on create (the experiment links to it as-is). */
+            feature_flag?: components["schemas"]["ExperimentFeatureFlagInput"];
             readonly holdout?: components["schemas"]["ExperimentHoldout"];
             /** @description ID of a holdout group to exclude from the experiment. */
             holdout_id?: number | null;
             readonly exposure_cohort?: number | null;
-            /** @description Variant definitions and rollout configuration. Set feature_flag_variants to customize the split (default: 50/50 control/test). Each variant needs a key and split_percent (the variant's share of traffic); percentages must sum to 100. Set rollout_percentage (0-100, default 100) to limit what fraction of users enter the experiment. Set minimum_detectable_effect (percentage, suggest 20-30) to control statistical power. */
+            /** @description Experiment parameters JSON. Supported keys include `custom_exposure_filter` and `variant_notes` (free-text notes per variant, keyed by variant key). Flag config (variants, rollout, aggregation, payloads, experience continuity) belongs on the `feature_flag` object; send it there. For backward compatibility, config still sent through these deprecated keys is copied onto the linked flag rather than rejected, and reads project the flag's current config back into this field. Excluded variants live on the top-level `excluded_variants` field, not here. */
             parameters?: components["schemas"]["ExperimentParameters"] | null;
+            /** @description Running-time calculator state: `minimum_detectable_effect`, `recommended_running_time`, `recommended_sample_size`, and `exposure_estimate_config`. Canonical home for these keys, which historically lived in `parameters`. */
+            running_time_calculation?: components["schemas"]["ExperimentRunningTimeCalculation"] | null;
+            /** @description Variant keys to exclude from metric result calculations. Excluded variants are still served to users but omitted from statistical analysis. The baseline variant and holdout pseudo-variants cannot be excluded. Canonical home for what historically lived in `parameters.excluded_variants`. */
+            excluded_variants?: string[] | null;
             readonly saved_metrics?: components["schemas"]["ExperimentToSavedMetric"][];
             /** @description IDs of shared saved metrics to attach to this experiment. Each item has 'id' (saved metric ID) and 'metadata' with 'type' (primary or secondary). */
             saved_metrics_ids?: unknown[] | null;
@@ -9259,7 +10534,7 @@ export interface components {
             type?: components["schemas"]["ExperimentTypeEnum"] | components["schemas"]["NullEnum"];
             /** @description Exposure configuration including filter test accounts and custom exposure events. */
             exposure_criteria?: components["schemas"]["ExperimentApiExposureCriteria"] | null;
-            /** @description Primary experiment metrics. Each metric must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Use the event-definitions-list tool to find available events in the project. */
+            /** @description Primary experiment metrics. Each metric must have kind='ExperimentMetric' and a metric_type: 'mean' (set source to an EventsNode with an event name), 'funnel' (set series to an array of EventsNode steps), 'ratio' (set numerator and denominator EventsNode entries), or 'retention' (set start_event and completion_event). Use the read-data-schema tool with query kind 'events' to find available events in the project. */
             metrics?: components["schemas"]["_ExperimentApiMetricsList"] | null;
             /** @description Secondary metrics for additional measurements. Same format as primary metrics. */
             metrics_secondary?: components["schemas"]["_ExperimentApiMetricsList"] | null;
@@ -9282,38 +10557,23 @@ export interface components {
             conclusion?: components["schemas"]["ConclusionEnum"] | components["schemas"]["NullEnum"];
             /** @description Comment about the experiment conclusion. */
             conclusion_comment?: string | null;
+            /**
+             * Format: uuid
+             * @description ID of the Code task opened to remove the experiment's feature-flag code, when one was requested via open_cleanup_pr on end/ship_variant. Read its status via the flag_cleanup_task action.
+             */
+            readonly flag_cleanup_task_id?: string | null;
             only_count_matured_users?: boolean;
             /**
-             * @description When true, sync feature flag configuration from parameters to the linked feature flag. Draft experiments always sync regardless of update_feature_flag_params, so only required for non-drafts.
+             * @description When true, sync the flag config sent in this request (via the `feature_flag` object) to the linked feature flag. Draft experiments always sync regardless. On a running experiment, `feature_flag` config without this flag is rejected.
              * @default false
              */
             update_feature_flag_params: boolean;
-            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'stopped' (ended). */
+            /** @description Experiment lifecycle state: 'draft' (not yet launched), 'running' (launched with active feature flag), 'paused' (running with feature flag deactivated — virtual state derived from feature_flag.active, not stored), 'exposure_frozen' (running with enrollment frozen to the already-exposed cohort while metrics keep flowing — virtual state derived from the flag's release groups, not stored), 'stopped' (ended). */
             readonly status?: components["schemas"]["ExperimentStatusEnum"];
-            /** @description The effective access level the user has for this object */
-            readonly user_access_level?: string | null;
-        };
-        PatchedExperimentHoldout: {
-            readonly id?: number;
-            name?: string;
-            description?: string | null;
-            readonly created_by?: components["schemas"]["UserBasic"];
-            /** Format: date-time */
-            readonly created_at?: string;
-            /** Format: date-time */
-            readonly updated_at?: string;
-        };
-        /** @description Mixin for serializers to add user access control fields */
-        PatchedExperimentSavedMetric: {
-            readonly id?: number;
-            name?: string;
-            description?: string | null;
-            readonly created_by?: components["schemas"]["UserBasic"];
-            /** Format: date-time */
-            readonly created_at?: string;
-            /** Format: date-time */
-            readonly updated_at?: string;
-            tags?: unknown[];
+            /** @description Whether the experiment uses any legacy-engine metrics (ExperimentTrendsQuery or ExperimentFunnelsQuery). Used to flag legacy experiments and gate actions that don't support them, such as duplicate and copy-to-project. */
+            readonly is_legacy?: boolean;
+            /** @description Whether enrollment can be frozen right now: the experiment must be running (not draft, paused, stopped, or already frozen) and its feature flag must have release conditions that a person cohort can narrow (no group aggregation, no holdout, no early access conditions). */
+            readonly can_freeze_exposure?: boolean;
             /** @description The effective access level the user has for this object */
             readonly user_access_level?: string | null;
         };
@@ -9326,10 +10586,31 @@ export interface components {
             filters?: components["schemas"]["FeatureFlagFiltersSchema"];
             /** @description Whether the feature flag is active. */
             active?: boolean;
+            /** @description Whether the flag is archived. Archived flags are hidden from the flag list by default and must be disabled (`active: false`). */
+            archived?: boolean;
             /** @description Organizational tags for this feature flag. */
             tags?: string[];
             /** @description Evaluation contexts that control where this flag evaluates at runtime. */
             evaluation_contexts?: string[];
+            /** @description Whether this flag is a remote configuration flag that delivers a payload rather than gating a feature. */
+            is_remote_configuration?: boolean | null;
+            /** @description Whether to persist a user's flag value across the anonymous-to-identified transition (the 'persist across authentication steps' option). Incompatible with device_id bucketing. */
+            ensure_experience_continuity?: boolean | null;
+            /**
+             * @description Where this flag is allowed to evaluate: 'server' (server-side SDKs only), 'client' (client-side SDKs only), or 'all' (both). Defaults to 'all'.
+             *
+             *     * `server` - Server
+             *     * `client` - Client
+             *     * `all` - All
+             */
+            evaluation_runtime?: components["schemas"]["EvaluationRuntimeEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description Identifier used to bucket users into rollout percentages and variants: 'distinct_id' (user ID, the default) or 'device_id'. Using 'device_id' is incompatible with ensure_experience_continuity=True.
+             *
+             *     * `distinct_id` - User ID (default)
+             *     * `device_id` - Device ID
+             */
+            bucketing_identifier?: components["schemas"]["BucketingIdentifierEnum"] | components["schemas"]["NullEnum"];
         };
         /** @description Simplified serializer to speed response times when loading large amounts of objects. */
         PatchedInsight: {
@@ -9341,8 +10622,12 @@ export interface components {
             order?: number | null;
             deleted?: boolean;
             /**
+             * @deprecated
              * @description DEPRECATED. Will be removed in a future release. Use dashboard_tiles instead.
              *             A dashboard ID for each of the dashboards that this insight is displayed on.
+             *             This field may be omitted from responses: once opt-in enforcement is enabled, API-token
+             *             callers (personal API keys, OAuth) only receive it when passing the
+             *             `include_dashboards=true` query parameter. Do not rely on it being present.
              */
             dashboards?: number[];
             /** @description A dashboard tile ID and dashboard_id for each of the dashboards that this insight is displayed on. */
@@ -9400,8 +10685,44 @@ export interface components {
             /** create in folder */
             _create_in_folder?: string;
             readonly alerts?: unknown[];
+            /** @description Resolved dashboard and tile filter layers used to explain filter precedence in the UI. */
+            readonly filter_override_context?: components["schemas"]["InsightFilterOverrideContext"] | null;
             /** Format: date-time */
             readonly last_viewed_at?: string | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type?: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        /**
+         * @description OpenAPI-only PATCH body for dashboards (agents/MCP).
+         *
+         *     Must be a superset of ``dashboard_patch_runtime_openapi_field_names()`` — ``extend_schema(request=...)``
+         *     replaces the inferred schema entirely. Contract: ``test_dashboard_openapi.py``.
+         */
+        PatchedPatchedDashboardOpenApi: {
+            name?: string | null;
+            description?: string;
+            pinned?: boolean;
+            /** @description Dashboard-level filters (date range and properties) applied across all tiles as the source of truth. */
+            filters?: components["schemas"]["DashboardFiltersOpenApi"];
+            /** @description Custom color mapping for breakdown values. */
+            breakdown_colors?: unknown;
+            /** @description ID of the color theme used for chart visualizations. */
+            data_color_theme_id?: number | null;
+            tags?: string[];
+            restriction_level?: components["schemas"]["EffectivePrivilegeLevelEnum"];
+            /** @description List of quick filter IDs associated with this dashboard. */
+            quick_filter_ids?: string[] | null;
+            /** @description Dashboard tiles to update. Widget tiles accept nested widget.config patches. */
+            tiles?: components["schemas"]["DashboardPatchTileOpenApi"][];
+            /** @description Template key to create the dashboard from a predefined template. */
+            use_template?: string;
+            /** @description ID of an existing dashboard to duplicate. */
+            use_dashboard?: number | null;
+            /**
+             * @description When deleting, also delete insights that are only on this dashboard.
+             * @default false
+             */
+            delete_insights: boolean;
         };
         PatchedSchemaPropertyGroup: {
             /** Format: uuid */
@@ -9443,6 +10764,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -9498,6 +10841,7 @@ export interface components {
             business_model?: components["schemas"]["BusinessModelEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
             conversations_enabled?: boolean | null;
             proactive_tasks_enabled?: boolean | null;
+            workflows_config?: components["schemas"]["TeamWorkflowsConfig"];
             readonly effective_membership_level?: components["schemas"]["EffectiveMembershipLevelEnum"];
             readonly has_group_types?: boolean;
             readonly group_types?: {
@@ -9511,6 +10855,10 @@ export interface components {
                 [key: string]: boolean;
             };
             readonly available_setup_task_ids?: components["schemas"]["AvailableSetupTaskIdsEnum"][];
+            /** @description The team's events data retention window in months (plan-derived, synced from billing). When retention enforcement is active for the team, queries do not return events older than this many months. */
+            readonly event_retention_months?: number;
+            /** @description Whether events data retention is currently enforced for this team (cohort/flag gated). */
+            readonly events_retention_enforced?: boolean;
         };
         /** PathCleaningFilter */
         PathCleaningFilter: {
@@ -9679,7 +11027,7 @@ export interface components {
              * @description Property filters for all series
              * @default []
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
             /** @default null */
             response: components["schemas"]["PathsQueryResponse"] | null;
             /**
@@ -9725,6 +11073,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -9737,9 +11090,31 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** PersonFilter */
         PersonFilter: {
+            /**
+             * Operator
+             * @default null
+             */
+            operator: string | null;
+            /**
+             * Value
+             * @default null
+             */
+            value: unknown;
             /**
              * Bytecode
              * @default null
@@ -9763,6 +11138,18 @@ export interface components {
             /** Key */
             key: string;
             /**
+             * Negation
+             * @default false
+             */
+            negation: boolean;
+        };
+        /**
+         * PersonMetadataFilter
+         * @description Filter on a top-level persons-table column (e.g. created_at) rather than the
+         *     properties JSON. The matching key must be one of PERSON_METADATA_FIELDS.
+         */
+        PersonMetadataFilter: {
+            /**
              * Operator
              * @default null
              */
@@ -9773,10 +11160,55 @@ export interface components {
              */
             value: unknown;
             /**
+             * Bytecode
+             * @default null
+             */
+            bytecode: unknown[] | null;
+            /**
+             * Bytecode Error
+             * @default null
+             */
+            bytecode_error: string | null;
+            /**
+             * Conditionhash
+             * @default null
+             */
+            conditionHash: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "person_metadata";
+            /** Key */
+            key: string;
+            /**
              * Negation
              * @default false
              */
             negation: boolean;
+        };
+        /** PersonMetadataPropertyFilter */
+        PersonMetadataPropertyFilter: {
+            /** Key */
+            key: string;
+            /**
+             * Label
+             * @default null
+             */
+            label: string | null;
+            operator: components["schemas"]["PropertyOperator"];
+            /**
+             * Type
+             * @description Top-level columns on the persons table (e.g. created_at), not properties JSON
+             * @default person_metadata
+             * @constant
+             */
+            type: "person_metadata";
+            /**
+             * Value
+             * @default null
+             */
+            value: (string | number | boolean)[] | string | number | boolean | null;
         };
         /** PersonPropertyFilter */
         PersonPropertyFilter: {
@@ -9828,11 +11260,10 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
-             * Kind
-             * @default PersonsNode
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "PersonsNode";
             /**
@@ -9855,7 +11286,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Response
              * @default null
@@ -9882,6 +11313,25 @@ export interface components {
          * @enum {string}
          */
         PersonsOnEventsMode: "disabled" | "person_id_no_override_properties_on_events" | "person_id_override_properties_on_events" | "person_id_override_properties_joined";
+        /** PieChartSettings */
+        PieChartSettings: {
+            /**
+             * Showtotal
+             * @description Whether to show the aggregation total below the chart. Defaults to on.
+             * @default null
+             */
+            showTotal: boolean | null;
+            /**
+             * @description What to render on each slice. Defaults to labels.
+             * @default null
+             */
+            sliceContent: components["schemas"]["SliceContent"] | null;
+            /**
+             * @description Whether slice values show as absolute amounts or shares of the total. Only applies when `sliceContent` is `values`.
+             * @default null
+             */
+            valueDisplay: components["schemas"]["ValueDisplay"] | null;
+        };
         /** Population */
         Population: {
             /** Both */
@@ -9908,6 +11358,7 @@ export interface components {
          *     * `event_metadata` - event_metadata
          *     * `feature` - feature
          *     * `person` - person
+         *     * `person_metadata` - person_metadata
          *     * `cohort` - cohort
          *     * `element` - element
          *     * `static-cohort` - static-cohort
@@ -9925,15 +11376,17 @@ export interface components {
          *     * `log` - log
          *     * `log_attribute` - log_attribute
          *     * `log_resource_attribute` - log_resource_attribute
+         *     * `metric_attribute` - metric_attribute
          *     * `span` - span
          *     * `span_attribute` - span_attribute
          *     * `span_resource_attribute` - span_resource_attribute
          *     * `revenue_analytics` - revenue_analytics
+         *     * `account_custom_property` - account_custom_property
          *     * `flag` - flag
          *     * `workflow_variable` - workflow_variable
          * @enum {string}
          */
-        PropertyFilterTypeEnum: "event" | "event_metadata" | "feature" | "person" | "cohort" | "element" | "static-cohort" | "dynamic-cohort" | "precalculated-cohort" | "group" | "recording" | "log_entry" | "behavioral" | "session" | "hogql" | "data_warehouse" | "data_warehouse_person_property" | "error_tracking_issue" | "log" | "log_attribute" | "log_resource_attribute" | "span" | "span_attribute" | "span_resource_attribute" | "revenue_analytics" | "flag" | "workflow_variable";
+        PropertyFilterTypeEnum: "event" | "event_metadata" | "feature" | "person" | "person_metadata" | "cohort" | "element" | "static-cohort" | "dynamic-cohort" | "precalculated-cohort" | "group" | "recording" | "log_entry" | "behavioral" | "session" | "hogql" | "data_warehouse" | "data_warehouse_person_property" | "error_tracking_issue" | "log" | "log_attribute" | "log_resource_attribute" | "metric_attribute" | "span" | "span_attribute" | "span_resource_attribute" | "revenue_analytics" | "account_custom_property" | "flag" | "workflow_variable";
         /** PropertyGroupFilter */
         PropertyGroupFilter: {
             type: components["schemas"]["FilterLogicalOperator"];
@@ -9944,7 +11397,7 @@ export interface components {
         PropertyGroupFilterValue: {
             type: components["schemas"]["FilterLogicalOperator"];
             /** Values */
-            values: (components["schemas"]["PropertyGroupFilterValue"] | components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[];
+            values: (components["schemas"]["PropertyGroupFilterValue"] | components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[];
         };
         /** @enum {string} */
         PropertyGroupOperator: "AND" | "OR";
@@ -10021,6 +11474,12 @@ export interface components {
              * @default false
              */
             error: boolean | null;
+            /**
+             * Error Code
+             * @description Stable machine-readable code for the error (the DRF exception code), when known.
+             * @default null
+             */
+            error_code: string | null;
             /**
              * Error Message
              * @default null
@@ -10190,6 +11649,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10204,6 +11668,18 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response1 */
         Response1: {
@@ -10245,6 +11721,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10262,6 +11743,18 @@ export interface components {
              * @default null
              */
             types: string[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response10 */
         Response10: {
@@ -10304,6 +11797,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10318,6 +11816,18 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response11 */
         Response11: {
@@ -10349,6 +11859,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10361,6 +11876,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response12 */
         Response12: {
@@ -10392,6 +11919,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10404,6 +11936,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response13 */
         Response13: {
@@ -10435,6 +11979,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10447,6 +11996,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response14 */
         Response14: {
@@ -10473,6 +12034,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10485,6 +12051,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response15 */
         Response15: {
@@ -10516,6 +12094,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10528,6 +12111,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response16 */
         Response16: {
@@ -10574,6 +12169,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10591,6 +12191,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response18 */
         Response18: {
@@ -10637,6 +12249,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10656,6 +12273,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response19 */
         Response19: {
@@ -10682,6 +12311,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10698,6 +12332,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response2 */
         Response2: {
@@ -10740,6 +12386,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10754,6 +12405,18 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response20 */
         Response20: {
@@ -10800,6 +12463,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10819,6 +12487,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response21 */
         Response21: {
@@ -10865,6 +12545,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10877,6 +12562,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response22 */
         Response22: {
@@ -10923,6 +12620,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -10935,6 +12637,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response23 */
         Response23: {
@@ -10970,6 +12684,12 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantFunnelsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response24 */
         Response24: {
@@ -11007,6 +12727,12 @@ export interface components {
             stats_version: number | null;
             /** Variants */
             variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
         };
         /** Response25 */
         Response25: {
@@ -11053,6 +12779,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11065,9 +12796,21 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
-        /** Response26 */
-        Response26: {
+        /** Response27 */
+        Response27: {
             /**
              * Columns
              * @default null
@@ -11111,6 +12854,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11128,6 +12876,97 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
+        /** Response28 */
+        Response28: {
+            /** Columns */
+            columns: unknown[];
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             */
+            hogql: string;
+            /**
+             * Kind
+             * @default AccountsQuery
+             * @constant
+             */
+            kind: "AccountsQuery";
+            /** Limit */
+            limit: number;
+            /**
+             * Metricsresults
+             * @description When `metrics` is set on the query, the aggregated values in the same order.
+             * @default null
+             */
+            metricsResults: (number | null)[] | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** Offset */
+            offset: number;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: unknown[][];
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /** Types */
+            types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response3 */
         Response3: {
@@ -11198,6 +13037,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11216,6 +13060,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response4 */
         Response4: {
@@ -11246,11 +13102,18 @@ export interface components {
              * @default null
              */
             modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
             /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
              */
             query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /**
              * @description The date range used for the query
              * @default null
@@ -11267,10 +13130,17 @@ export interface components {
              */
             timings: components["schemas"]["QueryTiming"][] | null;
             /**
-             * Usedpreaggregatedtables
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
              * @default null
              */
-            usedPreAggregatedTables: boolean | null;
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response5 */
         Response5: {
@@ -11312,10 +13182,23 @@ export interface components {
              */
             offset: number | null;
             /**
+             * Precomputestale
+             * @description Whether a lazy-precompute read was served from expired-within-grace (stale) jobs instead of recomputing inline.
+             * @default null
+             */
+            preComputeStale: boolean | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
+            /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
              */
             query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /**
              * @description The date range used for the query
              * @default null
@@ -11337,10 +13220,17 @@ export interface components {
              */
             types: unknown[] | null;
             /**
-             * Usedpreaggregatedtables
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
              * @default null
              */
-            usedPreAggregatedTables: boolean | null;
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response6 */
         Response6: {
@@ -11387,6 +13277,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11406,6 +13301,102 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
+        /** Response7 */
+        Response7: {
+            /**
+             * Columns
+             * @default null
+             */
+            columns: unknown[] | null;
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             * @default null
+             */
+            hogql: string | null;
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: unknown[];
+            /** @default null */
+            samplingRate: components["schemas"]["SamplingRate"] | null;
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Types
+             * @default null
+             */
+            types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response8 */
         Response8: {
@@ -11426,11 +13417,18 @@ export interface components {
              * @default null
              */
             modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
             /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
              */
             query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /**
              * @description The date range used for the query
              * @default null
@@ -11444,6 +13442,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** Response9 */
         Response9: {
@@ -11490,6 +13500,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11507,6 +13522,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `21` - Everyone in the project can edit
@@ -11591,7 +13618,7 @@ export interface components {
              * @description filters on the event
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Table Name
              * @description Data warehouse table name
@@ -11629,12 +13656,23 @@ export interface components {
              * @description The type of property to aggregate on (event, person or data_warehouse). Defaults to event.
              * @default event
              */
-            aggregationPropertyType: components["schemas"]["AggregationPropertyType1"] | null;
+            aggregationPropertyType: components["schemas"]["AggregationPropertyType"] | null;
             /**
              * @description The aggregation type to use for retention
              * @default count
              */
             aggregationType: components["schemas"]["AggregationType"] | null;
+            /**
+             * @description Chart rendering style overrides (line shape).
+             * @default null
+             */
+            chartStyle: components["schemas"]["ChartStyle"] | null;
+            /**
+             * Cohortlabelstartindex
+             * @description Starting index used when labeling cohort columns (e.g. 0 for D0/D1/D2, 1 for D1/D2/D3). Display-only — does not affect retention calculations.
+             * @default 0
+             */
+            cohortLabelStartIndex: number | null;
             /**
              * Cumulative
              * @default null
@@ -11756,7 +13794,7 @@ export interface components {
              * @description Property filters for all series
              * @default []
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
             /** @default null */
             response: components["schemas"]["RetentionQueryResponse"] | null;
             /** @description Properties specific to the retention insight */
@@ -11804,6 +13842,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11816,6 +13859,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * RetentionReference
@@ -11879,9 +13934,8 @@ export interface components {
             dateRange: components["schemas"]["DateRange"] | null;
             interval: components["schemas"]["SimpleIntervalType"];
             /**
-             * Kind
-             * @default RevenueAnalyticsGrossRevenueQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "RevenueAnalyticsGrossRevenueQuery";
             /**
@@ -11932,6 +13986,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -11944,6 +14003,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** RevenueAnalyticsMRRQuery */
         RevenueAnalyticsMRRQuery: {
@@ -11953,9 +14024,8 @@ export interface components {
             dateRange: components["schemas"]["DateRange"] | null;
             interval: components["schemas"]["SimpleIntervalType"];
             /**
-             * Kind
-             * @default RevenueAnalyticsMRRQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "RevenueAnalyticsMRRQuery";
             /**
@@ -12006,6 +14076,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12018,6 +14093,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** RevenueAnalyticsMRRQueryResultItem */
         RevenueAnalyticsMRRQueryResultItem: {
@@ -12040,9 +14127,8 @@ export interface components {
             dateRange: components["schemas"]["DateRange"] | null;
             interval: components["schemas"]["SimpleIntervalType"];
             /**
-             * Kind
-             * @default RevenueAnalyticsMetricsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "RevenueAnalyticsMetricsQuery";
             /**
@@ -12093,6 +14179,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12105,6 +14196,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** RevenueAnalyticsOverviewItem */
         RevenueAnalyticsOverviewItem: {
@@ -12122,9 +14225,8 @@ export interface components {
             /** @default null */
             dateRange: components["schemas"]["DateRange"] | null;
             /**
-             * Kind
-             * @default RevenueAnalyticsOverviewQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "RevenueAnalyticsOverviewQuery";
             /**
@@ -12170,6 +14272,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12182,6 +14289,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** RevenueAnalyticsPropertyFilter */
         RevenueAnalyticsPropertyFilter: {
@@ -12216,9 +14335,8 @@ export interface components {
             dateRange: components["schemas"]["DateRange"] | null;
             groupBy: components["schemas"]["RevenueAnalyticsTopCustomersGroupBy"];
             /**
-             * Kind
-             * @default RevenueAnalyticsTopCustomersQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "RevenueAnalyticsTopCustomersQuery";
             /**
@@ -12269,6 +14387,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12281,6 +14404,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** RevenueCurrencyPropertyConfig */
         RevenueCurrencyPropertyConfig: {
@@ -12295,9 +14430,8 @@ export interface components {
         /** RevenueExampleDataWarehouseTablesQuery */
         RevenueExampleDataWarehouseTablesQuery: {
             /**
-             * Kind
-             * @default RevenueExampleDataWarehouseTablesQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "RevenueExampleDataWarehouseTablesQuery";
             /**
@@ -12371,6 +14505,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12388,13 +14527,24 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** RevenueExampleEventsQuery */
         RevenueExampleEventsQuery: {
             /**
-             * Kind
-             * @default RevenueExampleEventsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "RevenueExampleEventsQuery";
             /**
@@ -12468,6 +14618,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12485,6 +14640,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `engineering` - Engineering
@@ -12548,6 +14715,8 @@ export interface components {
          * @enum {string}
          */
         SchemaPropertyGroupPropertyPropertyTypeEnum: "DateTime" | "String" | "Numeric" | "Boolean" | "Object";
+        /** @enum {string} */
+        SearchMatchTypeEnum: "exact" | "similar";
         /** SessionAttributionExplorerQuery */
         SessionAttributionExplorerQuery: {
             /** @default null */
@@ -12555,9 +14724,8 @@ export interface components {
             /** Groupby */
             groupBy: components["schemas"]["SessionAttributionGroupBy"][];
             /**
-             * Kind
-             * @default SessionAttributionExplorerQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "SessionAttributionExplorerQuery";
             /**
@@ -12631,6 +14799,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12648,6 +14821,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * SessionAttributionGroupBy
@@ -12686,6 +14871,124 @@ export interface components {
              * @default null
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        /** SessionQuery */
+        SessionQuery: {
+            /** @default null */
+            dateRange: components["schemas"]["DateRange"] | null;
+            /**
+             * Includesentiment
+             * @description Include stored sentiment evaluation results for returned traces and generation events.
+             * @default null
+             */
+            includeSentiment: boolean | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "SessionQuery";
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /** @default null */
+            response: components["schemas"]["SessionQueryResponse"] | null;
+            /** Sessionid */
+            sessionId: string;
+            /** @default null */
+            tags: components["schemas"]["QueryLogTags"] | null;
+            /**
+             * Version
+             * @description version of the node, used for schema migrations
+             * @default null
+             */
+            version: number | null;
+        };
+        /** SessionQueryResponse */
+        SessionQueryResponse: {
+            /**
+             * Columns
+             * @default null
+             */
+            columns: string[] | null;
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             * @default null
+             */
+            hogql: string | null;
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: components["schemas"]["LLMTrace"][];
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `30d` - 30 Days
@@ -12731,7 +15034,7 @@ export interface components {
              * @description Event property filters - filters sessions that contain events matching these properties
              * @default null
              */
-            eventProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            eventProperties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Filtertestaccounts
              * @description Filter test accounts
@@ -12743,11 +15046,10 @@ export interface components {
              * @description Fixed properties in the query, can't be edited in the interface (e.g. scoping down by person)
              * @default null
              */
-            fixedProperties: (components["schemas"]["PropertyGroupFilter"] | components["schemas"]["PropertyGroupFilterValue"] | components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            fixedProperties: (components["schemas"]["PropertyGroupFilter"] | components["schemas"]["PropertyGroupFilterValue"] | (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"]))[] | null;
             /**
-             * Kind
-             * @default SessionsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "SessionsQuery";
             /**
@@ -12784,7 +15086,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** @default null */
             response: components["schemas"]["SessionsQueryResponse"] | null;
             /**
@@ -12848,6 +15150,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -12862,6 +15169,18 @@ export interface components {
             timings: components["schemas"]["QueryTiming"][] | null;
             /** Types */
             types: string[];
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * SessionsV2JoinMode
@@ -12880,6 +15199,11 @@ export interface components {
          * @enum {string}
          */
         SimpleIntervalType: "day" | "month";
+        /**
+         * SliceContent
+         * @enum {string}
+         */
+        SliceContent: "labels" | "values" | "none";
         /** SpanPropertyFilter */
         SpanPropertyFilter: {
             /** Key */
@@ -12969,6 +15293,11 @@ export interface components {
         };
         /** StickinessFilter */
         StickinessFilter: {
+            /**
+             * @description Chart rendering style overrides (line shape).
+             * @default null
+             */
+            chartStyle: components["schemas"]["ChartStyle"] | null;
             /** @default null */
             computedAs: components["schemas"]["StickinessComputationMode"] | null;
             /** @default null */
@@ -12978,6 +15307,11 @@ export interface components {
              * @default null
              */
             hiddenLegendIndexes: number[] | null;
+            /**
+             * @description Where the in-chart legend sits relative to the plot. Only applies to the in-chart legend.
+             * @default bottom
+             */
+            legendPosition: components["schemas"]["LegendPosition"] | null;
             /**
              * @description Whether result datasets are associated by their values or by their order.
              * @default value
@@ -13066,7 +15400,7 @@ export interface components {
              * @description Property filters for all series
              * @default []
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
             /** @default null */
             response: components["schemas"]["StickinessQueryResponse"] | null;
             /**
@@ -13122,6 +15456,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -13136,6 +15475,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `exact` - exact
@@ -13158,6 +15509,7 @@ export interface components {
              *     * `event_metadata` - event_metadata
              *     * `feature` - feature
              *     * `person` - person
+             *     * `person_metadata` - person_metadata
              *     * `cohort` - cohort
              *     * `element` - element
              *     * `static-cohort` - static-cohort
@@ -13175,10 +15527,12 @@ export interface components {
              *     * `log` - log
              *     * `log_attribute` - log_attribute
              *     * `log_resource_attribute` - log_resource_attribute
+             *     * `metric_attribute` - metric_attribute
              *     * `span` - span
              *     * `span_attribute` - span_attribute
              *     * `span_resource_attribute` - span_resource_attribute
              *     * `revenue_analytics` - revenue_analytics
+             *     * `account_custom_property` - account_custom_property
              *     * `flag` - flag
              *     * `workflow_variable` - workflow_variable
              * @default event
@@ -13231,7 +15585,7 @@ export interface components {
          * TaxonomicFilterGroupType
          * @enum {string}
          */
-        TaxonomicFilterGroupType: "metadata" | "actions" | "cohorts" | "cohorts_with_all" | "data_warehouse" | "data_warehouse_properties" | "data_warehouse_person_properties" | "elements" | "events" | "internal_events" | "internal_event_properties" | "event_properties" | "event_feature_flags" | "event_metadata" | "numerical_event_properties" | "person_properties" | "pageview_urls" | "pageview_events" | "screens" | "screen_events" | "email_addresses" | "autocapture_events" | "custom_events" | "wildcard" | "groups" | "persons" | "feature_flags" | "insights" | "experiments" | "plugins" | "dashboards" | "name_groups" | "session_properties" | "hogql_expression" | "notebooks" | "log_entries" | "error_tracking_issues" | "logs" | "log_attributes" | "log_resource_attributes" | "spans" | "span_attributes" | "span_resource_attributes" | "replay" | "replay_saved_filters" | "revenue_analytics_properties" | "resources" | "error_tracking_properties" | "activity_log_properties" | "max_ai_context" | "workflow_variables" | "suggested_filters" | "recent_filters" | "pinned_filters" | "empty";
+        TaxonomicFilterGroupType: "metadata" | "actions" | "cohorts" | "cohorts_with_all" | "data_warehouse" | "data_warehouse_source_tables" | "data_warehouse_properties" | "data_warehouse_person_properties" | "elements" | "events" | "internal_events" | "internal_event_properties" | "event_properties" | "event_feature_flags" | "event_metadata" | "numerical_event_properties" | "person_properties" | "person_metadata" | "pageview_urls" | "pageview_events" | "screens" | "screen_events" | "email_addresses" | "autocapture_events" | "custom_events" | "wildcard" | "groups" | "persons" | "feature_flags" | "insights" | "experiments" | "plugins" | "dashboards" | "name_groups" | "session_properties" | "hogql_expression" | "notebooks" | "log_entries" | "error_tracking_issues" | "logs" | "log_attributes" | "log_resource_attributes" | "metric_attributes" | "spans" | "span_attributes" | "span_resource_attributes" | "replay" | "replay_saved_filters" | "revenue_analytics_properties" | "account_custom_properties" | "resources" | "error_tracking_properties" | "activity_log_properties" | "mcp_properties" | "max_ai_context" | "workflow_variables" | "suggested_filters" | "recent_filters" | "pinned_filters" | "empty";
         Team: {
             readonly id: number;
             /** Format: uuid */
@@ -13259,6 +15613,28 @@ export interface components {
             app_urls?: (string | null)[];
             anonymize_ips?: boolean;
             completed_snippet_onboarding?: boolean;
+            /**
+             * @description Filters used to identify internal/test users. Each entry is a property filter.
+             *
+             *                 Supported entry types and the exact shape each accepts:
+             *
+             *                 # Person property — match (or exclude) by a person property
+             *                 {"key": "email", "type": "person", "value": "@example.com", "operator": "icontains"}
+             *
+             *                 # Event property — match by an event property
+             *                 {"key": "$host", "type": "event", "value": "localhost", "operator": "icontains"}
+             *
+             *                 # Cohort membership — match (or exclude) members of a cohort.
+             *                 # Use operator "in" for inclusion and "not_in" for exclusion. Do NOT use a
+             *                 # `negation` field here — `negation` is specific to cohort *definitions*
+             *                 # (the inner sub-filters that build a cohort) and is rejected by the
+             *                 # property-filter schema.
+             *                 {"key": "id", "type": "cohort", "value": 8814, "operator": "not_in"}
+             *
+             *                 Common operators: "exact", "is_not", "icontains", "not_icontains", "regex",
+             *                 "not_regex", "gt", "lt", "gte", "lte", "is_set", "is_not_set", "in", "not_in".
+             */
+            test_account_filters?: unknown;
             test_account_filters_default_checked?: boolean | null;
             is_demo?: boolean;
             timezone?: components["schemas"]["TimezoneEnum"];
@@ -13314,6 +15690,7 @@ export interface components {
             business_model?: components["schemas"]["BusinessModelEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
             conversations_enabled?: boolean | null;
             proactive_tasks_enabled?: boolean | null;
+            workflows_config?: components["schemas"]["TeamWorkflowsConfig"];
             readonly effective_membership_level: components["schemas"]["EffectiveMembershipLevelEnum"];
             readonly has_group_types: boolean;
             readonly group_types: {
@@ -13327,8 +15704,25 @@ export interface components {
                 [key: string]: boolean;
             };
             readonly available_setup_task_ids: components["schemas"]["AvailableSetupTaskIdsEnum"][];
+            /** @description The team's events data retention window in months (plan-derived, synced from billing). When retention enforcement is active for the team, queries do not return events older than this many months. */
+            readonly event_retention_months: number;
+            /** @description Whether events data retention is currently enforced for this team (cohort/flag gated). */
+            readonly events_retention_enforced: boolean;
         };
-        TeamCustomerAnalyticsConfig: Record<string, never>;
+        TeamCustomerAnalyticsConfig: {
+            /** @description Event used as the activity signal (DAU/WAU/MAU). */
+            activity_event?: unknown;
+            /** @description Event used to count signup pageviews on dashboards. */
+            signup_pageview_event?: unknown;
+            /** @description Event used to count signups on dashboards. */
+            signup_event?: unknown;
+            /** @description Event used to count subscriptions on dashboards. */
+            subscription_event?: unknown;
+            /** @description Event used to count payments on dashboards. */
+            payment_event?: unknown;
+            /** @description Index of the group type to treat as an Account in customer analytics. Must reference an existing group type configured for the project. */
+            account_group_type_index?: number | null;
+        };
         TeamMarketingAnalyticsConfig: {
             attribution_window_days?: number;
             attribution_mode?: components["schemas"]["AttributionModeEnum"];
@@ -13337,11 +15731,53 @@ export interface components {
             base_currency?: components["schemas"]["BaseCurrencyEnum"];
             filter_test_accounts?: boolean;
         };
+        TeamWorkflowsConfig: {
+            /** @description When enabled, workflows engagement activity (email sends, opens, clicks, bounces, spam reports, unsubscribes) is captured as standard PostHog events ($workflows_email_*) alongside the existing workflow metrics. */
+            capture_workflows_engagement_events?: boolean;
+        };
         /**
          * TextMatching
          * @enum {unknown}
          */
         TextMatching: "contains" | "exact" | "regex" | null;
+        /** TileFilters */
+        TileFilters: {
+            /** @default null */
+            breakdown_filter: components["schemas"]["BreakdownFilter"] | null;
+            /**
+             * Date From
+             * @default null
+             */
+            date_from: string | null;
+            /**
+             * Date To
+             * @default null
+             */
+            date_to: string | null;
+            /**
+             * Explicitdate
+             * @default null
+             */
+            explicitDate: boolean | null;
+            /**
+             * Filtertestaccounts
+             * @default null
+             */
+            filterTestAccounts: boolean | null;
+            /**
+             * Ignoredashboardfilters
+             * @description When true, this tile ignores every dashboard-level filter; the tile's own overrides still apply.
+             * @default null
+             */
+            ignoreDashboardFilters: boolean | null;
+            /** @default null */
+            interval: components["schemas"]["IntervalType"] | null;
+            /**
+             * Properties
+             * @default null
+             */
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+        };
         /**
          * TimeWindowMode
          * @enum {string}
@@ -13952,9 +16388,14 @@ export interface components {
             /** @default null */
             dateRange: components["schemas"]["DateRange"] | null;
             /**
-             * Kind
-             * @default TraceQuery
-             * @constant
+             * Includesentiment
+             * @description Include stored sentiment evaluation results for the trace and its generations.
+             * @default null
+             */
+            includeSentiment: boolean | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "TraceQuery";
             /**
@@ -13967,7 +16408,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /** @default null */
             response: components["schemas"]["TraceQueryResponse"] | null;
             /** @default null */
@@ -14026,6 +16467,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14038,6 +16484,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** TracesQuery */
         TracesQuery: {
@@ -14064,9 +16522,14 @@ export interface components {
              */
             groupTypeIndex: number | null;
             /**
-             * Kind
-             * @default TracesQuery
-             * @constant
+             * Includesentiment
+             * @description Include stored sentiment evaluation results for returned traces and direct generation events.
+             * @default null
+             */
+            includeSentiment: boolean | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "TracesQuery";
             /**
@@ -14095,7 +16558,7 @@ export interface components {
              * @description Properties configurable in the interface
              * @default null
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
             /**
              * Randomorder
              * @description Use random ordering instead of timestamp DESC. Useful for representative sampling to avoid recency bias.
@@ -14104,6 +16567,11 @@ export interface components {
             randomOrder: boolean | null;
             /** @default null */
             response: components["schemas"]["TracesQueryResponse"] | null;
+            /**
+             * Searchterm
+             * @default null
+             */
+            searchTerm: string | null;
             /**
              * Showcolumnconfigurator
              * @default null
@@ -14163,6 +16631,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14175,18 +16648,43 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** TrendsFilter */
         TrendsFilter: {
-            /** @default numeric */
+            /**
+             * @description Y-axis value formatter. Picks a human-friendly unit per value at render time without changing the underlying series values.
+             *
+             *     - `numeric` (default): raw numbers, e.g. `1,234`.
+             *     - `duration`: values are in seconds; rendered as friendly units per value (`45s`, `2m 12s`, `1h 4m`). Use this whenever the series is in seconds (latency, session length, time-to-event) instead of dividing in `formula` to force minutes or hours.
+             *     - `duration_ms`: values are in milliseconds; rendered as friendly units (`850ms`, `1.5s`, `1m 4s`).
+             *     - `percentage`: values are already in the 0-100 range; appends `%`.
+             *     - `percentage_scaled`: values are a 0-1 ratio; multiplied and rendered as `%`.
+             *     - `currency`: values are in the project's base currency (set in project settings, defaults to USD); rendered with that currency symbol. For values pinned to a specific currency regardless of project base (e.g. `$ai_total_cost_usd` is always USD), use `aggregationAxisPrefix` instead.
+             *     - `short`: compact notation for large counts (`1.2K`, `3.4M`).
+             * @default numeric
+             */
             aggregationAxisFormat: components["schemas"]["AggregationAxisFormat"] | null;
             /**
              * Aggregationaxispostfix
+             * @description Literal suffix applied to every value (e.g. ` req`). Reserve for units that `aggregationAxisFormat` cannot express. Do not use ` mins`, ` s`, ` ms`, `%` etc. — pick the matching `aggregationAxisFormat` instead so the underlying values stay numerically correct for breakdowns, formulas, and alerts. Include any leading space yourself.
              * @default null
              */
             aggregationAxisPostfix: string | null;
             /**
              * Aggregationaxisprefix
+             * @description Literal prefix applied to every value (e.g. `$`). Use to pin a unit or currency symbol that does not depend on `aggregationAxisFormat` — for example, when values are denominated in a fixed currency regardless of the project's base currency. Include any trailing space yourself.
              * @default null
              */
             aggregationAxisPrefix: string | null;
@@ -14196,12 +16694,18 @@ export interface components {
              */
             breakdown_histogram_bin_count: number | null;
             /**
+             * @description Chart rendering style overrides (line shape).
+             * @default null
+             */
+            chartStyle: components["schemas"]["ChartStyle"] | null;
+            /**
              * Confidencelevel
              * @default null
              */
             confidenceLevel: number | null;
             /**
              * Decimalplaces
+             * @description Maximum number of decimal places shown. 1 or 2 is usually right for percentages and currency.
              * @default null
              */
             decimalPlaces: number | null;
@@ -14250,6 +16754,52 @@ export interface components {
              */
             hideWeekends: boolean | null;
             /**
+             * @description Where the in-chart legend sits relative to the plot. Only applies to the in-chart legend.
+             * @default bottom
+             */
+            legendPosition: components["schemas"]["LegendPosition"] | null;
+            /**
+             * Metricchangedecreasecolor
+             * @description Metric display: change pill color when the metric decreased. Defaults to red.
+             * @default null
+             */
+            metricChangeDecreaseColor: string | null;
+            /**
+             * Metricchangeincreasecolor
+             * @description Metric display: change pill color when the metric increased. Defaults to green.
+             * @default null
+             */
+            metricChangeIncreaseColor: string | null;
+            /**
+             * Metriccolorbydirection
+             * @description Metric display: color the sparkline by whether the metric increased or decreased.
+             * @default false
+             */
+            metricColorByDirection: boolean | null;
+            /**
+             * Metriclinedecreasecolor
+             * @description Metric display: line color when the metric decreased. Defaults to red.
+             * @default null
+             */
+            metricLineDecreaseColor: string | null;
+            /**
+             * Metriclineincreasecolor
+             * @description Metric display: line color when the metric increased. Defaults to green.
+             * @default null
+             */
+            metricLineIncreaseColor: string | null;
+            /**
+             * Metricshowchange
+             * @description Show the period-over-period change pill on the Metric display.
+             * @default true
+             */
+            metricShowChange: boolean | null;
+            /**
+             * @description Metric display: which summary the resting headline shows — the period total, the average, or the latest point. Hovering the sparkline always shows the hovered point's value. Also drives the change pill: total/average compare against the previous period when "compare to previous" is on; latest compares first→last of the series.
+             * @default total
+             */
+            metricSummary: components["schemas"]["MetricSummary"] | null;
+            /**
              * Mindecimalplaces
              * @default null
              */
@@ -14279,6 +16829,11 @@ export interface components {
              * @default false
              */
             showAlertThresholdLines: boolean | null;
+            /**
+             * Showannotations
+             * @default true
+             */
+            showAnnotations: boolean | null;
             /**
              * Showconfidenceintervals
              * @default null
@@ -14324,6 +16879,24 @@ export interface components {
              * @default 1
              */
             smoothingIntervals: number | null;
+            /**
+             * Stackbreakdownvalues
+             * @description On the horizontal bar-value chart, stack a series' breakdown values into a single bar instead of rendering one bar per breakdown value.
+             * @default false
+             */
+            stackBreakdownValues: boolean | null;
+            /**
+             * Xaxislabel
+             * @description Custom label rendered under the X axis.
+             * @default null
+             */
+            xAxisLabel: string | null;
+            /**
+             * Yaxislabel
+             * @description Custom label rendered alongside the Y axis.
+             * @default null
+             */
+            yAxisLabel: string | null;
             /** @default linear */
             yAxisScaleType: components["schemas"]["YAxisScaleType"] | null;
         };
@@ -14351,6 +16924,11 @@ export interface components {
              * @default null
              */
             breakdownFilter: components["schemas"]["BreakdownFilter"] | null;
+            /**
+             * @description Properties specific to the calendar heatmap display variant. Only consulted when `trendsFilter.display === ChartDisplayType.CalendarHeatmap`; ignored otherwise.
+             * @default null
+             */
+            calendarHeatmapFilter: components["schemas"]["CalendarHeatmapFilter"] | null;
             /**
              * @description Compare to date range
              * @default null
@@ -14399,7 +16977,7 @@ export interface components {
              * @description Property filters for all series
              * @default []
              */
-            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
+            properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | components["schemas"]["PropertyGroupFilter"] | null;
             /** @default null */
             response: components["schemas"]["TrendsQueryResponse"] | null;
             /**
@@ -14412,7 +16990,7 @@ export interface components {
              * Series
              * @description Events and actions to include
              */
-            series: (components["schemas"]["GroupNode"] | components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["DataWarehouseNode"])[];
+            series: (components["schemas"]["EventsNode"] | components["schemas"]["ActionsNode"] | components["schemas"]["DataWarehouseNode"] | components["schemas"]["GroupNode"])[];
             /**
              * @description Tags that will be added to the Query log comment
              * @default null
@@ -14466,6 +17044,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14480,6 +17063,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * UrlMatching
@@ -14504,6 +17099,11 @@ export interface components {
             } | null;
             role_at_organization?: components["schemas"]["RoleAtOrganizationEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
         };
+        /**
+         * ValueDisplay
+         * @enum {string}
+         */
+        ValueDisplay: "absolute" | "percentage";
         /** VizSpecificOptions */
         VizSpecificOptions: {
             /** @default null */
@@ -14533,6 +17133,11 @@ export interface components {
          * @enum {string}
          */
         WebAnalyticsOrderByFields: "Visitors" | "Views" | "AvgTimeOnPage" | "Clicks" | "BounceRate" | "AverageScrollPercentage" | "ScrollGt80Percentage" | "TotalConversions" | "UniqueConversions" | "ConversionRate" | "ConvertingUsers" | "RageClicks" | "DeadClicks" | "Errors";
+        /**
+         * WebAnalyticsPreComputeStrategy
+         * @enum {string}
+         */
+        WebAnalyticsPreComputeStrategy: "pre_aggregated" | "lazy_precompute" | "live";
         /** WebAnalyticsSampling */
         WebAnalyticsSampling: {
             /**
@@ -14587,9 +17192,8 @@ export interface components {
              */
             interval: components["schemas"]["IntervalType"] | null;
             /**
-             * Kind
-             * @default WebExternalClicksTableQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "WebExternalClicksTableQuery";
             /**
@@ -14683,6 +17287,11 @@ export interface components {
              */
             query_status: components["schemas"]["QueryStatus"] | null;
             /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
              * @description The date range used for the query
              * @default null
              */
@@ -14702,6 +17311,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** WebGoalsQuery */
         WebGoalsQuery: {
@@ -14747,9 +17368,8 @@ export interface components {
              */
             interval: components["schemas"]["IntervalType"] | null;
             /**
-             * Kind
-             * @default WebGoalsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "WebGoalsQuery";
             /**
@@ -14786,6 +17406,12 @@ export interface components {
              * @default null
              */
             useSessionsTable: boolean | null;
+            /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web_goals_query precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
             /**
              * Version
              * @description version of the node, used for schema migrations
@@ -14832,11 +17458,18 @@ export interface components {
              * @default null
              */
             offset: number | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
             /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
              */
             query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /**
              * @description The date range used for the query
              * @default null
@@ -14857,6 +17490,18 @@ export interface components {
              * @default null
              */
             types: unknown[] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** WebOverviewItem */
         WebOverviewItem: {
@@ -14878,11 +17523,6 @@ export interface components {
              * @default null
              */
             previous: number | null;
-            /**
-             * Usedpreaggregatedtables
-             * @default null
-             */
-            usedPreAggregatedTables: boolean | null;
             /**
              * Value
              * @default null
@@ -14967,6 +17607,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web_overview_query precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15002,11 +17648,18 @@ export interface components {
              * @default null
              */
             modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
             /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
              */
             query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /**
              * @description The date range used for the query
              * @default null
@@ -15023,10 +17676,17 @@ export interface components {
              */
             timings: components["schemas"]["QueryTiming"][] | null;
             /**
-             * Usedpreaggregatedtables
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
              * @default null
              */
-            usedPreAggregatedTables: boolean | null;
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * WebStatsBreakdown
@@ -15142,6 +17802,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web stats table precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15188,10 +17854,23 @@ export interface components {
              */
             offset: number | null;
             /**
+             * Precomputestale
+             * @description Whether a lazy-precompute read was served from expired-within-grace (stale) jobs instead of recomputing inline.
+             * @default null
+             */
+            preComputeStale: boolean | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
+            /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
              */
             query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /**
              * @description The date range used for the query
              * @default null
@@ -15213,10 +17892,17 @@ export interface components {
              */
             types: unknown[] | null;
             /**
-             * Usedpreaggregatedtables
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
              * @default null
              */
-            usedPreAggregatedTables: boolean | null;
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * WebVitalsMetric
@@ -15267,9 +17953,8 @@ export interface components {
              */
             interval: components["schemas"]["IntervalType"] | null;
             /**
-             * Kind
-             * @default WebVitalsPathBreakdownQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "WebVitalsPathBreakdownQuery";
             metric: components["schemas"]["WebVitalsMetric"];
@@ -15306,6 +17991,12 @@ export interface components {
              */
             useSessionsTable: boolean | null;
             /**
+             * Usewebanalyticsprecompute
+             * @description Opt this specific query into the web vitals path breakdown precompute path. Requires the `web-analytics-precompute-toggle` PostHog feature flag to be on for the team's organization for the gate to pass. *
+             * @default null
+             */
+            useWebAnalyticsPrecompute: boolean | null;
+            /**
              * Version
              * @description version of the node, used for schema migrations
              * @default null
@@ -15331,11 +18022,18 @@ export interface components {
              * @default null
              */
             modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /** @default null */
+            preComputeStrategy: components["schemas"]["WebAnalyticsPreComputeStrategy"] | null;
             /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
              */
             query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /**
              * @description The date range used for the query
              * @default null
@@ -15349,6 +18047,18 @@ export interface components {
              * @default null
              */
             timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /** WebVitalsPathBreakdownResult */
         WebVitalsPathBreakdownResult: {
@@ -15415,9 +18125,8 @@ export interface components {
              */
             interval: components["schemas"]["IntervalType"] | null;
             /**
-             * Kind
-             * @default WebVitalsQuery
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             kind: "WebVitalsQuery";
             /**
@@ -15536,13 +18245,310 @@ export interface components {
          *     - `HogQuery` — Hog language queries
          */
         _InsightQuerySchema: components["schemas"]["InsightVizNode"] | components["schemas"]["DataTableNode"] | components["schemas"]["DataVisualizationNode"] | components["schemas"]["HogQuery"];
+        /** WidgetFilterEntry */
+        WidgetFilterEntry: {
+            /** Filterid */
+            filterId: string;
+            /** Propertyname */
+            propertyName: string;
+            /** Optionid */
+            optionId: string;
+            operator: components["schemas"]["PropertyOperator"];
+            /**
+             * Value
+             * @default null
+             */
+            value: string | string[] | null;
+        };
+        /** ActivityEventsPropertyFilter */
+        ActivityEventsPropertyFilter: {
+            /** Key */
+            key: string;
+            /**
+             * Label
+             * @default null
+             */
+            label: string | null;
+            operator: components["schemas"]["PropertyOperator"];
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "event" | "person";
+            /**
+             * Value
+             * @default null
+             */
+            value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        /** WidgetDateRange */
+        WidgetDateRange: {
+            /**
+             * Date From
+             * @default null
+             */
+            date_from: ("-1M" | "-30M" | "-1h" | "-3h" | "-24h" | "-7d" | "-14d" | "-30d" | "-90d") | null;
+        };
+        /** ActivityEventsListWidgetConfig */
+        ActivityEventsListWidgetConfig: {
+            /** @default null */
+            dateRange: components["schemas"]["WidgetDateRange"] | null;
+            /**
+             * Filtertestaccounts
+             * @default null
+             */
+            filterTestAccounts: boolean | null;
+            /**
+             * Widgetfilters
+             * @default null
+             */
+            widgetFilters: {
+                [key: string]: components["schemas"]["WidgetFilterEntry"];
+            } | null;
+            /**
+             * Limit
+             * @description Maximum number of events to return.
+             * @default 25
+             */
+            limit: number;
+            /**
+             * Eventname
+             * @description Limit the feed to a single event name. Omit or null for all events.
+             * @default null
+             */
+            eventName: string | null;
+            /**
+             * Properties
+             * @description Event and person property filters, matching Activity > Explore events.
+             * @default null
+             */
+            properties: components["schemas"]["ActivityEventsPropertyFilter"][] | null;
+        };
+        /** WidgetAssigneeFilter */
+        WidgetAssigneeFilter: {
+            /** Id */
+            id: string | number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "user" | "role";
+        };
+        /** ErrorTrackingListWidgetConfig */
+        ErrorTrackingListWidgetConfig: {
+            /** @default null */
+            dateRange: components["schemas"]["WidgetDateRange"] | null;
+            /**
+             * Filtertestaccounts
+             * @default null
+             */
+            filterTestAccounts: boolean | null;
+            /**
+             * Widgetfilters
+             * @default null
+             */
+            widgetFilters: {
+                [key: string]: components["schemas"]["WidgetFilterEntry"];
+            } | null;
+            /**
+             * Limit
+             * @description Maximum number of issues to return.
+             * @default 10
+             */
+            limit: number;
+            /**
+             * Orderby
+             * @description Issue ranking column.
+             * @default occurrences
+             * @enum {string}
+             */
+            orderBy: "last_seen" | "first_seen" | "occurrences" | "users" | "sessions";
+            /**
+             * Orderdirection
+             * @description Sort direction for orderBy.
+             * @default DESC
+             * @enum {string}
+             */
+            orderDirection: "ASC" | "DESC";
+            /**
+             * Status
+             * @description Issue status filter.
+             * @default active
+             * @enum {string}
+             */
+            status: "archived" | "active" | "resolved" | "pending_release" | "suppressed" | "all";
+            /**
+             * @description Filter by assignee ({type: user|role, id}). Omit for any assignee.
+             * @default null
+             */
+            assignee: components["schemas"]["WidgetAssigneeFilter"] | null;
+        };
+        /** SessionReplayListWidgetConfig */
+        SessionReplayListWidgetConfig: {
+            /** @default null */
+            dateRange: components["schemas"]["WidgetDateRange"] | null;
+            /**
+             * Filtertestaccounts
+             * @default null
+             */
+            filterTestAccounts: boolean | null;
+            /**
+             * Widgetfilters
+             * @default null
+             */
+            widgetFilters: {
+                [key: string]: components["schemas"]["WidgetFilterEntry"];
+            } | null;
+            /**
+             * Limit
+             * @description Maximum number of recordings to return.
+             * @default 10
+             */
+            limit: number;
+            /**
+             * Orderby
+             * @description Recording ranking column.
+             * @default start_time
+             * @enum {string}
+             */
+            orderBy: "start_time" | "activity_score" | "recording_duration" | "duration" | "click_count" | "console_error_count";
+            /**
+             * Orderdirection
+             * @description Sort direction for orderBy.
+             * @default DESC
+             * @enum {string}
+             */
+            orderDirection: "ASC" | "DESC";
+            /**
+             * Savedfilterid
+             * @description short_id of a saved session replay filter to refine the recordings shown. When set, the saved filter owns the date range and property filters; only orderBy, orderDirection, and limit still apply. Combine with collectionId to filter within a collection.
+             * @default null
+             */
+            savedFilterId: string | null;
+            /**
+             * Collectionid
+             * @description short_id of a session replay collection to scope the widget to its pinned recordings. Combine with savedFilterId or property filters to narrow within the collection; orderBy, orderDirection, and limit still apply.
+             * @default null
+             */
+            collectionId: string | null;
+        };
+        /** ExperimentsListWidgetConfig */
+        ExperimentsListWidgetConfig: {
+            /**
+             * Limit
+             * @description Maximum number of experiments to return.
+             * @default 10
+             */
+            limit: number;
+            /**
+             * Orderby
+             * @description Experiment list sort column.
+             * @default created_at
+             * @enum {string}
+             */
+            orderBy: "created_at" | "name" | "start_date";
+            /**
+             * Orderdirection
+             * @description Sort direction for orderBy.
+             * @default DESC
+             * @enum {string}
+             */
+            orderDirection: "ASC" | "DESC";
+            /**
+             * Status
+             * @description Experiment status filter.
+             * @default all
+             * @enum {string}
+             */
+            status: "draft" | "running" | "paused" | "exposure_frozen" | "stopped" | "all";
+            /**
+             * Createdby
+             * @description Filter by creator (user id). Omit for any creator.
+             * @default null
+             */
+            createdBy: number | null;
+        };
+        /** ExperimentResultsWidgetConfig */
+        ExperimentResultsWidgetConfig: {
+            /**
+             * Experimentid
+             * @description Experiment to show results for. Null until the user picks one in the widget settings.
+             * @default null
+             */
+            experimentId: number | null;
+        };
+        /** SurveyResultsWidgetConfig */
+        SurveyResultsWidgetConfig: {
+            /**
+             * @description Null or omitted means all time (the survey's full lifetime).
+             * @default null
+             */
+            dateRange: components["schemas"]["WidgetDateRange"] | null;
+            /**
+             * Surveyid
+             * @description Survey to show performance stats and recent responses for. Null until the user picks one.
+             * @default null
+             */
+            surveyId: string | null;
+            /**
+             * Limit
+             * @description Maximum number of recent responses to return.
+             * @default 10
+             */
+            limit: number;
+        };
+        /** LogsListWidgetConfig */
+        LogsListWidgetConfig: {
+            /** @default null */
+            dateRange: components["schemas"]["WidgetDateRange"] | null;
+            /**
+             * Limit
+             * @description Maximum number of log lines to return.
+             * @default 50
+             */
+            limit: number;
+            /**
+             * Orderby
+             * @description Sort by newest (latest) or oldest (earliest) first.
+             * @default latest
+             * @enum {string}
+             */
+            orderBy: "latest" | "earliest";
+            /**
+             * Severitylevels
+             * @description Only show logs at these severity levels. Empty shows all levels.
+             */
+            severityLevels?: ("trace" | "debug" | "info" | "warn" | "error" | "fatal")[];
+            /**
+             * Servicenames
+             * @description Only show logs from these services. Empty shows all services.
+             */
+            serviceNames?: string[];
+            /**
+             * Wraplines
+             * @description Wrap long log lines instead of truncating them to a single row.
+             * @default false
+             */
+            wrapLines: boolean;
+            /**
+             * Timezone
+             * @description Render log timestamps in UTC or in each viewer's local timezone.
+             * @default UTC
+             * @enum {string}
+             */
+            timezone: "UTC" | "local";
+            /**
+             * Savedviewid
+             * @description short_id of a saved logs view to use as the source. When set, the saved view owns the date range, severity, service, and property filters; only orderBy and limit still apply.
+             * @default null
+             */
+            savedViewId: string | null;
+        };
     };
     responses: never;
     parameters: {
         /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
         ProjectIdPath: string;
-        /** @description Deprecated. Use /api/projects/{project_id}/ instead. */
-        EnvironmentIdPath: string;
     };
     requestBodies: never;
     headers: never;
@@ -15550,174 +18556,22 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    environments_endpoints_list: {
-        parameters: {
-            query?: {
-                created_by?: number;
-                is_active?: boolean;
-                /** @description Number of results to return per page. */
-                limit?: number;
-                /** @description The initial index from which to return the results. */
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                /** @description Deprecated. Use /api/projects/{project_id}/ instead. */
-                environment_id: components["parameters"]["EnvironmentIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedEndpointResponseList"];
-                };
-            };
-        };
-    };
-    environments_endpoints_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deprecated. Use /api/projects/{project_id}/ instead. */
-                environment_id: components["parameters"]["EnvironmentIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["EndpointRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["EndpointRequest"];
-                "multipart/form-data": components["schemas"]["EndpointRequest"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EndpointResponse"];
-                };
-            };
-        };
-    };
-    environments_endpoints_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deprecated. Use /api/projects/{project_id}/ instead. */
-                environment_id: components["parameters"]["EnvironmentIdPath"];
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EndpointVersionResponse"];
-                };
-            };
-        };
-    };
-    environments_endpoints_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deprecated. Use /api/projects/{project_id}/ instead. */
-                environment_id: components["parameters"]["EnvironmentIdPath"];
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["EndpointRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["EndpointRequest"];
-                "multipart/form-data": components["schemas"]["EndpointRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EndpointResponse"];
-                };
-            };
-        };
-    };
-    environments_endpoints_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deprecated. Use /api/projects/{project_id}/ instead. */
-                environment_id: components["parameters"]["EnvironmentIdPath"];
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    environments_endpoints_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deprecated. Use /api/projects/{project_id}/ instead. */
-                environment_id: components["parameters"]["EnvironmentIdPath"];
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedEndpointRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedEndpointRequest"];
-                "multipart/form-data": components["schemas"]["PatchedEndpointRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EndpointResponse"];
-                };
-            };
-        };
-    };
     actions_list: {
         parameters: {
             query?: {
+                /** @description Comma-separated list of creator user ids. Returns only actions created by these users. */
+                created_by?: string;
                 format?: "csv" | "json";
-                /** @description Number of results to return per page. */
+                /** @description Maximum number of actions to return. Omit to return all. */
                 limit?: number;
-                /** @description The initial index from which to return the results. */
+                /** @description Number of actions to skip before returning results. */
                 offset?: number;
+                /** @description Field to order by (name, created_at, pinned_at, created_by). Prefix with '-' for descending. */
+                ordering?: string;
+                /** @description Case-insensitive substring match on the action name. */
+                search?: string;
+                /** @description JSON-encoded array of tag names, e.g. ["billing","beta"]. Returns actions having any of these tags. */
+                tags?: string;
             };
             header?: never;
             path: {
@@ -15891,10 +18745,16 @@ export interface operations {
     cohorts_list: {
         parameters: {
             query?: {
+                /** @description Return a basic payload that omits the heavy `filters`, `query`, and `groups` fields. Useful for pickers that only need id/name/count. */
+                basic?: boolean;
+                /** @description Set true to exclude behavioral (event-based) cohorts, which can't be used in feature flags or batch workflow audiences. */
+                hide_behavioral_cohorts?: boolean;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /** @description Optional. Match against cohort `name`. Returns exact (case-insensitive substring) matches only; if no exact match exists, returns similar (fuzzy trigram — typos, transpositions, prefix-as-you-type) matches instead. Each result's `search_match_type` is `exact` or `similar`. Results are ordered by relevance. When omitted, cohorts are ordered newest-first. Capped at 200 characters; longer queries return a 400 error. */
+                search?: string;
             };
             header?: never;
             path: {
@@ -16023,12 +18883,14 @@ export interface operations {
     dashboards_list: {
         parameters: {
             query?: {
+                /** @description Optional. Return only dashboards filed directly in this project-tree folder, e.g. 'Unfiled/Dashboards'. An empty string matches dashboards at the project root. Nested sub-folders are not included. */
+                folder?: string;
                 format?: "json" | "txt";
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
-                /** @description Optional. Fuzzy match against dashboard `name` and `description` using Postgres trigram word similarity (handles typos, transpositions, and prefix-as-you-type). `name` matches rank above `description` matches. Results are ordered by relevance, then pinned status, then name. When omitted, dashboards are ordered by pinned status then alphabetical name. Capped at 200 characters; longer queries return a 400 error. */
+                /** @description Optional. Match against dashboard `name`, `description`, and tag names. Returns exact (case-insensitive substring) matches only; if no exact match exists, returns similar (fuzzy trigram — typos, transpositions, prefix-as-you-type) matches instead. Results are then ordered by relevance, then pinned status, then name; each result's `search_match_type` is `exact` or `similar`. When omitted, dashboards are ordered by pinned status then alphabetical name. Capped at 200 characters; longer queries return a 400 error. */
                 search?: string;
             };
             header?: never;
@@ -16055,6 +18917,8 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "json" | "txt";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
             };
             header?: never;
             path: {
@@ -16088,6 +18952,8 @@ export interface operations {
                 /** @description Object (or pre-encoded JSON string) to override dashboard filters for this request only (not persisted). Top-level keys replace; nested values are not deep-merged — pass the complete value for any key you override. Accepts the same keys as the dashboard filters schema (e.g., `date_from`, `date_to`, `properties`). Ignored when accessed via a sharing token. */
                 filters_override?: string;
                 format?: "json" | "txt";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
                 /** @description Object (or pre-encoded JSON string) to override dashboard variables for this request only (not persisted). Format: {"<variable_id>": {"code_name": "<code_name>", "variableId": "<variable_id>", "value": <new_value>}}. Each entry must include `code_name` — partial entries are silently dropped. The simplest workflow is to call `dashboard-get` first, copy the matching entry from the response, and mutate `value`. Top-level keys replace; nested values are not deep-merged. Ignored when accessed via a sharing token. */
                 variables_override?: string;
             };
@@ -16117,6 +18983,8 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "json" | "txt";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
             };
             header?: never;
             path: {
@@ -16175,6 +19043,8 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "json" | "txt";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
             };
             header?: never;
             path: {
@@ -16187,9 +19057,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedDashboard"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedDashboard"];
-                "multipart/form-data": components["schemas"]["PatchedDashboard"];
+                "application/json": components["schemas"]["PatchedPatchedDashboardOpenApi"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedPatchedDashboardOpenApi"];
+                "multipart/form-data": components["schemas"]["PatchedPatchedDashboardOpenApi"];
             };
         };
         responses: {
@@ -16200,6 +19070,166 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Dashboard"];
                     "text/event-stream": components["schemas"]["Dashboard"];
+                };
+            };
+        };
+    };
+    endpoints_list: {
+        parameters: {
+            query?: {
+                created_by?: number;
+                is_active?: boolean;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEndpointResponseList"];
+                };
+            };
+        };
+    };
+    endpoints_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EndpointRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EndpointRequest"];
+                "multipart/form-data": components["schemas"]["EndpointRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointResponse"];
+                };
+            };
+        };
+    };
+    endpoints_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointVersionResponse"];
+                };
+            };
+        };
+    };
+    endpoints_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EndpointRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EndpointRequest"];
+                "multipart/form-data": components["schemas"]["EndpointRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointResponse"];
+                };
+            };
+        };
+    };
+    endpoints_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    endpoints_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEndpointRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEndpointRequest"];
+                "multipart/form-data": components["schemas"]["PatchedEndpointRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointResponse"];
                 };
             };
         };
@@ -16261,6 +19291,10 @@ export interface operations {
     event_definitions_list: {
         parameters: {
             query?: {
+                /** @description When true, omit events that have been explicitly hidden by a team admin (Enterprise only). */
+                exclude_hidden?: boolean;
+                /** @description When true, omit events whose last ingested occurrence is older than 30 days. Events that have never been seen (`last_seen_at` is null) are kept so newly-defined events remain discoverable. Default false. If a search returns zero results with this filter on, retry with `exclude_stale=false` and tell the user the matches are stale. */
+                exclude_stale?: boolean;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
@@ -16603,10 +19637,14 @@ export interface operations {
     experiment_saved_metrics_list: {
         parameters: {
             query?: {
+                /** @description Filter to shared metrics whose query references this event name. Matches events used directly in metric queries as well as events behind any actions those metrics reference. Use this for reuse discovery (find a metric by what it measures); distinct from 'search', which matches the metric's own name/description/tags. */
+                event?: string;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path: {
@@ -16737,8 +19775,10 @@ export interface operations {
             query?: {
                 /** @description Filter by archived state. Defaults to non-archived experiments only. */
                 archived?: boolean;
-                /** @description Filter to experiments created by the given user ID. */
-                created_by_id?: number;
+                /** @description Filter to experiments created by the given user(s). Accepts a single user ID, or a JSON-encoded / comma-separated list of user IDs to match any of them. */
+                created_by_id?: string;
+                /** @description Filter to experiments whose metrics reference this event name. Matches events used directly in metric queries as well as events behind any actions those metrics reference. */
+                event?: string;
                 /** @description Filter to experiments linked to the given feature flag ID. */
                 feature_flag_id?: number;
                 /** @description Number of results to return per page. */
@@ -16747,10 +19787,12 @@ export interface operations {
                 offset?: number;
                 /** @description Field to order by. Prefix with '-' for descending. Allowlisted fields include name, created_at, updated_at, start_date, end_date, duration, and status. */
                 order?: string;
+                /** @description Filter to experiments created from an LLM prompt with this name. Matches experiments whose parameters.prompt_metadata.name equals the given value. */
+                prompt_name?: string;
                 /** @description Free-text search applied to the experiment name (case-insensitive). */
                 search?: string;
-                /** @description Filter by experiment status. "running" and "paused" are mutually exclusive: "running" returns launched experiments with an active feature flag, "paused" returns launched experiments whose feature flag is deactivated. "complete" is an alias for "stopped". "all" disables status filtering. */
-                status?: "all" | "complete" | "draft" | "paused" | "running" | "stopped";
+                /** @description Filter by experiment status. "running", "paused", and "exposure_frozen" are mutually exclusive: "running" returns launched experiments with an active feature flag, "paused" returns launched experiments whose feature flag is deactivated, and "exposure_frozen" returns launched experiments whose exposure was frozen to the already-enrolled cohort while metrics keep flowing. "complete" is an alias for "stopped". "all" disables status filtering. */
+                status?: "all" | "complete" | "draft" | "exposure_frozen" | "paused" | "running" | "stopped";
             };
             header?: never;
             path: {
@@ -16766,7 +19808,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedExperimentList"];
+                    "application/json": components["schemas"]["PaginatedExperimentBasicList"];
                 };
             };
         };
@@ -16783,9 +19825,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Experiment"];
-                "application/x-www-form-urlencoded": components["schemas"]["Experiment"];
-                "multipart/form-data": components["schemas"]["Experiment"];
+                "application/json": components["schemas"]["ExperimentWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExperimentWrite"];
+                "multipart/form-data": components["schemas"]["ExperimentWrite"];
             };
         };
         responses: {
@@ -16860,9 +19902,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedExperiment"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedExperiment"];
-                "multipart/form-data": components["schemas"]["PatchedExperiment"];
+                "application/json": components["schemas"]["PatchedExperimentWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedExperimentWrite"];
+                "multipart/form-data": components["schemas"]["PatchedExperimentWrite"];
             };
         };
         responses: {
@@ -16888,7 +19930,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ArchiveExperiment"];
+                "application/x-www-form-urlencoded": components["schemas"]["ArchiveExperiment"];
+                "multipart/form-data": components["schemas"]["ArchiveExperiment"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -17030,14 +20078,22 @@ export interface operations {
         parameters: {
             query?: {
                 active?: "STALE" | "false" | "true";
-                /** @description The User ID which initially created the feature flag. */
+                /** @description Filter by archived state. When omitted, archived flags are excluded. */
+                archived?: "false" | "true";
+                /** @description Filter by the user(s) who created the feature flag. Accepts a single user ID, or a JSON-encoded / comma-separated list of user IDs to match any of them. */
                 created_by_id?: string;
+                /** @description When 'true', only return flags that can back an experiment: multivariate with 2-20 variants. Any other value is ignored. */
+                eligible_for_experiment?: "true";
                 /** @description Filter feature flags by their evaluation runtime. */
-                evaluation_runtime?: "both" | "client" | "server";
+                evaluation_runtime?: "all" | "client" | "server";
                 /** @description JSON-encoded list of feature flag keys to exclude from the results. */
                 excluded_properties?: string;
+                /** @description JSON-encoded list of tag names to exclude. Flags carrying any of these tags are filtered out. */
+                excluded_tags?: string;
                 /** @description Filter feature flags by presence of evaluation contexts. 'true' returns only flags with at least one evaluation context, 'false' returns only flags without. */
                 has_evaluation_contexts?: "false" | "true";
+                /** @description Filter by exact feature flag key match. Case insensitive. */
+                key?: string;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
@@ -17222,6 +20278,8 @@ export interface operations {
                 /** @description Include this parameter (any value) to restrict results to insights marked as favorited. */
                 favorited?: boolean;
                 format?: "csv" | "json";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
                 /** @description Restrict to a single insight type. `JSON` matches non-wrapper query insights; `SQL` matches HogQL queries. */
                 insight?: "FUNNELS" | "JSON" | "LIFECYCLE" | "PATHS" | "RETENTION" | "SQL" | "STICKINESS" | "TRENDS";
                 /** @description Filter by `last_viewed_at > last_viewed_date_from`. Accepts absolute or relative dates. */
@@ -17245,7 +20303,7 @@ export interface operations {
                 refresh?: "async" | "async_except_on_cache_miss" | "blocking" | "force_async" | "force_blocking" | "force_cache" | "lazy_async";
                 /** @description When truthy, restricts results to insights that are saved (or attached to a visible dashboard). When falsy, only unsaved insights. */
                 saved?: boolean;
-                /** @description Case-insensitive substring match across name, derived_name, description, and tag names. */
+                /** @description Search term matched across name, derived_name, description, and tag names. Returns exact (case-insensitive substring) matches only; if no exact match exists, returns similar (fuzzy trigram) matches instead. Each result's `search_match_type` is `exact` or `similar`. */
                 search?: string;
                 short_id?: string;
                 /** @description JSON-encoded array of tag names. Returns insights with any of the listed tags. */
@@ -17277,6 +20335,8 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "csv" | "json";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
             };
             header?: never;
             path: {
@@ -17313,6 +20373,8 @@ export interface operations {
                  *     When set, the specified dashboard's filters and date range override will be applied.
                  */
                 from_dashboard?: number;
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
                 /**
                  * @description Whether to refresh the insight, how aggresively, and if sync or async:
                  *     - `'force_cache'` - return cached data or a cache miss; always completes immediately as it never calculates
@@ -17353,6 +20415,8 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "csv" | "json";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
             };
             header?: never;
             path: {
@@ -17409,6 +20473,8 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "csv" | "json";
+                /** @description Opt in to receiving the deprecated `dashboards` field in insight payloads. Once opt-in enforcement is enabled, API-token callers stop receiving it by default; use `dashboard_tiles` instead. */
+                include_dashboards?: boolean;
             };
             header?: never;
             path: {
