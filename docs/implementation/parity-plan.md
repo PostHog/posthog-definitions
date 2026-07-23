@@ -177,20 +177,29 @@ Retrospective lessons now baked into the guidance below:
 No `tags`, no free-text field, or ordering semantics. Each needs a short
 identity design recorded here before its codegen commit.
 
-- [ ] **Annotations** — `projects/{id}/annotations`. Only text field is
-      `content` (user-facing). Options: trailing marker in `content`
-      (endpoints pattern, visible in UI tooltip) or treat `(date_marker,
-      scope)` as natural key. Decide first.
-- [ ] **Alerts (insight alerts)** — `environments/{id}/alerts`. References an
-      insight (cross-resource key resolution). No description field.
-- [ ] **Subscriptions** — `environments/{id}/subscriptions`. References
-      insight/dashboard + delivery target. `title`/`target_value` as carrier?
+- [ ] **Annotations** — `projects/{id}/annotations`. ✅ Investigated,
+      buildable: `content` round-trips a trailing marker (live-verified);
+      soft-delete via PATCH; optional dashboard/insight refs resolve by key.
+- [ ] **Alerts (insight alerts)** — `environments/{id}/alerts`.
+      ⛔ **Deferred.** Only marker home is `name`, which appears in
+      notification emails and Slack subject lines — a marker there leaks
+      into every "Alert 'X' triggered" message. A markerless composite key
+      `(insight, name)` cannot satisfy the safety invariant (would adopt
+      hand-built alerts). Revisit if the API grows a description field.
+- [ ] **Subscriptions** — `environments/{id}/subscriptions`. ✅ Investigated,
+      buildable: `title` round-trips a marker (low UI prominence, absent
+      from delivery payloads); soft-delete via PATCH; insight-or-dashboard
+      ref resolves by key; Slack `integration_id` is environment-specific.
 - [ ] **Error tracking assignment rules** — `environments/{id}/error_tracking/assignment_rules`.
 - [ ] **Error tracking grouping rules** — has `description` → marker.
 - [ ] **Error tracking suppression rules**.
 - [ ] **Error tracking bypass rules** — new since May.
-- [ ] **Error tracking settings + spike detection config** — two singletons,
-      `add-singleton-resource` pattern (PATCH-only field-level diff).
+- [x] **Error tracking settings** — singleton, shipped (#93). Field-scoped
+      PATCH via `retrieve_settings`/`update_settings`.
+- [ ] **Spike detection config** — 🚫 **Excluded.** Its write endpoint
+      rejects personal API key access entirely (no write path for CLI
+      auth); GET schema also declares an array but returns an object.
+      Upstream issue candidate.
 - [ ] **Logs views** — `environments/{id}/logs/views`. Has `name`.
 - [ ] **Logs alerts** — `environments/{id}/logs/alerts`
       (`LogsAlertConfiguration`). Destinations reference integrations —
@@ -250,6 +259,13 @@ an IaC capability. Collected here for the maintainer to file.
    `name`), and unknown create fields (`description`, `tags`, `metadata`)
    are silently dropped instead of rejected — leaving no round-tripped
    field for external tools to carry identity metadata.
+3. **Spike detection config**: the `update_config` endpoint rejects
+   personal API key access on PATCH and POST, so the resource cannot be
+   managed by any API-key-authenticated tool; its GET schema also declares
+   an array response but returns a single object.
+4. **Insight alerts**: no description/metadata field — the only free-text
+   field is `name`, which surfaces in notification subject lines, so
+   external tools have no clean place for identity metadata.
 
 ## Excluded (with reasons)
 
