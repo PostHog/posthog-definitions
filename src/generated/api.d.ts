@@ -616,6 +616,43 @@ export interface paths {
         patch: operations["insights_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/product_tours/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Create, read, update, and manage product tours and their targeting. */
+        get: operations["product_tours_list"];
+        put?: never;
+        /** @description Create, read, update, and manage product tours and their targeting. */
+        post: operations["product_tours_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/product_tours/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Create, read, update, and manage product tours and their targeting. */
+        get: operations["product_tours_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Create, read, update, and manage product tours and their targeting. */
+        delete: operations["product_tours_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Create, read, update, and manage product tours and their targeting. */
+        patch: operations["product_tours_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/schema_property_groups/": {
         parameters: {
             query?: never;
@@ -10287,6 +10324,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Insight"][];
         };
+        PaginatedProductTourList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["ProductTour"][];
+        };
         PaginatedSchemaPropertyGroupList: {
             /** @example 123 */
             count: number;
@@ -10723,6 +10775,36 @@ export interface components {
              * @default false
              */
             delete_insights: boolean;
+        };
+        /** @description Serializer for creating and updating ProductTour. */
+        PatchedProductTourSerializerCreateUpdateOnly: {
+            /** Format: uuid */
+            readonly id?: string;
+            name?: string;
+            description?: string;
+            readonly internal_targeting_flag?: components["schemas"]["MinimalFeatureFlag"];
+            readonly linked_flag?: components["schemas"]["MinimalFeatureFlag"];
+            linked_flag_id?: number | null;
+            targeting_flag_filters?: unknown;
+            auto_launch?: boolean;
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at?: string;
+            archived?: boolean;
+            /**
+             * @description Where the tour was created/updated from
+             *
+             *     * `app` - app
+             *     * `toolbar` - toolbar
+             * @default app
+             */
+            creation_context: components["schemas"]["ProductTourSerializerCreateUpdateOnlyCreationContextEnum"];
         };
         PatchedSchemaPropertyGroup: {
             /** Format: uuid */
@@ -11353,6 +11435,70 @@ export interface components {
          * @enum {string}
          */
         PrecomputationMode: "precomputed" | "direct";
+        /** @description Read-only serializer for ProductTour. */
+        ProductTour: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            description?: string;
+            readonly internal_targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            readonly linked_flag: components["schemas"]["MinimalFeatureFlag"];
+            /** @description Return the targeting flag filters, excluding the base exclusion properties. */
+            readonly targeting_flag_filters: {
+                [key: string]: unknown;
+            } | null;
+            readonly draft_content: unknown;
+            readonly has_draft: boolean;
+            auto_launch?: boolean;
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at: string;
+            archived?: boolean;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        /** @description Serializer for creating and updating ProductTour. */
+        ProductTourSerializerCreateUpdateOnly: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            description?: string;
+            readonly internal_targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            readonly linked_flag: components["schemas"]["MinimalFeatureFlag"];
+            linked_flag_id?: number | null;
+            targeting_flag_filters?: unknown;
+            auto_launch?: boolean;
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at: string;
+            archived?: boolean;
+            /**
+             * @description Where the tour was created/updated from
+             *
+             *     * `app` - app
+             *     * `toolbar` - toolbar
+             * @default app
+             */
+            creation_context: components["schemas"]["ProductTourSerializerCreateUpdateOnlyCreationContextEnum"];
+        };
+        /**
+         * @description * `app` - app
+         *     * `toolbar` - toolbar
+         * @enum {string}
+         */
+        ProductTourSerializerCreateUpdateOnlyCreationContextEnum: "app" | "toolbar";
         /**
          * @description * `event` - event
          *     * `event_metadata` - event_metadata
@@ -20498,6 +20644,140 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Insight"];
                     "text/csv": components["schemas"]["Insight"];
+                };
+            };
+        };
+    };
+    product_tours_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Match against product tour `name` and `description`. Returns exact (case-insensitive substring) matches only; if no exact match exists, returns similar (fuzzy trigram — typos, prefix-as-you-type) matches instead. Each result's `search_match_type` is `exact` or `similar`. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedProductTourList"];
+                };
+            };
+        };
+    };
+    product_tours_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductTourSerializerCreateUpdateOnly"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProductTourSerializerCreateUpdateOnly"];
+                "multipart/form-data": components["schemas"]["ProductTourSerializerCreateUpdateOnly"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductTourSerializerCreateUpdateOnly"];
+                };
+            };
+        };
+    };
+    product_tours_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this product tour. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductTour"];
+                };
+            };
+        };
+    };
+    product_tours_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this product tour. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    product_tours_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this product tour. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedProductTourSerializerCreateUpdateOnly"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedProductTourSerializerCreateUpdateOnly"];
+                "multipart/form-data": components["schemas"]["PatchedProductTourSerializerCreateUpdateOnly"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductTourSerializerCreateUpdateOnly"];
                 };
             };
         };
