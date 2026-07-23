@@ -23,6 +23,13 @@ export type {
 export { cohort } from "./resources/cohort/index.js";
 export type { Cohort, CohortFilters, CohortType } from "./resources/cohort/index.js";
 
+export { subscription } from "./resources/subscription/index.js";
+export type {
+  Subscription,
+  SubscriptionTargetType,
+  SubscriptionFrequency,
+} from "./resources/subscription/index.js";
+
 export { action } from "./resources/action/index.js";
 export type {
   Action,
