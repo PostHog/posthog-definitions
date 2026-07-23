@@ -98,6 +98,84 @@ export interface paths {
         patch: operations["dashboards_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/dashboards/{id}/create_text_tile/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Add a markdown text tile to a dashboard.
+         *
+         *     Text tiles render as markdown blocks on the dashboard — useful as section headings, dividers,
+         *     or annotations between insight tiles to give the dashboard structure.
+         */
+        post: operations["dashboards_create_text_tile_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/dashboards/{id}/delete_tile/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Soft-delete a single tile from a dashboard.
+         *
+         *     Works for text, insight, and button tiles. The underlying Insight, Text, or ButtonTile
+         *     object is preserved — only the dashboard tile is hidden. To delete the entire dashboard,
+         *     use the dashboard delete endpoint instead.
+         */
+        post: operations["dashboards_delete_tile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/dashboards/{id}/reorder_tiles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["dashboards_reorder_tiles_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/dashboards/{id}/update_text_tile/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Update the markdown body, layout, or color of an existing text tile on a dashboard. */
+        post: operations["dashboards_update_text_tile_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/endpoints/": {
         parameters: {
             query?: never;
@@ -1729,6 +1807,21 @@ export interface components {
          * @enum {string}
          */
         BusinessModelEnum: "b2b" | "b2c" | "other";
+        ButtonTile: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            readonly last_modified_by: components["schemas"]["UserBasic"];
+            url: string;
+            text: string;
+            /** @default left */
+            placement: components["schemas"]["PlacementEnum"];
+            readonly dashboard_tiles: components["schemas"]["DashboardTileBasic"][];
+            style?: components["schemas"]["StyleEnum"];
+            /** Format: date-time */
+            readonly last_modified_at: string;
+            team: number;
+        };
         /** CalendarHeatmapFilter */
         CalendarHeatmapFilter: {
             /**
@@ -2432,6 +2525,14 @@ export interface components {
          * @enum {string}
          */
         CountPerActorMathType: "avg_count_per_actor" | "min_count_per_actor" | "max_count_per_actor" | "median_count_per_actor" | "p75_count_per_actor" | "p90_count_per_actor" | "p95_count_per_actor" | "p99_count_per_actor";
+        CreateTextTileRequest: {
+            /** @description Markdown body for the text tile. Supports headings, lists, and inline formatting. Useful as a dashboard section heading, divider, or annotation between insights. Max 4000 characters. */
+            body: string;
+            /** @description Optional grid layout per breakpoint. If omitted, the tile is placed at the bottom of the dashboard using the default size. Text tiles typically use a thin full-width banner (e.g. w=12, h=1). */
+            layouts?: components["schemas"]["TileLayouts"];
+            /** @description Optional accent color name (e.g. 'blue', 'green', 'purple', 'black'). */
+            color?: string | null;
+        };
         /**
          * @description * `default` - Default
          *     * `template` - Template
@@ -2681,10 +2782,38 @@ export interface components {
          * @enum {string}
          */
         DashboardPatchWidgetOpenApiWidgetTypeEnum: "activity_events_list" | "error_tracking_list" | "experiment_results" | "experiments_list" | "logs_list" | "session_replay_list" | "survey_results";
+        DashboardTile: {
+            id?: number;
+            insight: components["schemas"]["Insight"];
+            text: components["schemas"]["Text"];
+            button_tile: components["schemas"]["ButtonTile"];
+            widget?: components["schemas"]["DashboardWidget"] | null;
+            color?: string | null;
+            show_description?: boolean | null;
+            transparent_background?: boolean | null;
+        };
         DashboardTileBasic: {
             readonly id: number;
             readonly dashboard_id: number;
             deleted?: boolean | null;
+        };
+        DashboardWidget: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            readonly last_modified_by: components["schemas"]["UserBasic"];
+            /** @description Widget type identifier from the dashboard widget catalog. */
+            widget_type: string;
+            /** @description Optional custom display name for this widget tile. Falls back to the widget catalog label when unset. */
+            name?: string | null;
+            /** @description Optional markdown description shown on the dashboard tile when enabled. */
+            description?: string;
+            /** @description Widget-specific configuration JSON for this widget type. */
+            config?: components["schemas"]["DashboardWidgetConfig"];
+            readonly dashboard_tiles: components["schemas"]["DashboardTileBasic"][];
+            /** Format: date-time */
+            readonly last_modified_at: string;
+            team: number;
         };
         DashboardWidgetConfig: components["schemas"]["ActivityEventsListWidgetConfig"] | components["schemas"]["ErrorTrackingListWidgetConfig"] | components["schemas"]["SessionReplayListWidgetConfig"] | components["schemas"]["ExperimentsListWidgetConfig"] | components["schemas"]["ExperimentResultsWidgetConfig"] | components["schemas"]["SurveyResultsWidgetConfig"] | components["schemas"]["LogsListWidgetConfig"];
         /**
@@ -3263,6 +3392,10 @@ export interface components {
          * @enum {number}
          */
         DaysOfWeekEnum: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+        DeleteTileRequest: {
+            /** @description ID of the dashboard tile to delete. Use dashboard-get to look up tile IDs. */
+            tile_id: number;
+        };
         /**
          * DetailedResultsAggregationType
          * @enum {string}
@@ -9038,6 +9171,13 @@ export interface components {
             uuid: string;
         };
         /**
+         * @description * `preserve` - preserve
+         *     * `two_column` - two_column
+         *     * `full_width` - full_width
+         * @enum {string}
+         */
+        LayoutEnum: "preserve" | "two_column" | "full_width";
+        /**
          * LegendPosition
          * @enum {string}
          */
@@ -11332,6 +11472,12 @@ export interface components {
              */
             valueDisplay: components["schemas"]["ValueDisplay"] | null;
         };
+        /**
+         * @description * `left` - left
+         *     * `right` - right
+         * @enum {string}
+         */
+        PlacementEnum: "left" | "right";
         /** Population */
         Population: {
             /** Both */
@@ -11588,6 +11734,19 @@ export interface components {
              * @default null
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        ReorderTilesRequest: {
+            /** @description Array of tile IDs in the desired display order (top to bottom, left to right). */
+            tile_order: number[];
+            /**
+             * @description How to size tiles when reordering. 'preserve' (default) keeps each tile's existing width and height and only repacks positions in the new order. 'two_column' forces a 6-wide × 5-tall grid (two tiles per row). 'full_width' forces each tile to span the full 12-column row at height 5.
+             *
+             *     * `preserve` - preserve
+             *     * `two_column` - two_column
+             *     * `full_width` - full_width
+             * @default preserve
+             */
+            layout: components["schemas"]["LayoutEnum"];
         };
         /** ResolvedDateRangeResponse */
         ResolvedDateRangeResponse: {
@@ -15558,6 +15717,12 @@ export interface components {
          * @enum {string}
          */
         Style: "none" | "number" | "short" | "percent";
+        /**
+         * @description * `primary` - Primary
+         *     * `secondary` - Secondary
+         * @enum {string}
+         */
+        StyleEnum: "primary" | "secondary";
         /** TableSettings */
         TableSettings: {
             /**
@@ -15735,6 +15900,16 @@ export interface components {
             /** @description When enabled, workflows engagement activity (email sends, opens, clicks, bounces, spam reports, unsubscribes) is captured as standard PostHog events ($workflows_email_*) alongside the existing workflow metrics. */
             capture_workflows_engagement_events?: boolean;
         };
+        Text: {
+            readonly id: number;
+            readonly created_by: components["schemas"]["UserBasic"];
+            readonly last_modified_by: components["schemas"]["UserBasic"];
+            body?: string | null;
+            readonly dashboard_tiles: components["schemas"]["DashboardTileBasic"][];
+            /** Format: date-time */
+            readonly last_modified_at: string;
+            team: number;
+        };
         /**
          * TextMatching
          * @enum {unknown}
@@ -15777,6 +15952,22 @@ export interface components {
              * @default null
              */
             properties: (components["schemas"]["EventPropertyFilter"] | components["schemas"]["PersonPropertyFilter"] | components["schemas"]["PersonMetadataPropertyFilter"] | components["schemas"]["ElementPropertyFilter"] | components["schemas"]["EventMetadataPropertyFilter"] | components["schemas"]["SessionPropertyFilter"] | components["schemas"]["CohortPropertyFilter"] | components["schemas"]["RecordingPropertyFilter"] | components["schemas"]["LogEntryPropertyFilter"] | components["schemas"]["GroupPropertyFilter"] | components["schemas"]["FeaturePropertyFilter"] | components["schemas"]["FlagPropertyFilter"] | components["schemas"]["HogQLPropertyFilter"] | components["schemas"]["EmptyPropertyFilter"] | components["schemas"]["DataWarehousePropertyFilter"] | components["schemas"]["DataWarehousePersonPropertyFilter"] | components["schemas"]["ErrorTrackingIssueFilter"] | components["schemas"]["LogPropertyFilter"] | components["schemas"]["MetricPropertyFilter"] | components["schemas"]["SpanPropertyFilter"] | components["schemas"]["RevenueAnalyticsPropertyFilter"] | components["schemas"]["AccountCustomPropertyFilter"] | components["schemas"]["WorkflowVariablePropertyFilter"])[] | null;
+        };
+        TileLayoutBox: {
+            /** @description Column position in the dashboard grid (0-indexed). */
+            x?: number;
+            /** @description Row position in the dashboard grid (0-indexed). */
+            y?: number;
+            /** @description Width in grid columns. The desktop grid is 12 columns wide. */
+            w?: number;
+            /** @description Height in grid rows. */
+            h?: number;
+        };
+        TileLayouts: {
+            /** @description Layout for the standard (desktop) breakpoint. The grid is 12 columns wide. */
+            sm?: components["schemas"]["TileLayoutBox"];
+            /** @description Layout for the small (mobile) breakpoint. The grid is 1 column wide. */
+            xs?: components["schemas"]["TileLayoutBox"];
         };
         /**
          * TimeWindowMode
@@ -17075,6 +17266,16 @@ export interface components {
              * @default null
              */
             warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
+        UpdateTextTileRequest: {
+            /** @description ID of the dashboard tile to update. Use dashboard-get to look up tile IDs. */
+            tile_id: number;
+            /** @description New markdown body for the text tile. Omit to leave the body unchanged. Max 4000 characters. */
+            body?: string;
+            /** @description New grid layout per breakpoint. Omit to leave the layout unchanged. */
+            layouts?: components["schemas"]["TileLayouts"];
+            /** @description New accent color name, empty string or null to clear. Omit to leave unchanged. */
+            color?: string | null;
         };
         /**
          * UrlMatching
@@ -19070,6 +19271,136 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Dashboard"];
                     "text/event-stream": components["schemas"]["Dashboard"];
+                };
+            };
+        };
+    };
+    dashboards_create_text_tile_create: {
+        parameters: {
+            query?: {
+                format?: "json" | "txt";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this dashboard. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTextTileRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CreateTextTileRequest"];
+                "multipart/form-data": components["schemas"]["CreateTextTileRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardTile"];
+                    "text/event-stream": components["schemas"]["DashboardTile"];
+                };
+            };
+        };
+    };
+    dashboards_delete_tile: {
+        parameters: {
+            query?: {
+                format?: "json" | "txt";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this dashboard. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteTileRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["DeleteTileRequest"];
+                "multipart/form-data": components["schemas"]["DeleteTileRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    dashboards_reorder_tiles_create: {
+        parameters: {
+            query?: {
+                format?: "json" | "txt";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this dashboard. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderTilesRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReorderTilesRequest"];
+                "multipart/form-data": components["schemas"]["ReorderTilesRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
+                    "text/event-stream": components["schemas"]["Dashboard"];
+                };
+            };
+        };
+    };
+    dashboards_update_text_tile_create: {
+        parameters: {
+            query?: {
+                format?: "json" | "txt";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this dashboard. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTextTileRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["UpdateTextTileRequest"];
+                "multipart/form-data": components["schemas"]["UpdateTextTileRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardTile"];
+                    "text/event-stream": components["schemas"]["DashboardTile"];
                 };
             };
         };
