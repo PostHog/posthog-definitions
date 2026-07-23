@@ -69,6 +69,10 @@ export type ApplyContext = {
   insightIdByKey: Map<string, number>;
   /** Inverse of insightIdByKey; populated when displaying server-side dashboard tiles so we can show keys rather than ids. */
   insightKeyByServerId: Map<number, string>;
+  /** Dashboard server id by spec key. Populated by the dashboard module's executor; read by resources that reference a dashboard by key (annotations, subscriptions). */
+  dashboardIdByKey: Map<string, number>;
+  /** Inverse of dashboardIdByKey; populated for display so dashboard references render as keys rather than opaque ids. */
+  dashboardKeyByServerId: Map<number, string>;
   /** Property-group server id by spec key. Populated by the property-group module's executor; read by the event-definition module to reconcile EventSchema links. */
   propertyGroupIdByKey: Map<string, string>;
   /** Experiment-holdout server id by spec key. Populated by the experiment-holdout module's executor; read by the experiment module's resolver. */
@@ -81,6 +85,8 @@ export function newApplyContext(): ApplyContext {
   return {
     insightIdByKey: new Map(),
     insightKeyByServerId: new Map(),
+    dashboardIdByKey: new Map(),
+    dashboardKeyByServerId: new Map(),
     propertyGroupIdByKey: new Map(),
     experimentHoldoutIdByKey: new Map(),
     experimentSavedMetricIdByKey: new Map(),

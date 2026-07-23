@@ -86,6 +86,11 @@ inverseOperationIds:
   - actions_partial_update
   - actions_destroy
 
+  - subscriptions_list
+  - subscriptions_create
+  - subscriptions_retrieve
+  - subscriptions_partial_update
+
 unusedComponents:
   - schemas
   - parameters

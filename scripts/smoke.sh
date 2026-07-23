@@ -16,6 +16,11 @@
 # project-settings (singleton) is intentionally skipped: applying it would
 # mutate a project-wide row we can't restore.
 #
+# subscriptions are intentionally skipped: their identity marker lives in
+# `title`, which the server caps at 100 chars, and pull derives the spec key by
+# slugifying `title` — so a STAMP-length seed key can't round-trip through pull
+# within the length budget. Verified in isolation instead.
+#
 # Steps:
 #   1. Seed:    write the fixture and apply it.
 #   2. Pull:    pull the same kinds back into a scratch dir.

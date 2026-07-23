@@ -16,6 +16,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Annotations         | ✅ `projects/{id}/annotations`           | ❌                  |                                               |
 | Notebooks           | ✅ `projects/{id}/notebooks`             | ❌                  |                                               |
 | Alerts              | ✅ `environments/{id}/alerts`            | ❌                  |                                               |
+| Subscriptions       | ✅ `environments/{id}/subscriptions`     | ✅                  | Identity via `iac:subscriptions:<key>` marker in `title` (server caps `title` at 100 chars — title + key budget ≈ 45). Exactly one insight/dashboard ref by key; email/Slack targets; `send_test_now` forced false (apply never delivers). Full matrix refresh tracked in #78. |
 | Insight variables   | ✅ `environments/{id}/insight_variables` | ❌                  |                                               |
 | Comments            | ✅ `projects/{id}/comments`              | —                   | Ephemeral by nature                           |
 
