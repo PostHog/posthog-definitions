@@ -16,6 +16,7 @@ import { experimentSavedMetricResource } from "./experiment-saved-metric/index.j
 import { featureFlagResource } from "./feature-flag/index.js";
 import { insightResource } from "./insight/index.js";
 import { projectSettingsResource } from "./project-settings/index.js";
+import { errorTrackingSettingsResource } from "./error-tracking-settings/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
 
 describe("topoOrder", () => {
@@ -184,6 +185,7 @@ describe("RESOURCES (real registry)", () => {
         featureFlagResource,
         insightResource,
         projectSettingsResource,
+        errorTrackingSettingsResource,
         propertyGroupResource,
       ].map((r) => r.name),
     );

@@ -11,6 +11,7 @@ import { experimentResource } from "./experiment/index.js";
 import { experimentHoldoutResource } from "./experiment-holdout/index.js";
 import { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";
 import { projectSettingsResource } from "./project-settings/index.js";
+import { errorTrackingSettingsResource } from "./error-tracking-settings/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
 
 /**
@@ -30,6 +31,7 @@ const REGISTRY: ReadonlyArray<ResourceModule<unknown, unknown>> = [
   featureFlagResource as ResourceModule<unknown, unknown>,
   insightResource as ResourceModule<unknown, unknown>,
   projectSettingsResource as ResourceModule<unknown, unknown>,
+  errorTrackingSettingsResource as ResourceModule<unknown, unknown>,
   propertyGroupResource as ResourceModule<unknown, unknown>,
 ];
 
@@ -53,6 +55,7 @@ export { experimentHoldoutResource } from "./experiment-holdout/index.js";
 export { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";
 export { experimentResource } from "./experiment/index.js";
 export { projectSettingsResource } from "./project-settings/index.js";
+export { errorTrackingSettingsResource } from "./error-tracking-settings/index.js";
 export type {
   ResourceModule,
   CollectionResourceModule,

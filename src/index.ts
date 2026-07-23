@@ -75,5 +75,8 @@ export type {
 export { projectSettings } from "./resources/project-settings/index.js";
 export type { ProjectSettings } from "./resources/project-settings/index.js";
 
+export { errorTrackingSettings } from "./resources/error-tracking-settings/index.js";
+export type { ErrorTrackingSettings } from "./resources/error-tracking-settings/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";
