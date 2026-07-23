@@ -8,7 +8,7 @@ import {
   withCleanup,
 } from "../../test-helpers/acceptance.js";
 import { deleteInsight, listManagedInsights } from "../insight/client.js";
-import { insightHash, insightKeyFromTags, runInsightOp } from "../insight/pipeline.js";
+import { insightKeyFromTags, runInsightOp } from "../insight/pipeline.js";
 import { type Insight } from "../insight/sdk.js";
 import { deleteDashboard, getDashboard, listManagedDashboards } from "./client.js";
 import {

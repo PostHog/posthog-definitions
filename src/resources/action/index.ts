@@ -1,4 +1,4 @@
-import type { ApplyContext, ResourceModule } from "../types.js";
+import type { ApplyContext, CollectionResourceModule } from "../types.js";
 import type { Action } from "./sdk.js";
 import {
   ACTION_TAG_PREFIX,
@@ -12,12 +12,13 @@ import {
   runActionOp,
   validateActions,
 } from "./pipeline.js";
-import { listManagedActions, type ServerAction } from "./client.js";
+import { getAction, listActions, listManagedActions, type ServerAction } from "./client.js";
+import { pullFilter, pullLabel, renderToFile, serverIdOf, tagOnServer } from "./codegen.js";
 
 export { action } from "./sdk.js";
 export type { Action, ActionStep, ActionStepMatching, ActionStepProperty } from "./sdk.js";
 
-export const actionResource: ResourceModule<Action, ServerAction> = {
+export const actionResource: CollectionResourceModule<Action, ServerAction> = {
   kind: "collection",
   name: "actions",
   displayName: "action",
@@ -37,4 +38,13 @@ export const actionResource: ResourceModule<Action, ServerAction> = {
 
   displaySpec: (spec, _ctx: ApplyContext) => displayAction(spec),
   displayServer: (server, _ctx: ApplyContext) => displayActionFromServer(server),
+
+  listAll: listActions,
+  getById: (config, id, options) =>
+    getAction(config, typeof id === "string" ? Number(id) : id, options),
+  pullFilter,
+  pullLabel,
+  serverIdOf,
+  renderToFile,
+  tagOnServer,
 };
