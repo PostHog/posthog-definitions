@@ -142,10 +142,35 @@ pattern.
       Description marker. Writable model is `actions`+`edges` (top-level
       `trigger` is a derived read-only view); node ids are author-controlled;
       order preserved; validation enforces one trigger + edge integrity.
-- [ ] **Messaging templates** — `environments/{id}/messaging_templates`
-      (`MessageTemplate` schema). Carrier TBD at implementation (likely
-      description).
-- [ ] **Product tours** — `projects/{id}/product_tours`. Description marker.
+- [x] **Messaging templates** — `environments/{id}/messaging_templates`.
+      Shipped (#91). Description marker; `content.email` passthrough bag;
+      DELETE 405s despite an advertised destroy op → soft-delete via PATCH;
+      no dedicated scope — rides `hog_flow:write`.
+- [x] **Product tours** — `projects/{id}/product_tours`. Shipped (#92).
+      Description marker; lifecycle is directly-writable schedule fields
+      (no launch/stop endpoints, no status abstraction); draft workflow and
+      server-managed targeting flags left read-only; real DELETE.
+
+**Wave 1 complete: 8 shipped, 2 deferred (insight variables, data color
+themes — both blocked on identity carriers, see above).**
+
+Retrospective lessons now baked into the guidance below:
+- The description marker is the *default* identity carrier (6 of 8 shipped
+  used it; only 2 had `tags`). Wave 2+ should assume marker-or-composite.
+- Generated types are a floor, not a contract: 3 of 8 resources had the
+  OpenAPI schema omit writable fields that round-trip at runtime. Always
+  live-probe the create→GET round-trip before designing the hash.
+- Delete verb variance is unguessable from the schema (PATCH-soft-delete
+  with DELETE→403 or 405 vs real DELETE→204, distribution roughly 50/50) —
+  probe it live per resource.
+- Nested blobs accumulate server-computed noise (bytecode, timestamps,
+  order fields) — every marker resource with a nested blob needed a
+  canonical strip before hashing.
+- The secrets convention (env-ref `secret("VAR")`, hash-excluded,
+  create-only + rotate token) established in #89 is the standard for all
+  masked-field resources (Wave 3 warehouse/batch exports).
+- `pull --all-rows` tags pre-existing rows (that's its job) — on a shared
+  project, isolate the kind or expect to restore collateral.
 
 ## Wave 2 — identity design required
 
