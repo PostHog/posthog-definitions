@@ -86,6 +86,11 @@ inverseOperationIds:
   - actions_partial_update
   - actions_destroy
 
+  - hog_functions_list
+  - hog_functions_create
+  - hog_functions_retrieve
+  - hog_functions_partial_update
+
 unusedComponents:
   - schemas
   - parameters
