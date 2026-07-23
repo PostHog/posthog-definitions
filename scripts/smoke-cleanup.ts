@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedProductTours } from "../src/resources/product-tour/client.js";
+import {
+  productTourKeyFromServer,
+  pruneProductTour,
+} from "../src/resources/product-tour/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "product-tour"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "product-tour",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["product-tour"]) {
+    await deleteByKey(
+      "product-tour",
+      args["product-tour"],
+      config,
+      listManagedProductTours,
+      (row) => productTourKeyFromServer(row),
+      (c, row) => pruneProductTour(c, row),
     );
   }
 }
