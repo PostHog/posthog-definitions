@@ -273,17 +273,24 @@ export async function runDashboardOp(
   ctx: ApplyContext,
   options: { verbose?: boolean } = {},
 ): Promise<void> {
-  if (op.kind === "unchanged") return;
+  // Expose the dashboard's server id by key so dependents (annotations,
+  // subscriptions) can resolve dashboard references at execute time.
+  if (op.kind === "unchanged") {
+    ctx.dashboardIdByKey.set(op.spec.key, op.server.id);
+    return;
+  }
 
   const payload = dashboardPayload(op.spec, dashboardHash(op.spec), ctx.insightIdByKey);
 
   if (op.kind === "create") {
-    await createDashboard(config, payload, options);
+    const created = await createDashboard(config, payload, options);
+    ctx.dashboardIdByKey.set(op.spec.key, created.id);
     return;
   }
 
   await assertManagedDashboard(config, op.server.id, op.spec.key, options);
   await updateDashboard(config, op.server.id, payload, options);
+  ctx.dashboardIdByKey.set(op.spec.key, op.server.id);
 }
 
 export async function pruneDashboard(

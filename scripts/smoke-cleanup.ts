@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedAnnotations } from "../src/resources/annotation/client.js";
+import {
+  annotationKeyFromServer,
+  pruneAnnotation,
+} from "../src/resources/annotation/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  annotation?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "annotation",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["annotation"]) {
+    await deleteByKey(
+      "annotation",
+      args["annotation"],
+      config,
+      listManagedAnnotations,
+      (row) => annotationKeyFromServer(row),
+      (c, row) => pruneAnnotation(c, row),
     );
   }
 }

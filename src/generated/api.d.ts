@@ -32,6 +32,42 @@ export interface paths {
         patch: operations["actions_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/annotations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Create, Read, Update and Delete annotations. [See docs](https://posthog.com/docs/data/annotations) for more information on annotations. */
+        get: operations["annotations_list"];
+        put?: never;
+        /** @description Create, Read, Update and Delete annotations. [See docs](https://posthog.com/docs/data/annotations) for more information on annotations. */
+        post: operations["annotations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/annotations/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Create, Read, Update and Delete annotations. [See docs](https://posthog.com/docs/data/annotations) for more information on annotations. */
+        get: operations["annotations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Create, Read, Update and Delete annotations. [See docs](https://posthog.com/docs/data/annotations) for more information on annotations. */
+        patch: operations["annotations_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/cohorts/": {
         parameters: {
             query?: never;
@@ -1193,6 +1229,59 @@ export interface components {
          * @enum {string}
          */
         AggregationType: "count" | "sum" | "avg";
+        Annotation: {
+            readonly id: number;
+            /** @description Annotation text shown on charts to describe the change, release, or incident. */
+            content?: string | null;
+            /**
+             * Format: date-time
+             * @description When this annotation happened (ISO 8601 timestamp). Used to position it on charts.
+             */
+            date_marker?: string | null;
+            /**
+             * @description Who created this annotation. Use `USR` for user-created notes and `GIT` for bot/deployment notes.
+             *
+             *     * `USR` - user
+             *     * `GIT` - GitHub
+             */
+            creation_type?: components["schemas"]["CreationTypeEnum"];
+            dashboard_item?: number | null;
+            dashboard_id?: number | null;
+            readonly dashboard_name: string | null;
+            readonly insight_short_id: string | null;
+            readonly insight_name: string | null;
+            readonly insight_derived_name: string | null;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** @description Soft-delete flag. Set to true to hide the annotation, or false to restore it. */
+            deleted?: boolean;
+            /**
+             * @description Annotation visibility scope: `project`, `organization`, `dashboard`, or `dashboard_item`. `recording` is deprecated and rejected.
+             *
+             *     * `dashboard_item` - insight
+             *     * `dashboard` - dashboard
+             *     * `project` - project
+             *     * `organization` - organization
+             *     * `recording` - recording
+             */
+            scope?: components["schemas"]["AnnotationScopeEnum"];
+            /** @description Optional emoji shown in place of the default badge when this annotation is surfaced on a chart. */
+            emoji?: string | null;
+            /** @description When true, the annotation is hidden from the PostHog UI (charts and the annotations list) but still readable over the API and MCP. Use for high-frequency markers like deployments that would otherwise crowd the UI. Null (the default) means the annotation is shown. */
+            hidden_in_user_interface?: boolean | null;
+        };
+        /**
+         * @description * `dashboard_item` - insight
+         *     * `dashboard` - dashboard
+         *     * `project` - project
+         *     * `organization` - organization
+         *     * `recording` - recording
+         * @enum {string}
+         */
+        AnnotationScopeEnum: "dashboard_item" | "dashboard" | "project" | "organization" | "recording";
         ArchiveExperiment: {
             /**
              * @description When the linked feature flag is still enabled, also disable and archive it along with the experiment. Has no effect if the flag is already disabled (it is archived either way).
@@ -2440,6 +2529,12 @@ export interface components {
          * @enum {string}
          */
         CreationModeEnum: "default" | "template" | "duplicate" | "unlisted";
+        /**
+         * @description * `USR` - user
+         *     * `GIT` - GitHub
+         * @enum {string}
+         */
+        CreationTypeEnum: "USR" | "GIT";
         /**
          * CurrencyCode
          * @enum {string}
@@ -10137,6 +10232,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Action"][];
         };
+        PaginatedAnnotationList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Annotation"][];
+        };
         PaginatedCohortList: {
             /** @example 123 */
             count: number;
@@ -10342,6 +10452,50 @@ export interface components {
             _create_in_folder?: string;
             /** @description The effective access level the user has for this object */
             readonly user_access_level?: string | null;
+        };
+        PatchedAnnotation: {
+            readonly id?: number;
+            /** @description Annotation text shown on charts to describe the change, release, or incident. */
+            content?: string | null;
+            /**
+             * Format: date-time
+             * @description When this annotation happened (ISO 8601 timestamp). Used to position it on charts.
+             */
+            date_marker?: string | null;
+            /**
+             * @description Who created this annotation. Use `USR` for user-created notes and `GIT` for bot/deployment notes.
+             *
+             *     * `USR` - user
+             *     * `GIT` - GitHub
+             */
+            creation_type?: components["schemas"]["CreationTypeEnum"];
+            dashboard_item?: number | null;
+            dashboard_id?: number | null;
+            readonly dashboard_name?: string | null;
+            readonly insight_short_id?: string | null;
+            readonly insight_name?: string | null;
+            readonly insight_derived_name?: string | null;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly created_at?: string | null;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            /** @description Soft-delete flag. Set to true to hide the annotation, or false to restore it. */
+            deleted?: boolean;
+            /**
+             * @description Annotation visibility scope: `project`, `organization`, `dashboard`, or `dashboard_item`. `recording` is deprecated and rejected.
+             *
+             *     * `dashboard_item` - insight
+             *     * `dashboard` - dashboard
+             *     * `project` - project
+             *     * `organization` - organization
+             *     * `recording` - recording
+             */
+            scope?: components["schemas"]["AnnotationScopeEnum"];
+            /** @description Optional emoji shown in place of the default badge when this annotation is surfaced on a chart. */
+            emoji?: string | null;
+            /** @description When true, the annotation is hidden from the PostHog UI (charts and the annotations list) but still readable over the API and MCP. Use for high-frequency markers like deployments that would otherwise crowd the UI. Null (the default) means the annotation is shown. */
+            hidden_in_user_interface?: boolean | null;
         };
         PatchedCohort: {
             readonly id?: number;
@@ -18738,6 +18892,117 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Action"];
                     "text/csv": components["schemas"]["Action"];
+                };
+            };
+        };
+    };
+    annotations_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAnnotationList"];
+                };
+            };
+        };
+    };
+    annotations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Annotation"];
+                "application/x-www-form-urlencoded": components["schemas"]["Annotation"];
+                "multipart/form-data": components["schemas"]["Annotation"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Annotation"];
+                };
+            };
+        };
+    };
+    annotations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this annotation. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Annotation"];
+                };
+            };
+        };
+    };
+    annotations_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this annotation. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAnnotation"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedAnnotation"];
+                "multipart/form-data": components["schemas"]["PatchedAnnotation"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Annotation"];
                 };
             };
         };

@@ -13,7 +13,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Dashboards          | ✅ `projects/{id}/dashboards`            | ✅                  | Tag-identified via `iac:dashboards:<key>`     |
 | Insights            | ✅ `projects/{id}/insights`              | ✅                  | Standalone or inlined inside a dashboard tile |
 | Dashboard templates | ✅ `projects/{id}/dashboard_templates`   | ❌                  |                                               |
-| Annotations         | ✅ `projects/{id}/annotations`           | ❌                  |                                               |
+| Annotations         | ✅ `projects/{id}/annotations`           | ✅                  | Identity via `iac:annotations:<key>` marker in `content`. `scope` project/organization/dashboard_item(insight)/dashboard; insight/dashboard refs by key. `hidden` keeps deploy markers (and the marker comment) out of the UI. Full matrix refresh tracked in #78. |
 | Notebooks           | ✅ `projects/{id}/notebooks`             | ❌                  |                                               |
 | Alerts              | ✅ `environments/{id}/alerts`            | ❌                  |                                               |
 | Insight variables   | ✅ `environments/{id}/insight_variables` | ❌                  |                                               |

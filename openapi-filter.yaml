@@ -86,6 +86,11 @@ inverseOperationIds:
   - actions_partial_update
   - actions_destroy
 
+  - annotations_list
+  - annotations_create
+  - annotations_retrieve
+  - annotations_partial_update
+
 unusedComponents:
   - schemas
   - parameters

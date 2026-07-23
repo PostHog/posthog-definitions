@@ -140,6 +140,18 @@ function buildDisplayContext(
       ctx.insightIdByKey.set(key, id);
     }
   }
+  // Same for dashboards, so annotation / subscription references to a dashboard
+  // render as keys rather than opaque ids.
+  const dashboardResource = resources.find((r) => r.name === "dashboards");
+  if (dashboardResource && dashboardResource.kind === "collection") {
+    for (const row of serverState.get("dashboards") ?? []) {
+      const key = dashboardResource.keyFromServer(row);
+      if (!key) continue;
+      const id = (row as { id: number }).id;
+      ctx.dashboardKeyByServerId.set(id, key);
+      ctx.dashboardIdByKey.set(key, id);
+    }
+  }
   return ctx;
 }
 

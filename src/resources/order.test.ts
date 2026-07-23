@@ -7,6 +7,7 @@ import { topoOrder } from "./order.js";
 import { RESOURCES } from "./index.js";
 import { actionResource } from "./action/index.js";
 import { cohortResource } from "./cohort/index.js";
+import { annotationResource } from "./annotation/index.js";
 import { dashboardResource } from "./dashboard/index.js";
 import { endpointResource } from "./endpoint/index.js";
 import { eventDefinitionResource } from "./event-definition/index.js";
@@ -154,6 +155,23 @@ describe("topoOrder", () => {
     );
   });
 
+  it("lenient mode tolerates a dependency absent from the input set (pull)", () => {
+    const absent = makeFakeResource({ name: "absent" });
+    const dependent = makeFakeResource({ name: "dependent", dependsOn: [absent] });
+
+    // Strict throws; lenient drops the out-of-set edge and orders the rest.
+    expect(topoOrder([dependent], { lenient: true }).map((r) => r.name)).toEqual(["dependent"]);
+  });
+
+  it("lenient mode still orders in-set dependencies correctly", () => {
+    const absent = makeFakeResource({ name: "absent" });
+    const a = makeFakeResource({ name: "a" });
+    const b = makeFakeResource({ name: "b", dependsOn: [a, absent] });
+
+    // `absent` edge dropped; `a` before `b` preserved.
+    expect(topoOrder([b, a], { lenient: true }).map((r) => r.name)).toEqual(["a", "b"]);
+  });
+
   it("throws on duplicate resource names with distinct objects", () => {
     const a1 = makeFakeResource({ name: "a" });
     const a2 = makeFakeResource({ name: "a" });
@@ -185,6 +203,7 @@ describe("RESOURCES (real registry)", () => {
         insightResource,
         projectSettingsResource,
         propertyGroupResource,
+        annotationResource,
       ].map((r) => r.name),
     );
     expect(new Set(RESOURCES.map((r) => r.name))).toEqual(expected);
