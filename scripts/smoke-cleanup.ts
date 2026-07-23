@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedLogsViews } from "../src/resources/logs-view/client.js";
+import {
+  logsViewKeyFromServer,
+  pruneLogsView,
+} from "../src/resources/logs-view/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "logs-view"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "logs-view",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["logs-view"]) {
+    await deleteByKey(
+      "logs-view",
+      args["logs-view"],
+      config,
+      listManagedLogsViews,
+      (row) => logsViewKeyFromServer(row),
+      (c, row) => pruneLogsView(c, row),
     );
   }
 }

@@ -616,6 +616,38 @@ export interface paths {
         patch: operations["insights_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/logs/views/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["logs_views_list"];
+        put?: never;
+        post: operations["logs_views_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/logs/views/{short_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["logs_views_retrieve"];
+        put: operations["logs_views_update"];
+        post?: never;
+        delete: operations["logs_views_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["logs_views_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/schema_property_groups/": {
         parameters: {
             query?: never;
@@ -9351,6 +9383,57 @@ export interface components {
          * @enum {string}
          */
         LogPropertyFilterType: "log" | "log_attribute" | "log_resource_attribute";
+        LogsView: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly short_id: string;
+            name: string;
+            /** @description Filter criteria — subset of LogsViewerFilters. May contain severityLevels, serviceNames, searchTerm, filterGroup, dateRange, and other keys. */
+            filters?: {
+                [key: string]: unknown;
+            };
+            /** @description Ordered column configuration for the logs table (LogsColumnConfig[]). Order is array index. Null means the view has no column preference and the client renders its default column set. Omitting the field on update leaves the saved configuration unchanged; send null to clear it. */
+            columns?: components["schemas"]["LogsViewColumn"][] | null;
+            pinned?: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at: string | null;
+        };
+        LogsViewColumn: {
+            /** @description Client-generated stable identity for list operations (React keys, reorder). Never interpreted by the server. */
+            id: string;
+            /**
+             * @description Column type. Built-in types resolve client-side from log row fields; `custom` columns are computed server-side from `expression`.
+             *
+             *     * `timestamp` - timestamp
+             *     * `level` - level
+             *     * `source` - source
+             *     * `trace_id` - trace_id
+             *     * `span_id` - span_id
+             *     * `message` - message
+             *     * `custom` - custom
+             */
+            type: components["schemas"]["LogsViewColumnTypeEnum"];
+            /** @description Header label override. Defaults to the built-in type's label, or to the expression for custom columns. */
+            name?: string;
+            /** @description Only meaningful for `type: custom`: a source-prefixed shorthand (`attributes.<key>`, `resource_attributes.<key>`, `body.<json.path>`) or a scalar HogQL expression, sent verbatim in the logs query's `customColumns`. */
+            expression?: string;
+            /** @description Column width in pixels (1–2000). Omitted for the default width; ignored for the flex message column. */
+            width?: number;
+        };
+        /**
+         * @description * `timestamp` - timestamp
+         *     * `level` - level
+         *     * `source` - source
+         *     * `trace_id` - trace_id
+         *     * `span_id` - span_id
+         *     * `message` - message
+         *     * `custom` - custom
+         * @enum {string}
+         */
+        LogsViewColumnTypeEnum: "timestamp" | "level" | "source" | "trace_id" | "span_id" | "message" | "custom";
         /**
          * ManualMetricType
          * @enum {string}
@@ -10287,6 +10370,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Insight"][];
         };
+        PaginatedLogsViewList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["LogsView"][];
+        };
         PaginatedSchemaPropertyGroupList: {
             /** @example 123 */
             count: number;
@@ -10691,6 +10789,24 @@ export interface components {
             readonly last_viewed_at?: string | null;
             /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
             readonly search_match_type?: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        PatchedLogsView: {
+            /** Format: uuid */
+            readonly id?: string;
+            readonly short_id?: string;
+            name?: string;
+            /** @description Filter criteria — subset of LogsViewerFilters. May contain severityLevels, serviceNames, searchTerm, filterGroup, dateRange, and other keys. */
+            filters?: {
+                [key: string]: unknown;
+            };
+            /** @description Ordered column configuration for the logs table (LogsColumnConfig[]). Order is array index. Null means the view has no column preference and the client renders its default column set. Omitting the field on update leaves the saved configuration unchanged; send null to clear it. */
+            columns?: components["schemas"]["LogsViewColumn"][] | null;
+            pinned?: boolean;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at?: string | null;
         };
         /**
          * @description OpenAPI-only PATCH body for dashboards (agents/MCP).
@@ -20498,6 +20614,164 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Insight"];
                     "text/csv": components["schemas"]["Insight"];
+                };
+            };
+        };
+    };
+    logs_views_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedLogsViewList"];
+                };
+            };
+        };
+    };
+    logs_views_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogsView"];
+                "application/x-www-form-urlencoded": components["schemas"]["LogsView"];
+                "multipart/form-data": components["schemas"]["LogsView"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsView"];
+                };
+            };
+        };
+    };
+    logs_views_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+                short_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsView"];
+                };
+            };
+        };
+    };
+    logs_views_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+                short_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogsView"];
+                "application/x-www-form-urlencoded": components["schemas"]["LogsView"];
+                "multipart/form-data": components["schemas"]["LogsView"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsView"];
+                };
+            };
+        };
+    };
+    logs_views_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+                short_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    logs_views_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+                short_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLogsView"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedLogsView"];
+                "multipart/form-data": components["schemas"]["PatchedLogsView"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsView"];
                 };
             };
         };
