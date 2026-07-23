@@ -9,6 +9,14 @@ export type {
   Filters,
 } from "./resources/dashboard/index.js";
 
+export { dashboardTemplate } from "./resources/dashboard-template/index.js";
+export type {
+  DashboardTemplate,
+  DashboardTemplateScope,
+  DashboardTemplateTile,
+  DashboardTemplateVariable,
+} from "./resources/dashboard-template/index.js";
+
 export { insight, trends, funnels, hogql } from "./resources/insight/index.js";
 export type {
   Insight,

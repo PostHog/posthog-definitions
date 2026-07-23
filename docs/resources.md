@@ -12,7 +12,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | ------------------- | ---------------------------------------- | ------------------- | --------------------------------------------- |
 | Dashboards          | ✅ `projects/{id}/dashboards`            | ✅                  | Tag-identified via `iac:dashboards:<key>`     |
 | Insights            | ✅ `projects/{id}/insights`              | ✅                  | Standalone or inlined inside a dashboard tile |
-| Dashboard templates | ✅ `projects/{id}/dashboard_templates`   | ❌                  |                                               |
+| Dashboard templates | ✅ `projects/{id}/dashboard_templates`   | ✅                  | Tag-identified via `iac:dashboard-templates:<key>`; project-scoped (`team`) only — global/official templates are read-only. Full matrix refresh tracked in #78. |
 | Annotations         | ✅ `projects/{id}/annotations`           | ❌                  |                                               |
 | Notebooks           | ✅ `projects/{id}/notebooks`             | ❌                  |                                               |
 | Alerts              | ✅ `environments/{id}/alerts`            | ❌                  |                                               |
