@@ -23,6 +23,14 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  - surveys_list
+  - surveys_create
+  - surveys_retrieve
+  - surveys_partial_update
+  - surveys_destroy
+  - surveys_launch
+  - surveys_stop
+
   - endpoints_list
   - endpoints_create
   - endpoints_retrieve

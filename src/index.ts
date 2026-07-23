@@ -75,5 +75,20 @@ export type {
 export { projectSettings } from "./resources/project-settings/index.js";
 export type { ProjectSettings } from "./resources/project-settings/index.js";
 
+export { survey } from "./resources/survey/index.js";
+export type {
+  Survey,
+  SurveyType,
+  SurveyStatus,
+  SurveyQuestion,
+  SurveyConditions,
+  SurveyAppearance,
+  OpenQuestion,
+  LinkQuestion,
+  RatingQuestion,
+  SingleChoiceQuestion,
+  MultipleChoiceQuestion,
+} from "./resources/survey/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";

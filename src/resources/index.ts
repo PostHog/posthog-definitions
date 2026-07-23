@@ -12,6 +12,7 @@ import { experimentHoldoutResource } from "./experiment-holdout/index.js";
 import { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";
 import { projectSettingsResource } from "./project-settings/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
+import { surveyResource } from "./survey/index.js";
 
 /**
  * Source-of-truth registry. Listed in stable, human-readable order — the
@@ -31,6 +32,7 @@ const REGISTRY: ReadonlyArray<ResourceModule<unknown, unknown>> = [
   insightResource as ResourceModule<unknown, unknown>,
   projectSettingsResource as ResourceModule<unknown, unknown>,
   propertyGroupResource as ResourceModule<unknown, unknown>,
+  surveyResource as ResourceModule<unknown, unknown>,
 ];
 
 /**
@@ -53,6 +55,7 @@ export { experimentHoldoutResource } from "./experiment-holdout/index.js";
 export { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";
 export { experimentResource } from "./experiment/index.js";
 export { projectSettingsResource } from "./project-settings/index.js";
+export { surveyResource } from "./survey/index.js";
 export type {
   ResourceModule,
   CollectionResourceModule,
