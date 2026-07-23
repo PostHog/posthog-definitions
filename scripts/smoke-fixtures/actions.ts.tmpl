@@ -1,0 +1,9 @@
+import { action } from "@posthog/definitions";
+export default action({
+  key: "@@ACTION_KEY@@",
+  name: "@@ACTION_KEY@@",
+  description: "Smoke fixture action",
+  steps: [
+    { event: "@@EVENT_DEFINITION_KEY@@" },
+  ],
+});

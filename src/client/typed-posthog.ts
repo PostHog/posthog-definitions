@@ -81,6 +81,9 @@ type EventSchemaMap<TEvents extends ReadonlyArray<{ name: string }>> = {
   [E in TEvents[number] as E["name"]]: EventPropertiesOf<E>;
 };
 
+// `{}` here means "the empty object type" — TProps has no required keys when the
+// empty object is assignable to it. This is the intended type-level check.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type HasRequired<TProps> = {} extends TProps ? false : true;
 
 // ---------- runtime ----------

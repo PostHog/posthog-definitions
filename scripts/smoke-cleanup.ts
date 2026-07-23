@@ -84,43 +84,117 @@ import {
 
 import type { ClientConfig } from "../src/client/config.js";
 
-type Args = {
-  experiment?: string;
-  "feature-flag"?: string;
-  "experiment-holdout"?: string;
-  "experiment-saved-metric"?: string;
-  dashboard?: string;
-  insight?: string;
-  "event-definition"?: string;
-  action?: string;
-  "property-group"?: string;
-  cohort?: string;
-  endpoint?: string;
+// --- Cleanup registry -------------------------------------------------------
+//
+// One entry per resource: the `--<flag>=<key>` argument it reads, plus the
+// list / key-extraction / prune wrappers `deleteByKey` needs. Adding a
+// resource is one import group above + one `entry(...)` row below.
+//
+// Order is dependents-first: an entry that references another resource must
+// appear before it, so the reference is gone before the referent is deleted
+// (experiments before their flag / holdout / saved-metric, dashboards before
+// their tile-insights, event-definitions before their property-groups). Each
+// delete goes through the resource's pipeline `prune*` helper, which does an
+// identity check before issuing the DELETE — so a misclicked key can't take
+// out something unrelated.
+
+type CleanupEntry = {
+  flag: string;
+  run: (key: string, config: ClientConfig) => Promise<void>;
 };
 
-const ARG_KEYS: Array<keyof Args> = [
-  "experiment",
-  "feature-flag",
-  "experiment-holdout",
-  "experiment-saved-metric",
-  "dashboard",
-  "insight",
-  "event-definition",
-  "action",
-  "property-group",
-  "cohort",
-  "endpoint",
+function entry<T>(
+  flag: string,
+  list: (config: ClientConfig) => Promise<T[]>,
+  keyOf: (row: T) => string | undefined,
+  prune: (config: ClientConfig, row: T) => Promise<boolean>,
+): CleanupEntry {
+  return {
+    flag,
+    run: (key, config) => deleteByKey(flag, key, config, list, keyOf, prune),
+  };
+}
+
+const CLEANUP_REGISTRY: CleanupEntry[] = [
+  entry(
+    "experiment",
+    listManagedExperiments,
+    (row) => experimentKeyFromServer(row),
+    (c, row) => pruneExperiment(c, row),
+  ),
+  entry(
+    "feature-flag",
+    listManagedFeatureFlags,
+    (row) => featureFlagKeyFromTags(row.tags),
+    (c, row) => pruneFeatureFlag(c, row),
+  ),
+  entry(
+    "experiment-holdout",
+    listManagedExperimentHoldouts,
+    (row) => experimentHoldoutKeyFromServer(row),
+    (c, row) => pruneExperimentHoldout(c, row),
+  ),
+  entry(
+    "experiment-saved-metric",
+    listManagedExperimentSavedMetrics,
+    (row) => experimentSavedMetricKeyFromServer(row),
+    (c, row) => pruneExperimentSavedMetric(c, row),
+  ),
+  entry(
+    "dashboard",
+    listManagedDashboards,
+    (row) => dashboardKeyFromTags(row.tags),
+    (c, row) => pruneDashboard(c, row),
+  ),
+  entry(
+    "insight",
+    listManagedInsights,
+    (row) => insightKeyFromTags(row.tags),
+    (c, row) => pruneInsight(c, row),
+  ),
+  entry(
+    "event-definition",
+    listManagedEventDefinitions,
+    (row) => eventDefinitionKeyFromTags(row.tags),
+    (c, row) => pruneEventDefinition(c, row),
+  ),
+  entry(
+    "action",
+    listManagedActions,
+    (row) => actionKeyFromTags(row.tags),
+    (c, row) => pruneAction(c, row),
+  ),
+  entry(
+    "property-group",
+    listManagedPropertyGroups,
+    (row) => propertyGroupKeyFromServer(row),
+    (c, row) => prunePropertyGroup(c, row),
+  ),
+  entry(
+    "cohort",
+    listManagedCohorts,
+    (row) => cohortKeyFromServer(row),
+    (c, row) => pruneCohort(c, row),
+  ),
+  entry(
+    "endpoint",
+    listManagedEndpoints,
+    (row) => endpointKeyFromServer(row),
+    (c, row) => pruneEndpoint(c, row),
+  ),
 ];
 
-function parseArgs(argv: string[]): Args {
-  const out: Args = {};
+const CLEANUP_FLAGS = new Set(CLEANUP_REGISTRY.map((e) => e.flag));
+
+function parseArgs(argv: string[]): Record<string, string> {
+  const out: Record<string, string> = {};
   for (const a of argv) {
     const eq = a.indexOf("=");
     if (eq < 0 || !a.startsWith("--")) continue;
-    const k = a.slice(2, eq) as keyof Args;
+    const k = a.slice(2, eq);
     const v = a.slice(eq + 1);
     if (!v) continue;
-    if (ARG_KEYS.includes(k)) out[k] = v;
+    if (CLEANUP_FLAGS.has(k)) out[k] = v;
   }
   return out;
 }
@@ -159,116 +233,10 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const config = loadConfig();
 
-  // Order matters — dependents before their deps.
-  if (args["experiment"]) {
-    await deleteByKey(
-      "experiment",
-      args["experiment"],
-      config,
-      listManagedExperiments,
-      (row) => experimentKeyFromServer(row),
-      (c, row) => pruneExperiment(c, row),
-    );
-  }
-  if (args["feature-flag"]) {
-    await deleteByKey(
-      "feature-flag",
-      args["feature-flag"],
-      config,
-      listManagedFeatureFlags,
-      (row) => featureFlagKeyFromTags(row.tags),
-      (c, row) => pruneFeatureFlag(c, row),
-    );
-  }
-  if (args["experiment-holdout"]) {
-    await deleteByKey(
-      "experiment-holdout",
-      args["experiment-holdout"],
-      config,
-      listManagedExperimentHoldouts,
-      (row) => experimentHoldoutKeyFromServer(row),
-      (c, row) => pruneExperimentHoldout(c, row),
-    );
-  }
-  if (args["experiment-saved-metric"]) {
-    await deleteByKey(
-      "experiment-saved-metric",
-      args["experiment-saved-metric"],
-      config,
-      listManagedExperimentSavedMetrics,
-      (row) => experimentSavedMetricKeyFromServer(row),
-      (c, row) => pruneExperimentSavedMetric(c, row),
-    );
-  }
-  if (args["dashboard"]) {
-    await deleteByKey(
-      "dashboard",
-      args["dashboard"],
-      config,
-      listManagedDashboards,
-      (row) => dashboardKeyFromTags(row.tags),
-      (c, row) => pruneDashboard(c, row),
-    );
-  }
-  if (args["insight"]) {
-    await deleteByKey(
-      "insight",
-      args["insight"],
-      config,
-      listManagedInsights,
-      (row) => insightKeyFromTags(row.tags),
-      (c, row) => pruneInsight(c, row),
-    );
-  }
-  if (args["event-definition"]) {
-    await deleteByKey(
-      "event-definition",
-      args["event-definition"],
-      config,
-      listManagedEventDefinitions,
-      (row) => eventDefinitionKeyFromTags(row.tags),
-      (c, row) => pruneEventDefinition(c, row),
-    );
-  }
-  if (args["action"]) {
-    await deleteByKey(
-      "action",
-      args["action"],
-      config,
-      listManagedActions,
-      (row) => actionKeyFromTags(row.tags),
-      (c, row) => pruneAction(c, row),
-    );
-  }
-  if (args["property-group"]) {
-    await deleteByKey(
-      "property-group",
-      args["property-group"],
-      config,
-      listManagedPropertyGroups,
-      (row) => propertyGroupKeyFromServer(row),
-      (c, row) => prunePropertyGroup(c, row),
-    );
-  }
-  if (args["cohort"]) {
-    await deleteByKey(
-      "cohort",
-      args["cohort"],
-      config,
-      listManagedCohorts,
-      (row) => cohortKeyFromServer(row),
-      (c, row) => pruneCohort(c, row),
-    );
-  }
-  if (args["endpoint"]) {
-    await deleteByKey(
-      "endpoint",
-      args["endpoint"],
-      config,
-      listManagedEndpoints,
-      (row) => endpointKeyFromServer(row),
-      (c, row) => pruneEndpoint(c, row),
-    );
+  // Registry order is dependents-first, so this loop deletes in a safe order.
+  for (const { flag, run } of CLEANUP_REGISTRY) {
+    const key = args[flag];
+    if (key) await run(key, config);
   }
 }
 

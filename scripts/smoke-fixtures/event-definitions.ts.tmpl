@@ -1,0 +1,8 @@
+import { eventDefinition } from "@posthog/definitions";
+import smokePg from "../property-groups/smoke-pg.js";
+export default eventDefinition({
+  key: "@@EVENT_DEFINITION_KEY@@",
+  name: "@@EVENT_DEFINITION_KEY@@",
+  description: "Smoke fixture event",
+  propertyGroups: [smokePg],
+});
