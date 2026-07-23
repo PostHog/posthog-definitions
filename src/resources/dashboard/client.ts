@@ -36,7 +36,9 @@ export type DashboardUpdate = Partial<DashboardCreate>;
 type GeneratedDashboard = components["schemas"]["Dashboard"];
 type GeneratedDashboardBasic = components["schemas"]["DashboardBasic"];
 type DashboardBody = components["schemas"]["Dashboard"];
-type PatchedDashboardBody = components["schemas"]["PatchedDashboard"];
+// 2026-07-23 spec renamed the dashboard PATCH request body from
+// `PatchedDashboard` to `PatchedPatchedDashboardOpenApi`.
+type PatchedDashboardBody = components["schemas"]["PatchedPatchedDashboardOpenApi"];
 
 /**
  * Narrow PostHog's wide `Dashboard`/`DashboardBasic` response shape down to
