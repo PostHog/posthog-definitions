@@ -648,6 +648,48 @@ export interface paths {
         patch: operations["schema_property_groups_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/session_recording_playlists/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Override list to include synthetic playlists.
+         *
+         *     Synthetics have no DB row, so we compute each one's position in the merged
+         *     sort and split the requested page between synthetics and a DB queryset slice.
+         *     The merge/rank/sort is all in-memory, so each phase is wrapped in a span and
+         *     the input sizes are recorded as span attributes — a slow response on a team
+         *     with many playlists then shows up as a wide span against a large db_count.
+         */
+        get: operations["session_recording_playlists_list"];
+        put?: never;
+        post: operations["session_recording_playlists_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/session_recording_playlists/{short_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["session_recording_playlists_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Hard delete of this model is not allowed. Use a patch API call to set "deleted" to true */
+        delete: operations["session_recording_playlists_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["session_recording_playlists_partial_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -10302,6 +10344,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
         };
+        PaginatedSessionRecordingPlaylistList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["SessionRecordingPlaylist"][];
+        };
         /**
          * ParserMode
          * @enum {string}
@@ -10736,6 +10793,43 @@ export interface components {
             /** Format: date-time */
             readonly updated_at?: string;
             readonly created_by?: components["schemas"]["UserBasic"];
+        };
+        PatchedSessionRecordingPlaylist: {
+            readonly id?: number;
+            readonly short_id?: string;
+            /** @description Human-readable name for the playlist. */
+            name?: string | null;
+            derived_name?: string | null;
+            /** @description Optional description of the playlist's purpose or contents. */
+            description?: string;
+            /** @description Whether this playlist is pinned to the top of the list. */
+            pinned?: boolean;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** @description Set to true to soft-delete the playlist. */
+            deleted?: boolean;
+            /** @description JSON object with recording filter criteria. Only used when type is 'filters'. Defines which recordings match this saved filter view. When updating a filters-type playlist, you must include the existing filters alongside any other changes — omitting filters will be treated as removing them. */
+            filters?: unknown;
+            /** Format: date-time */
+            readonly last_modified_at?: string;
+            readonly last_modified_by?: components["schemas"]["UserBasic"];
+            readonly recordings_counts?: {
+                [key: string]: {
+                    [key: string]: number | boolean | null;
+                };
+            };
+            /**
+             * @description Playlist type: 'collection' for manually curated recordings, 'filters' for saved filter views. Required on create, cannot be changed after.
+             *
+             *     * `collection` - Collection
+             *     * `filters` - Filters
+             */
+            type?: components["schemas"]["SessionRecordingPlaylistTypeEnum"] | components["schemas"]["NullEnum"];
+            /** @description Return whether this is a synthetic playlist */
+            readonly is_synthetic?: boolean;
+            /** create in folder */
+            _create_in_folder?: string;
         };
         PatchedTeam: {
             readonly id?: number;
@@ -14990,6 +15084,49 @@ export interface components {
              */
             warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
+        SessionRecordingPlaylist: {
+            readonly id: number;
+            readonly short_id: string;
+            /** @description Human-readable name for the playlist. */
+            name?: string | null;
+            derived_name?: string | null;
+            /** @description Optional description of the playlist's purpose or contents. */
+            description?: string;
+            /** @description Whether this playlist is pinned to the top of the list. */
+            pinned?: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** @description Set to true to soft-delete the playlist. */
+            deleted?: boolean;
+            /** @description JSON object with recording filter criteria. Only used when type is 'filters'. Defines which recordings match this saved filter view. When updating a filters-type playlist, you must include the existing filters alongside any other changes — omitting filters will be treated as removing them. */
+            filters?: unknown;
+            /** Format: date-time */
+            readonly last_modified_at: string;
+            readonly last_modified_by: components["schemas"]["UserBasic"];
+            readonly recordings_counts: {
+                [key: string]: {
+                    [key: string]: number | boolean | null;
+                };
+            };
+            /**
+             * @description Playlist type: 'collection' for manually curated recordings, 'filters' for saved filter views. Required on create, cannot be changed after.
+             *
+             *     * `collection` - Collection
+             *     * `filters` - Filters
+             */
+            type?: components["schemas"]["SessionRecordingPlaylistTypeEnum"] | components["schemas"]["NullEnum"];
+            /** @description Return whether this is a synthetic playlist */
+            readonly is_synthetic: boolean;
+            /** create in folder */
+            _create_in_folder?: string;
+        };
+        /**
+         * @description * `collection` - Collection
+         *     * `filters` - Filters
+         * @enum {string}
+         */
+        SessionRecordingPlaylistTypeEnum: "collection" | "filters";
         /**
          * @description * `30d` - 30 Days
          *     * `90d` - 90 Days
@@ -20630,6 +20767,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaPropertyGroup"];
+                };
+            };
+        };
+    };
+    session_recording_playlists_list: {
+        parameters: {
+            query?: {
+                created_by?: number;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                short_id?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSessionRecordingPlaylistList"];
+                };
+            };
+        };
+    };
+    session_recording_playlists_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SessionRecordingPlaylist"];
+                "application/x-www-form-urlencoded": components["schemas"]["SessionRecordingPlaylist"];
+                "multipart/form-data": components["schemas"]["SessionRecordingPlaylist"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionRecordingPlaylist"];
+                };
+            };
+        };
+    };
+    session_recording_playlists_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+                short_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionRecordingPlaylist"];
+                };
+            };
+        };
+    };
+    session_recording_playlists_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+                short_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    session_recording_playlists_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+                short_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSessionRecordingPlaylist"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSessionRecordingPlaylist"];
+                "multipart/form-data": components["schemas"]["PatchedSessionRecordingPlaylist"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionRecordingPlaylist"];
                 };
             };
         };

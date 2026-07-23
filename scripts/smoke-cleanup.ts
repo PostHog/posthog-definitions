@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedSessionRecordingPlaylists } from "../src/resources/session-recording-playlist/client.js";
+import {
+  playlistKeyFromServer,
+  pruneSessionRecordingPlaylist,
+} from "../src/resources/session-recording-playlist/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "session-recording-playlist"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "session-recording-playlist",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["session-recording-playlist"]) {
+    await deleteByKey(
+      "session-recording-playlist",
+      args["session-recording-playlist"],
+      config,
+      listManagedSessionRecordingPlaylists,
+      (row) => playlistKeyFromServer(row),
+      (c, row) => pruneSessionRecordingPlaylist(c, row),
     );
   }
 }
