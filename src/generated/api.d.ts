@@ -616,6 +616,38 @@ export interface paths {
         patch: operations["insights_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/logs/sampling_rules/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["logs_sampling_rules_list"];
+        put?: never;
+        post: operations["logs_sampling_rules_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/logs/sampling_rules/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["logs_sampling_rules_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["logs_sampling_rules_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["logs_sampling_rules_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/schema_property_groups/": {
         parameters: {
             query?: never;
@@ -9351,6 +9383,47 @@ export interface components {
          * @enum {string}
          */
         LogPropertyFilterType: "log" | "log_attribute" | "log_resource_attribute";
+        LogsSamplingRule: {
+            /**
+             * Format: uuid
+             * @description Unique identifier for this sampling rule.
+             */
+            readonly id: string;
+            /** @description User-visible label for this rule. */
+            name: string;
+            /**
+             * @description When false, the rule is ignored by ingestion and listing UIs that show active rules only.
+             * @default false
+             */
+            enabled: boolean;
+            /** @description Lower numbers are evaluated first; the first matching rule wins. Omit to append after existing rules. */
+            priority?: number | null;
+            /**
+             * @description Rule kind: severity_sampling, path_drop, or rate_limit (caps matching log volume at ingestion).
+             *
+             *     * `severity_sampling` - Severity-based reduction
+             *     * `path_drop` - Path exclusion
+             *     * `rate_limit` - Rate limit
+             */
+            rule_type: components["schemas"]["RuleTypeEnum"];
+            /** @description Optional legacy service-name scope; new rules use `config.filter_group` for matching instead. */
+            scope_service?: string | null;
+            /** @description Optional regex matched against a path-like log attribute when present. */
+            scope_path_pattern?: string | null;
+            /** @description Optional list of predicates over string attributes, e.g. [{"key":"http.route","op":"eq","value":"/api"}]. */
+            scope_attribute_filters?: {
+                [key: string]: unknown;
+            }[];
+            /** @description Type-specific JSON. For path_drop: object with optional `filter_group` (PropertyGroupFilter shape — AND/OR tree of property predicates evaluated per record) and/or legacy `patterns` (list of regex strings) + `match_attribute_key` (string). When both are present a record is dropped if EITHER matches. Filter group example: `{"type":"AND","values":[{"type":"AND","values":[{"key":"service.name","operator":"exact","value":"api"}]}]}`. Every group in `filter_group` must contain at least one filter — empty groups never match, so the rule would never apply. For severity_sampling: object with `actions` per severity level and optional `always_keep`. For rate_limit: object with EITHER `logs_per_second` (integer 1–1000000, optional `burst_logs` integer ≥ logs_per_second, max 10000000) OR `kb_per_second` (integer 1–1000000 = 1 GB/s, optional `burst_kb` integer ≥ kb_per_second, max 10000000) — not both. Plus optional `filter_group` to narrow which logs the cap applies to. KB-mode charges each log its own uncompressed byte size, matching how billing measures ingested bytes. */
+            config: unknown;
+            /** @description Incremented on each update for worker cache coherency. */
+            readonly version: number;
+            readonly created_by: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string | null;
+        };
         /**
          * ManualMetricType
          * @enum {string}
@@ -10287,6 +10360,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Insight"][];
         };
+        PaginatedLogsSamplingRuleList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["LogsSamplingRule"][];
+        };
         PaginatedSchemaPropertyGroupList: {
             /** @example 123 */
             count: number;
@@ -10691,6 +10779,47 @@ export interface components {
             readonly last_viewed_at?: string | null;
             /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
             readonly search_match_type?: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        PatchedLogsSamplingRule: {
+            /**
+             * Format: uuid
+             * @description Unique identifier for this sampling rule.
+             */
+            readonly id?: string;
+            /** @description User-visible label for this rule. */
+            name?: string;
+            /**
+             * @description When false, the rule is ignored by ingestion and listing UIs that show active rules only.
+             * @default false
+             */
+            enabled: boolean;
+            /** @description Lower numbers are evaluated first; the first matching rule wins. Omit to append after existing rules. */
+            priority?: number | null;
+            /**
+             * @description Rule kind: severity_sampling, path_drop, or rate_limit (caps matching log volume at ingestion).
+             *
+             *     * `severity_sampling` - Severity-based reduction
+             *     * `path_drop` - Path exclusion
+             *     * `rate_limit` - Rate limit
+             */
+            rule_type?: components["schemas"]["RuleTypeEnum"];
+            /** @description Optional legacy service-name scope; new rules use `config.filter_group` for matching instead. */
+            scope_service?: string | null;
+            /** @description Optional regex matched against a path-like log attribute when present. */
+            scope_path_pattern?: string | null;
+            /** @description Optional list of predicates over string attributes, e.g. [{"key":"http.route","op":"eq","value":"/api"}]. */
+            scope_attribute_filters?: {
+                [key: string]: unknown;
+            }[];
+            /** @description Type-specific JSON. For path_drop: object with optional `filter_group` (PropertyGroupFilter shape — AND/OR tree of property predicates evaluated per record) and/or legacy `patterns` (list of regex strings) + `match_attribute_key` (string). When both are present a record is dropped if EITHER matches. Filter group example: `{"type":"AND","values":[{"type":"AND","values":[{"key":"service.name","operator":"exact","value":"api"}]}]}`. Every group in `filter_group` must contain at least one filter — empty groups never match, so the rule would never apply. For severity_sampling: object with `actions` per severity level and optional `always_keep`. For rate_limit: object with EITHER `logs_per_second` (integer 1–1000000, optional `burst_logs` integer ≥ logs_per_second, max 10000000) OR `kb_per_second` (integer 1–1000000 = 1 GB/s, optional `burst_kb` integer ≥ kb_per_second, max 10000000) — not both. Plus optional `filter_group` to narrow which logs the cap applies to. KB-mode charges each log its own uncompressed byte size, matching how billing measures ingested bytes. */
+            config?: unknown;
+            /** @description Incremented on each update for worker cache coherency. */
+            readonly version?: number;
+            readonly created_by?: number;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string | null;
         };
         /**
          * @description OpenAPI-only PATCH body for dashboards (agents/MCP).
@@ -14665,6 +14794,13 @@ export interface components {
          * @enum {string}
          */
         RoleAtOrganizationEnum: "engineering" | "data" | "product" | "founder" | "leadership" | "marketing" | "sales" | "other";
+        /**
+         * @description * `severity_sampling` - Severity-based reduction
+         *     * `path_drop` - Path exclusion
+         *     * `rate_limit` - Rate limit
+         * @enum {string}
+         */
+        RuleTypeEnum: "severity_sampling" | "path_drop" | "rate_limit";
         /** SamplingRate */
         SamplingRate: {
             /**
@@ -20498,6 +20634,138 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Insight"];
                     "text/csv": components["schemas"]["Insight"];
+                };
+            };
+        };
+    };
+    logs_sampling_rules_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedLogsSamplingRuleList"];
+                };
+            };
+        };
+    };
+    logs_sampling_rules_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogsSamplingRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["LogsSamplingRule"];
+                "multipart/form-data": components["schemas"]["LogsSamplingRule"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsSamplingRule"];
+                };
+            };
+        };
+    };
+    logs_sampling_rules_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logs exclusion rule. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsSamplingRule"];
+                };
+            };
+        };
+    };
+    logs_sampling_rules_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logs exclusion rule. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    logs_sampling_rules_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logs exclusion rule. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLogsSamplingRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedLogsSamplingRule"];
+                "multipart/form-data": components["schemas"]["PatchedLogsSamplingRule"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsSamplingRule"];
                 };
             };
         };
