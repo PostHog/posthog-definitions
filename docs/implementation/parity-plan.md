@@ -197,10 +197,19 @@ identity design recorded here before its codegen commit.
       isolation. Carrier-investigation lesson recorded: probe a candidate
       marker field's maxLength with realistic key+title, not just
       round-trip.
-- [ ] **Error tracking assignment rules** — `environments/{id}/error_tracking/assignment_rules`.
-- [ ] **Error tracking grouping rules** — has `description` → marker.
-- [ ] **Error tracking suppression rules**.
-- [ ] **Error tracking bypass rules** — new since May.
+- [ ] **Error tracking rules (all four kinds)** — ⛔ **Deferred** after live
+      investigation (now under `projects/{id}/error_tracking/<kind>/`).
+      Two independent blockers: (1) **every PUT/PATCH on all four rule
+      endpoints returns 502** (empty body included) while POST/GET/DELETE
+      succeed — and the mutation partially lands anyway; observed on the dev
+      deployment, upstream issue candidate. (2) assignment / suppression /
+      bypass have **no identity carrier** (`description`/`name`/`tags`/
+      `metadata` silently dropped on create). Grouping rules DO round-trip a
+      `description` marker (≥5000 chars) and are the sole revisit candidate
+      once the 502 is fixed — with a state-comparison diff, since
+      `description`/`assignee` are create-only. Ordering: only meaningful
+      where there's no carrier (assignment/bypass), server-forced 0 on
+      grouping — so no order-aware diff mechanism is needed yet.
 - [x] **Error tracking settings** — singleton, shipped (#93). Field-scoped
       PATCH via `retrieve_settings`/`update_settings`.
 - [ ] **Spike detection config** — 🚫 **Excluded.** Its write endpoint
@@ -273,6 +282,16 @@ an IaC capability. Collected here for the maintainer to file.
 4. **Insight alerts**: no description/metadata field — the only free-text
    field is `name`, which surfaces in notification subject lines, so
    external tools have no clean place for identity metadata.
+5. **Error-tracking rules update 502** (dev deployment): PUT/PATCH on all
+   four rule kinds (assignment/grouping/suppression/bypass) return a 502
+   protocol error — empty-body PATCH included — while POST/GET/DELETE on
+   the same rows succeed, and the mutation partially lands despite the
+   error. Blocks updates from any API client. Needs prod confirmation.
+6. **Error-tracking rule create serializers silently drop unknown fields**
+   (`description`/`name`/`tags`/`metadata` on assignment/suppression/
+   bypass) instead of rejecting — same failure mode as insight variables.
+7. **Grouping rule `description`/`assignee` are create-only** — absent from
+   the update serializer, so they cannot be edited after creation.
 
 ## Excluded (with reasons)
 
