@@ -543,6 +543,38 @@ export interface paths {
         patch: operations["feature_flags_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/hog_functions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["hog_functions_list"];
+        put?: never;
+        post: operations["hog_functions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/hog_functions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["hog_functions_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["hog_functions_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/insights/": {
         parameters: {
             query?: never;
@@ -8120,6 +8152,196 @@ export interface components {
          * @enum {string}
          */
         HeatmapSortOrder: "asc" | "desc";
+        HogFunction: {
+            /** Format: uuid */
+            readonly id: string;
+            /**
+             * @description Function type: destination, site_destination, internal_destination, source_webhook, warehouse_source_webhook, site_app, or transformation.
+             *
+             *     * `destination` - Destination
+             *     * `site_destination` - Site Destination
+             *     * `internal_destination` - Internal Destination
+             *     * `source_webhook` - Source Webhook
+             *     * `warehouse_source_webhook` - Warehouse Source Webhook
+             *     * `site_app` - Site App
+             *     * `transformation` - Transformation
+             */
+            type?: components["schemas"]["HogFunctionTypeEnum"] | components["schemas"]["NullEnum"];
+            /** @description Display name for the function. */
+            name?: string | null;
+            /** @description Human-readable description of what this function does. */
+            description?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** @description Whether the function is active and processing events. */
+            enabled?: boolean;
+            /** @description Soft-delete flag. Set to true to archive the function. */
+            deleted?: boolean;
+            /** @description Source code. Hog language for most types; TypeScript for site_destination and site_app. */
+            hog?: string;
+            readonly bytecode: unknown;
+            readonly transpiled: string | null;
+            /** @description Schema defining the configurable input parameters for this function. */
+            inputs_schema?: components["schemas"]["InputsSchemaItem"][];
+            /** @description Values for each input defined in inputs_schema. */
+            inputs?: {
+                [key: string]: components["schemas"]["InputsItem"];
+            };
+            /** @description Event filters that control which events trigger this function. */
+            filters?: components["schemas"]["HogFunctionFilters"];
+            /** @description PII masking configuration with TTL, threshold, and hash expression. */
+            masking?: components["schemas"]["HogFunctionMasking"] | null;
+            /** @description Event-to-destination field mappings. Only for destination and site_destination types. */
+            mappings?: components["schemas"]["Mappings"][] | null;
+            /** @description URL for the function's icon displayed in the UI. */
+            icon_url?: string | null;
+            readonly template: components["schemas"]["HogFunctionTemplate"];
+            /** @description ID of the template to create this function from. */
+            template_id?: string | null;
+            readonly status: components["schemas"]["HogFunctionStatus"] | null;
+            /** @description Execution priority for transformations. Lower values run first. */
+            execution_order?: number | null;
+            /** create in folder */
+            _create_in_folder?: string;
+            /** Format: uuid */
+            readonly batch_export_id: string | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        HogFunctionFilters: {
+            /** @default events */
+            source: components["schemas"]["HogFunctionFiltersSourceEnum"];
+            actions?: {
+                [key: string]: unknown;
+            }[];
+            events?: {
+                [key: string]: unknown;
+            }[];
+            data_warehouse?: {
+                [key: string]: unknown;
+            }[];
+            properties?: {
+                [key: string]: unknown;
+            }[];
+            filter_test_accounts?: boolean;
+            bytecode_error?: string;
+        };
+        /**
+         * @description * `events` - events
+         *     * `person-updates` - person-updates
+         *     * `data-warehouse-table` - data-warehouse-table
+         * @enum {string}
+         */
+        HogFunctionFiltersSourceEnum: "events" | "person-updates" | "data-warehouse-table";
+        HogFunctionMappingTemplate: {
+            /** @description Name of this mapping template. */
+            name: string;
+            /** @description Whether this mapping is enabled by default. */
+            include_by_default?: boolean | null;
+            /** @description Whether this mapping should match all events by default, hiding the event filter UI. */
+            use_all_events_by_default?: boolean | null;
+            /** @description Event filters specific to this mapping. */
+            filters?: unknown;
+            /** @description Input values specific to this mapping. */
+            inputs?: unknown;
+            /** @description Additional input schema fields specific to this mapping. */
+            inputs_schema?: unknown;
+        };
+        HogFunctionMasking: {
+            /** @description Time-to-live in seconds for the masking cache (60–86400). */
+            ttl: number;
+            /** @description Optional threshold count before masking applies. */
+            threshold?: number | null;
+            /** @description Hog expression used to compute the masking hash. */
+            hash: string;
+            /** @description Compiled bytecode for the hash expression. Auto-generated. */
+            bytecode?: unknown;
+        };
+        HogFunctionMinimal: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly type: string | null;
+            readonly name: string | null;
+            readonly description: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly enabled: boolean;
+            readonly hog: string;
+            readonly filters: unknown;
+            readonly icon_url: string | null;
+            readonly template: components["schemas"]["HogFunctionTemplate"];
+            readonly status: components["schemas"]["HogFunctionStatus"] | null;
+            readonly execution_order: number | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        HogFunctionStatus: {
+            state: components["schemas"]["HogFunctionStatusStateEnum"];
+            tokens: number;
+        };
+        /**
+         * @description * `0` - 0
+         *     * `1` - 1
+         *     * `2` - 2
+         *     * `3` - 3
+         *     * `11` - 11
+         *     * `12` - 12
+         * @enum {integer}
+         */
+        HogFunctionStatusStateEnum: 0 | 1 | 2 | 3 | 11 | 12;
+        HogFunctionTemplate: {
+            /** @description Unique template identifier (e.g. 'template-slack'). */
+            id: string;
+            /** @description Display name of the template. */
+            name: string;
+            /** @description What this template does. */
+            description?: string | null;
+            /** @description Source code of the template. */
+            code: string;
+            /** @description Programming language: 'hog' or 'javascript'. */
+            code_language?: string;
+            /** @description Schema defining configurable inputs for functions created from this template. */
+            inputs_schema: unknown;
+            /** @description Function type this template creates. */
+            type: string;
+            /** @description Lifecycle status: alpha, beta, stable, deprecated, or hidden. */
+            status?: string;
+            /** @description Category tags for organizing templates. */
+            category?: unknown;
+            /** @description Whether available on free plans. */
+            free?: boolean;
+            /** @description URL for the template's icon. */
+            icon_url?: string | null;
+            /** @description Default event filters. */
+            filters?: unknown;
+            /** @description Default PII masking configuration. */
+            masking?: unknown;
+            /** @description Pre-defined mapping configurations for destination templates. */
+            mapping_templates?: components["schemas"]["HogFunctionMappingTemplate"][] | null;
+        };
+        /**
+         * @description * `hog` - hog
+         *     * `liquid` - liquid
+         * @enum {string}
+         */
+        HogFunctionTemplatingEnum: "hog" | "liquid";
+        /**
+         * @description * `destination` - Destination
+         *     * `site_destination` - Site Destination
+         *     * `internal_destination` - Internal Destination
+         *     * `source_webhook` - Source Webhook
+         *     * `warehouse_source_webhook` - Warehouse Source Webhook
+         *     * `site_app` - Site App
+         *     * `transformation` - Transformation
+         * @enum {string}
+         */
+        HogFunctionTypeEnum: "destination" | "site_destination" | "internal_destination" | "source_webhook" | "warehouse_source_webhook" | "site_app" | "transformation";
         /** HogQLFilter */
         HogQLFilter: {
             /**
@@ -8597,6 +8819,55 @@ export interface components {
          * @enum {string}
          */
         InlineCohortCalculation: "off" | "auto" | "always";
+        InputsItem: {
+            templating?: components["schemas"]["HogFunctionTemplatingEnum"];
+            readonly bytecode: unknown[];
+            readonly order: number;
+            readonly transpiled: unknown;
+        };
+        InputsSchemaItem: {
+            type: components["schemas"]["InputsSchemaItemTypeEnum"];
+            key: string;
+            label?: string;
+            choices?: {
+                [key: string]: unknown;
+            }[];
+            searchable?: boolean;
+            /** @default false */
+            required: boolean;
+            /** @default false */
+            secret: boolean;
+            /** @default false */
+            hidden: boolean;
+            description?: string;
+            integration?: string;
+            integration_key?: string;
+            requires_field?: string;
+            integration_field?: string;
+            requiredScopes?: string;
+            templating?: boolean | ("hog" | "liquid");
+        };
+        /**
+         * @description * `string` - string
+         *     * `number` - number
+         *     * `boolean` - boolean
+         *     * `dictionary` - dictionary
+         *     * `choice` - choice
+         *     * `json` - json
+         *     * `integration` - integration
+         *     * `integration_multi` - integration_multi
+         *     * `integration_field` - integration_field
+         *     * `email` - email
+         *     * `native_email` - native_email
+         *     * `posthog_assignee` - posthog_assignee
+         *     * `posthog_ticket_tags` - posthog_ticket_tags
+         *     * `posthog_business_hours` - posthog_business_hours
+         *     * `non_failure_status_codes` - non_failure_status_codes
+         *     * `customer_analytics_account_properties` - customer_analytics_account_properties
+         *     * `customer_analytics_account_relationships` - customer_analytics_account_relationships
+         * @enum {string}
+         */
+        InputsSchemaItemTypeEnum: "string" | "number" | "boolean" | "dictionary" | "choice" | "json" | "integration" | "integration_multi" | "integration_field" | "email" | "native_email" | "posthog_assignee" | "posthog_ticket_tags" | "posthog_business_hours" | "non_failure_status_codes" | "customer_analytics_account_properties" | "customer_analytics_account_relationships";
         /** @description Simplified serializer to speed response times when loading large amounts of objects. */
         Insight: {
             readonly id: number;
@@ -9356,6 +9627,14 @@ export interface components {
          * @enum {string}
          */
         ManualMetricType: "funnel" | "mean_count" | "mean_sum_or_avg";
+        Mappings: {
+            name?: string;
+            inputs_schema?: components["schemas"]["InputsSchemaItem"][];
+            inputs?: {
+                [key: string]: components["schemas"]["InputsItem"];
+            };
+            filters?: components["schemas"]["HogFunctionFilters"];
+        };
         /** MarketingAnalyticsAggregatedQuery */
         MarketingAnalyticsAggregatedQuery: {
             /**
@@ -10272,6 +10551,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["FeatureFlag"][];
         };
+        PaginatedHogFunctionMinimalList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["HogFunctionMinimal"][];
+        };
         PaginatedInsightList: {
             /** @example 123 */
             count: number;
@@ -10611,6 +10905,65 @@ export interface components {
              *     * `device_id` - Device ID
              */
             bucketing_identifier?: components["schemas"]["BucketingIdentifierEnum"] | components["schemas"]["NullEnum"];
+        };
+        PatchedHogFunction: {
+            /** Format: uuid */
+            readonly id?: string;
+            /**
+             * @description Function type: destination, site_destination, internal_destination, source_webhook, warehouse_source_webhook, site_app, or transformation.
+             *
+             *     * `destination` - Destination
+             *     * `site_destination` - Site Destination
+             *     * `internal_destination` - Internal Destination
+             *     * `source_webhook` - Source Webhook
+             *     * `warehouse_source_webhook` - Warehouse Source Webhook
+             *     * `site_app` - Site App
+             *     * `transformation` - Transformation
+             */
+            type?: components["schemas"]["HogFunctionTypeEnum"] | components["schemas"]["NullEnum"];
+            /** @description Display name for the function. */
+            name?: string | null;
+            /** @description Human-readable description of what this function does. */
+            description?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at?: string;
+            /** @description Whether the function is active and processing events. */
+            enabled?: boolean;
+            /** @description Soft-delete flag. Set to true to archive the function. */
+            deleted?: boolean;
+            /** @description Source code. Hog language for most types; TypeScript for site_destination and site_app. */
+            hog?: string;
+            readonly bytecode?: unknown;
+            readonly transpiled?: string | null;
+            /** @description Schema defining the configurable input parameters for this function. */
+            inputs_schema?: components["schemas"]["InputsSchemaItem"][];
+            /** @description Values for each input defined in inputs_schema. */
+            inputs?: {
+                [key: string]: components["schemas"]["InputsItem"];
+            };
+            /** @description Event filters that control which events trigger this function. */
+            filters?: components["schemas"]["HogFunctionFilters"];
+            /** @description PII masking configuration with TTL, threshold, and hash expression. */
+            masking?: components["schemas"]["HogFunctionMasking"] | null;
+            /** @description Event-to-destination field mappings. Only for destination and site_destination types. */
+            mappings?: components["schemas"]["Mappings"][] | null;
+            /** @description URL for the function's icon displayed in the UI. */
+            icon_url?: string | null;
+            readonly template?: components["schemas"]["HogFunctionTemplate"];
+            /** @description ID of the template to create this function from. */
+            template_id?: string | null;
+            readonly status?: components["schemas"]["HogFunctionStatus"] | null;
+            /** @description Execution priority for transformations. Lower values run first. */
+            execution_order?: number | null;
+            /** create in folder */
+            _create_in_folder?: string;
+            /** Format: uuid */
+            readonly batch_export_id?: string | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type?: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
         };
         /** @description Simplified serializer to speed response times when loading large amounts of objects. */
         PatchedInsight: {
@@ -20254,6 +20607,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeatureFlag"];
+                };
+            };
+        };
+    };
+    hog_functions_list: {
+        parameters: {
+            query?: {
+                created_at?: string;
+                created_by?: number;
+                enabled?: boolean;
+                id?: string;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Multiple values may be separated by commas. */
+                type?: string[];
+                updated_at?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedHogFunctionMinimalList"];
+                };
+            };
+        };
+    };
+    hog_functions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["HogFunction"];
+                "application/x-www-form-urlencoded": components["schemas"]["HogFunction"];
+                "multipart/form-data": components["schemas"]["HogFunction"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HogFunction"];
+                };
+            };
+        };
+    };
+    hog_functions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this hog function. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HogFunction"];
+                };
+            };
+        };
+    };
+    hog_functions_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this hog function. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHogFunction"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedHogFunction"];
+                "multipart/form-data": components["schemas"]["PatchedHogFunction"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HogFunction"];
                 };
             };
         };
