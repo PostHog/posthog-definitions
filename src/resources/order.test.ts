@@ -16,6 +16,7 @@ import { experimentSavedMetricResource } from "./experiment-saved-metric/index.j
 import { featureFlagResource } from "./feature-flag/index.js";
 import { insightResource } from "./insight/index.js";
 import { projectSettingsResource } from "./project-settings/index.js";
+import { messagingTemplateResource } from "./messaging-template/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
 
 describe("topoOrder", () => {
@@ -185,6 +186,7 @@ describe("RESOURCES (real registry)", () => {
         insightResource,
         projectSettingsResource,
         propertyGroupResource,
+        messagingTemplateResource,
       ].map((r) => r.name),
     );
     expect(new Set(RESOURCES.map((r) => r.name))).toEqual(expected);
