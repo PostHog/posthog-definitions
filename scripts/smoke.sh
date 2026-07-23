@@ -174,7 +174,7 @@ export default dashboard({
   name: "${DASHBOARD_KEY}",
   description: "Smoke fixture dashboard",
   tiles: [
-    { insight: smokeInsight, layout: { x: 0, y: 0, w: 6, h: 4 } },
+    { insight: smokeInsight },
     text({ body: "smoke note", layout: { x: 6, y: 0, w: 6, h: 4 } }),
   ],
 });

@@ -28,10 +28,14 @@ export type DashboardCreate = {
   pinned?: boolean;
   tags?: string[];
   restriction_level?: number;
-  tiles?: unknown[];
+  // NB: no `tiles` — `Dashboard.tiles` is read-only on the API. Tiles are
+  // written via the tile endpoints below (text/button) and via the insight's
+  // `dashboards` membership (insight tiles).
 };
 
 export type DashboardUpdate = Partial<DashboardCreate>;
+
+export type TileLayout = { x: number; y: number; w: number; h: number };
 
 type GeneratedDashboard = components["schemas"]["Dashboard"];
 type GeneratedDashboardBasic = components["schemas"]["DashboardBasic"];
@@ -136,21 +140,75 @@ export async function updateDashboard(
   options: { verbose?: boolean } = {},
 ): Promise<ServerDashboard> {
   const api = createApiClient(config, { verbose: options.verbose });
+  // PatchedPatchedDashboardOpenApi marks `delete_insights` as required — an
+  // upstream schema bug. Pass the `delete_insights: false` default the server
+  // applies for non-delete PATCHes anyway. Tiles are not sent here (read-only).
   const { data } = await api.PATCH("/api/projects/{project_id}/dashboards/{id}/", {
     params: { path: { project_id: config.projectId, id } },
-    // PatchedDashboard marks `tiles` (which the API accepts) as readonly and
-    // `delete_insights` as required — both upstream schema bugs. Cast just
-    // `tiles` and pass the schema-required `delete_insights: false` (the
-    // default the server applies for non-delete PATCHes anyway).
     body: {
       ...payload,
       description: payload.description ?? undefined,
       restriction_level: payload.restriction_level as PatchedDashboardBody["restriction_level"],
-      tiles: payload.tiles as PatchedDashboardBody["tiles"],
       delete_insights: false,
     },
   });
   return toServerDashboard(data!);
+}
+
+// ---------------------------------------------------------------------------
+// Tile endpoints. `Dashboard.tiles` is read-only, so text/button tiles are
+// created and mutated through these dedicated routes. Insight tiles are
+// managed via the insight's `dashboards` membership (see insight/client.ts).
+// ---------------------------------------------------------------------------
+
+type CreateTextTileBody = components["schemas"]["CreateTextTileRequest"];
+type ReorderLayout = components["schemas"]["LayoutEnum"];
+
+/** Both TileLayouts breakpoints get the same box; pull reads `sm` back. */
+function tileLayouts(layout: TileLayout): CreateTextTileBody["layouts"] {
+  return { sm: layout, xs: layout } as CreateTextTileBody["layouts"];
+}
+
+export async function createTextTile(
+  config: ClientConfig,
+  dashboardId: number,
+  body: string,
+  layout: TileLayout,
+  color: string | undefined,
+  options: { verbose?: boolean } = {},
+): Promise<void> {
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.POST("/api/projects/{project_id}/dashboards/{id}/create_text_tile/", {
+    params: { path: { project_id: config.projectId, id: dashboardId } },
+    body: { body, layouts: tileLayouts(layout), ...(color !== undefined && { color }) },
+  });
+}
+
+export async function deleteTile(
+  config: ClientConfig,
+  dashboardId: number,
+  tileId: number,
+  options: { verbose?: boolean } = {},
+): Promise<void> {
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.POST("/api/projects/{project_id}/dashboards/{id}/delete_tile/", {
+    params: { path: { project_id: config.projectId, id: dashboardId } },
+    body: { tile_id: tileId },
+  });
+}
+
+export async function reorderTiles(
+  config: ClientConfig,
+  dashboardId: number,
+  tileOrder: number[],
+  layout: "preserve" | "two_column" | "full_width",
+  options: { verbose?: boolean } = {},
+): Promise<void> {
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.POST("/api/projects/{project_id}/dashboards/{id}/reorder_tiles/", {
+    params: { path: { project_id: config.projectId, id: dashboardId } },
+    body: { tile_order: tileOrder, layout: layout as ReorderLayout },
+  });
 }
 
 export async function deleteDashboard(

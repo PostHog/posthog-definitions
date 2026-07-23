@@ -68,9 +68,9 @@ export default dashboard({
       style: "primary",
       layout: { x: 9, y: 0, w: 3, h: 1 },
     }),
-    { insight: ticketsByDay, layout: { x: 0, y: 1, w: 6, h: 4 } },
-    { insight: urgentTickets, layout: { x: 6, y: 1, w: 6, h: 4 } },
-    { insight: exceptionsDaily, layout: { x: 0, y: 5, w: 6, h: 4 } },
-    { insight: topOrgs, layout: { x: 6, y: 5, w: 6, h: 4 } },
+    { insight: ticketsByDay },
+    { insight: urgentTickets },
+    { insight: exceptionsDaily },
+    { insight: topOrgs },
   ],
 });
