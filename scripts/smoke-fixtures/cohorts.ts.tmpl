@@ -1,0 +1,18 @@
+import { cohort } from "@posthog/definitions";
+export default cohort({
+  key: "@@COHORT_KEY@@",
+  name: "@@COHORT_KEY@@",
+  filters: {
+    properties: {
+      type: "OR",
+      values: [
+        {
+          type: "OR",
+          values: [
+            { key: "email", value: "smoke@example.com", operator: "exact", type: "person" },
+          ],
+        },
+      ],
+    },
+  },
+});

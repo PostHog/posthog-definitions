@@ -16,6 +16,21 @@
 # project-settings (singleton) is intentionally skipped: applying it would
 # mutate a project-wide row we can't restore.
 #
+# ---------------------------------------------------------------------------
+# Adding a resource is one fixture file plus one registry entry:
+#
+#   1. Drop a template at scripts/smoke-fixtures/<kind>.ts.tmpl. Use
+#      @@<TOKEN>@@ placeholders where a per-run key belongs (they are
+#      substituted from the registry below); cross-reference another
+#      fixture by its fixed on-disk path (e.g. ../insights/smoke-insight.js).
+#   2. Add one row to SMOKE_RESOURCES: "<kind>|<key-prefix>|<TOKEN>|<cleanup-flag>".
+#
+# The seed dir, the fixture filename (<key-prefix>.ts), the --kind list, the
+# key substitutions, and the smoke-cleanup arguments are all derived from
+# that row — there is nothing else to touch. Order the rows dependents-first;
+# cleanup deletes in registry order (a dependent must drop before its deps).
+# ---------------------------------------------------------------------------
+#
 # Steps:
 #   1. Seed:    write the fixture and apply it.
 #   2. Pull:    pull the same kinds back into a scratch dir.
@@ -39,6 +54,7 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLI="pnpm --silent exec tsx $REPO_ROOT/src/cli/index.ts"
+FIXTURES_DIR="$REPO_ROOT/scripts/smoke-fixtures"
 
 # Work dirs live inside the repo so that files referencing `@posthog/definitions`
 # resolve via the workspace's own node_modules (the package self-imports through
@@ -52,42 +68,70 @@ mkdir -p "$SEED_DIR" "$PULL_DIR"
 # Unique key suffix per run. Reruns don't collide because of ${STAMP}; the
 # trap cleanup nukes the rows we created.
 STAMP="$(date +%s)-$$"
-INSIGHT_KEY="smoke-insight-${STAMP}"
-DASHBOARD_KEY="smoke-dashboard-${STAMP}"
-PROPERTY_GROUP_KEY="smoke-pg-${STAMP}"
-EVENT_DEFINITION_KEY="smoke-event-${STAMP}"
-ACTION_KEY="smoke-action-${STAMP}"
-FLAG_KEY="smoke-flag-${STAMP}"
-HOLDOUT_KEY="smoke-holdout-${STAMP}"
-SAVED_METRIC_KEY="smoke-metric-${STAMP}"
-EXPERIMENT_KEY="smoke-experiment-${STAMP}"
-COHORT_KEY="smoke-cohort-${STAMP}"
-ENDPOINT_KEY="smoke-endpoint-${STAMP}"
 
-# Names that round-trip cleanly through pull's slug-from-name. We use the
-# event-definition `name` as both the spec key AND the on-the-wire event
-# name; the suffix keeps event catalogues uncluttered.
-EVENT_NAME="${EVENT_DEFINITION_KEY}"
+# ---- Resource registry --------------------------------------------------
+# One row per seeded resource: "<kind>|<key-prefix>|<TOKEN>|<cleanup-flag>".
+#   kind         seed dir + --kind slug (plural, matches src/resources name)
+#   key-prefix   fixture filename and key stem; the key is <key-prefix>-${STAMP}
+#   TOKEN        the @@TOKEN@@ placeholder substituted in the fixture template
+#   cleanup-flag the --<flag>=<key> argument passed to smoke-cleanup.ts
+# Ordered dependents-first: cleanup drops rows in this order so a resource
+# never outlives something that references it.
+SMOKE_RESOURCES=(
+  "experiments|smoke-experiment|EXPERIMENT_KEY|experiment"
+  "feature-flags|smoke-flag|FLAG_KEY|feature-flag"
+  "experiment-holdouts|smoke-holdout|HOLDOUT_KEY|experiment-holdout"
+  "experiment-saved-metrics|smoke-metric|SAVED_METRIC_KEY|experiment-saved-metric"
+  "dashboards|smoke-dashboard|DASHBOARD_KEY|dashboard"
+  "insights|smoke-insight|INSIGHT_KEY|insight"
+  "event-definitions|smoke-event|EVENT_DEFINITION_KEY|event-definition"
+  "actions|smoke-action|ACTION_KEY|action"
+  "property-groups|smoke-pg|PROPERTY_GROUP_KEY|property-group"
+  "cohorts|smoke-cohort|COHORT_KEY|cohort"
+  "endpoints|smoke-endpoint|ENDPOINT_KEY|endpoint"
+)
 
-# Resource kinds we'll seed and pull. Used both in --kind for pull and in
-# the no-op assertion's filter (we don't want unrelated kinds dirtying it).
-SMOKE_KINDS="insights,dashboards,property-groups,event-definitions,actions,feature-flags,experiment-holdouts,experiment-saved-metrics,experiments,cohorts,endpoints"
+# The per-run key for a given kind slug (e.g. key_for feature-flags).
+key_for() {
+  local want="$1" row kind prefix
+  for row in "${SMOKE_RESOURCES[@]}"; do
+    IFS='|' read -r kind prefix _ _ <<<"$row"
+    if [[ "$kind" == "$want" ]]; then
+      echo "${prefix}-${STAMP}"
+      return 0
+    fi
+  done
+  echo "smoke: no registry entry for kind '$want'" >&2
+  return 1
+}
+
+# Resource kinds we'll seed and pull, derived from the registry. Used both in
+# --kind for pull and in the no-op assertion's filter (we don't want unrelated
+# kinds dirtying it).
+SMOKE_KINDS=""
+for row in "${SMOKE_RESOURCES[@]}"; do
+  IFS='|' read -r kind _ _ _ <<<"$row"
+  SMOKE_KINDS="${SMOKE_KINDS:+$SMOKE_KINDS,}$kind"
+done
+
+# sed program that maps every @@TOKEN@@ to its per-run key. Keys are
+# [a-z0-9-] only, so no sed-metacharacter escaping is needed.
+SUBST_SED="$WORK_DIR/subst.sed"
+: >"$SUBST_SED"
+for row in "${SMOKE_RESOURCES[@]}"; do
+  IFS='|' read -r _ prefix token _ <<<"$row"
+  printf 's/@@%s@@/%s/g\n' "$token" "${prefix}-${STAMP}" >>"$SUBST_SED"
+done
 
 cleanup() {
   echo
   echo "smoke: deleting smoke-created server rows"
-  pnpm --silent exec tsx "$REPO_ROOT/scripts/smoke-cleanup.ts" \
-    "--experiment=${EXPERIMENT_KEY}" \
-    "--feature-flag=${FLAG_KEY}" \
-    "--experiment-holdout=${HOLDOUT_KEY}" \
-    "--experiment-saved-metric=${SAVED_METRIC_KEY}" \
-    "--dashboard=${DASHBOARD_KEY}" \
-    "--insight=${INSIGHT_KEY}" \
-    "--event-definition=${EVENT_DEFINITION_KEY}" \
-    "--action=${ACTION_KEY}" \
-    "--property-group=${PROPERTY_GROUP_KEY}" \
-    "--cohort=${COHORT_KEY}" \
-    "--endpoint=${ENDPOINT_KEY}" \
+  local args=()
+  for row in "${SMOKE_RESOURCES[@]}"; do
+    IFS='|' read -r _ prefix _ flag <<<"$row"
+    args+=("--${flag}=${prefix}-${STAMP}")
+  done
+  pnpm --silent exec tsx "$REPO_ROOT/scripts/smoke-cleanup.ts" "${args[@]}" \
     || echo "smoke: cleanup hit an error (continuing)"
   echo "smoke: removing workdir $WORK_DIR"
   rm -rf "$WORK_DIR"
@@ -142,172 +186,19 @@ assert_pull_wrote_at_least() {
 # ---- 1. Seed ------------------------------------------------------------
 step "1. Seed one definition per kind (suffix=${STAMP})"
 
-mkdir -p \
-  "$SEED_DIR/insights" \
-  "$SEED_DIR/dashboards" \
-  "$SEED_DIR/property-groups" \
-  "$SEED_DIR/event-definitions" \
-  "$SEED_DIR/actions" \
-  "$SEED_DIR/feature-flags" \
-  "$SEED_DIR/experiment-holdouts" \
-  "$SEED_DIR/experiment-saved-metrics" \
-  "$SEED_DIR/experiments" \
-  "$SEED_DIR/cohorts" \
-  "$SEED_DIR/endpoints"
-
-# Insight — referenced by the dashboard tile below.
-cat > "$SEED_DIR/insights/smoke-insight.ts" <<EOF
-import { hogql, insight } from "@posthog/definitions";
-export default insight({
-  key: "${INSIGHT_KEY}",
-  name: "${INSIGHT_KEY}",
-  query: hogql("SELECT 1 AS smoke"),
-});
-EOF
-
-# Dashboard — references the insight by import.
-cat > "$SEED_DIR/dashboards/smoke-dashboard.ts" <<EOF
-import { dashboard, text } from "@posthog/definitions";
-import smokeInsight from "../insights/smoke-insight.js";
-export default dashboard({
-  key: "${DASHBOARD_KEY}",
-  name: "${DASHBOARD_KEY}",
-  description: "Smoke fixture dashboard",
-  tiles: [
-    { insight: smokeInsight, layout: { x: 0, y: 0, w: 6, h: 4 } },
-    text({ body: "smoke note", layout: { x: 6, y: 0, w: 6, h: 4 } }),
-  ],
-});
-EOF
-
-# Property group — referenced by the event-definition.
-cat > "$SEED_DIR/property-groups/smoke-pg.ts" <<EOF
-import { propertyGroup } from "@posthog/definitions";
-export default propertyGroup({
-  key: "${PROPERTY_GROUP_KEY}",
-  description: "Smoke fixture property group",
-  properties: {
-    plan: { type: "String", required: true, description: "Subscription plan" },
-    seats: { type: "Numeric" },
-  },
-});
-EOF
-
-# Event definition — links to the property group above.
-cat > "$SEED_DIR/event-definitions/smoke-event.ts" <<EOF
-import { eventDefinition } from "@posthog/definitions";
-import smokePg from "../property-groups/smoke-pg.js";
-export default eventDefinition({
-  key: "${EVENT_DEFINITION_KEY}",
-  name: "${EVENT_NAME}",
-  description: "Smoke fixture event",
-  propertyGroups: [smokePg],
-});
-EOF
-
-# Feature flag — referenced by the experiment.
-cat > "$SEED_DIR/feature-flags/smoke-flag.ts" <<EOF
-import { featureFlag } from "@posthog/definitions";
-export default featureFlag({
-  key: "${FLAG_KEY}",
-  name: "${FLAG_KEY}",
-  active: true,
-  filters: {
-    groups: [{ properties: [], rollout_percentage: 100 }],
-    // Multivariate — experiment validation requires control + ≥1 test.
-    multivariate: {
-      variants: [
-        { key: "control", rollout_percentage: 50 },
-        { key: "test", rollout_percentage: 50 },
-      ],
-    },
-  },
-});
-EOF
-
-# Experiment holdout — referenced by the experiment.
-cat > "$SEED_DIR/experiment-holdouts/smoke-holdout.ts" <<EOF
-import { experimentHoldout } from "@posthog/definitions";
-export default experimentHoldout({
-  key: "${HOLDOUT_KEY}",
-  name: "${HOLDOUT_KEY}",
-  filters: [{ properties: [], rollout_percentage: 10 }],
-});
-EOF
-
-# Experiment saved metric — referenced by the experiment.
-cat > "$SEED_DIR/experiment-saved-metrics/smoke-metric.ts" <<EOF
-import { experimentSavedMetric } from "@posthog/definitions";
-export default experimentSavedMetric({
-  key: "${SAVED_METRIC_KEY}",
-  name: "${SAVED_METRIC_KEY}",
-  query: {
-    kind: "ExperimentMetric",
-    metric_type: "mean",
-    source: { kind: "EventsNode", event: "${EVENT_NAME}" },
-  },
-});
-EOF
-
-# Experiment — pulls in flag + holdout + saved metric.
-cat > "$SEED_DIR/experiments/smoke-experiment.ts" <<EOF
-import { experiment } from "@posthog/definitions";
-import smokeFlag from "../feature-flags/smoke-flag.js";
-import smokeHoldout from "../experiment-holdouts/smoke-holdout.js";
-import smokeMetric from "../experiment-saved-metrics/smoke-metric.js";
-export default experiment({
-  key: "${EXPERIMENT_KEY}",
-  name: "${EXPERIMENT_KEY}",
-  featureFlag: smokeFlag,
-  holdout: smokeHoldout,
-  primarySavedMetrics: [smokeMetric],
-});
-EOF
-
-# Cohort — independent.
-cat > "$SEED_DIR/cohorts/smoke-cohort.ts" <<EOF
-import { cohort } from "@posthog/definitions";
-export default cohort({
-  key: "${COHORT_KEY}",
-  name: "${COHORT_KEY}",
-  filters: {
-    properties: {
-      type: "OR",
-      values: [
-        {
-          type: "OR",
-          values: [
-            { key: "email", value: "smoke@example.com", operator: "exact", type: "person" },
-          ],
-        },
-      ],
-    },
-  },
-});
-EOF
-
-# Action — independent.
-cat > "$SEED_DIR/actions/smoke-action.ts" <<EOF
-import { action } from "@posthog/definitions";
-export default action({
-  key: "${ACTION_KEY}",
-  name: "${ACTION_KEY}",
-  description: "Smoke fixture action",
-  steps: [
-    { event: "${EVENT_NAME}" },
-  ],
-});
-EOF
-
-# Endpoint — independent.
-cat > "$SEED_DIR/endpoints/smoke-endpoint.ts" <<EOF
-import { endpoint } from "@posthog/definitions";
-export default endpoint({
-  key: "${ENDPOINT_KEY}",
-  name: "${ENDPOINT_KEY}",
-  query: { kind: "HogQLQuery", query: "select 1 as smoke" },
-});
-EOF
+# Render every fixture template into its seed dir. The filename is
+# <key-prefix>.ts so cross-fixture imports (which reference that fixed path)
+# resolve.
+for row in "${SMOKE_RESOURCES[@]}"; do
+  IFS='|' read -r kind prefix _ _ <<<"$row"
+  template="$FIXTURES_DIR/$kind.ts.tmpl"
+  if [[ ! -f "$template" ]]; then
+    echo "smoke: missing fixture template $template" >&2
+    exit 1
+  fi
+  mkdir -p "$SEED_DIR/$kind"
+  sed -f "$SUBST_SED" "$template" >"$SEED_DIR/$kind/$prefix.ts"
+done
 
 # Apply the seed (no --prune so unrelated iac-tagged rows stay intact).
 $CLI apply --dir "$SEED_DIR" --json | jq '{totals, byResource}'
@@ -331,6 +222,7 @@ expect_no_changes "$PULL_DIR"
 # Edit happens on the PULL tree — pull's tag-back stamps the server with
 # hashes derived from the pulled spec, which diverge from seed-spec hashes
 # whenever pull writes fields the seed omitted.
+FLAG_KEY="$(key_for feature-flags)"
 PULLED_FLAG_FILE="$PULL_DIR/feature-flags/${FLAG_KEY}.ts"
 if [[ ! -f "$PULLED_FLAG_FILE" ]]; then
   echo "smoke: expected pulled flag at $PULLED_FLAG_FILE" >&2

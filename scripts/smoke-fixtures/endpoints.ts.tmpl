@@ -1,0 +1,6 @@
+import { endpoint } from "@posthog/definitions";
+export default endpoint({
+  key: "@@ENDPOINT_KEY@@",
+  name: "@@ENDPOINT_KEY@@",
+  query: { kind: "HogQLQuery", query: "select 1 as smoke" },
+});
