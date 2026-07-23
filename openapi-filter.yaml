@@ -23,6 +23,12 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  - early_access_feature_list
+  - early_access_feature_create
+  - early_access_feature_retrieve
+  - early_access_feature_partial_update
+  - early_access_feature_destroy
+
   - endpoints_list
   - endpoints_create
   - endpoints_retrieve
