@@ -79,7 +79,7 @@ carrier in this order:
 - [x] `feat(action): pull codegen` — discovered during Phase 0: actions was
       the only resource without pull support, breaking `pull --kind actions`
       and the smoke gate.
-- [ ] `feat(apply): --kind scoping for plan and prune` — discovered in Wave 1:
+- [x] `feat(apply): --kind scoping for plan and prune` — discovered in Wave 1:
       `apply --prune` has no kind filter, so on a shared project a prune pass
       deletes every orphan of every kind (a global prune against the shared
       dev project would have swept ~500 rows belonging to other sessions).
@@ -132,12 +132,16 @@ pattern.
       a cosmetic resource), and `name` is not unique-enforced so it can't be
       a bare natural key either (live-verified). Stays 🟡 (referenced by
       `dataColorThemeKey`, unsynced) until a cleaner carrier appears.
-- [ ] **Hog functions** — `environments/{id}/hog_functions` (destinations /
-      transformations / site apps). Description marker. Secret inputs are
-      masked on read — hash must exclude masked values; document that secret
-      rotation is out-of-band, or support env-var indirection in the spec.
-- [ ] **Hog flows** — `environments/{id}/hog_flows` (campaigns). Description
-      marker. Big nested action/edge graph — hash canonicalisation needs care.
+- [x] **Hog functions** — `environments/{id}/hog_functions`. Shipped (#89).
+      Description marker. Establishes the secrets convention:
+      `secret("ENV_VAR")` — value from env at create/rotation, never in
+      files, excluded from hash; explicit `rotate` token forces re-send.
+      Template-based only (custom raw hog deferred); templateId drift errors
+      loudly; soft-delete via PATCH.
+- [x] **Hog flows** — `environments/{id}/hog_flows`. Shipped (#90).
+      Description marker. Writable model is `actions`+`edges` (top-level
+      `trigger` is a derived read-only view); node ids are author-controlled;
+      order preserved; validation enforces one trigger + edge integrity.
 - [ ] **Messaging templates** — `environments/{id}/messaging_templates`
       (`MessageTemplate` schema). Carrier TBD at implementation (likely
       description).
