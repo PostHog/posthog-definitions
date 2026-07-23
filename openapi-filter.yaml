@@ -86,6 +86,9 @@ inverseOperationIds:
   - actions_partial_update
   - actions_destroy
 
+  - error_tracking_settings_retrieve_settings_retrieve
+  - error_tracking_settings_update_settings_partial_update
+
 unusedComponents:
   - schemas
   - parameters

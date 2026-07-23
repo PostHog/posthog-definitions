@@ -160,6 +160,38 @@ export interface paths {
         patch: operations["environments_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/error_tracking/settings/retrieve_settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["error_tracking_settings_retrieve_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/error_tracking/settings/update_settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["error_tracking_settings_update_settings_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/event_definitions/": {
         parameters: {
             query?: never;
@@ -4244,6 +4276,16 @@ export interface components {
              * @default null
              */
             warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
+        ErrorTrackingSettings: {
+            /** @description Maximum number of exception events ingested per bucket for the entire project. Null removes the limit. */
+            project_rate_limit_value?: number | null;
+            /** @description Bucket window over which the project-wide rate limit applies, in minutes. */
+            project_rate_limit_bucket_size_minutes?: number | null;
+            /** @description Maximum number of exception events ingested per bucket for each individual issue. Null removes the limit. */
+            per_issue_rate_limit_value?: number | null;
+            /** @description Bucket window over which the per-issue rate limit applies, in minutes. */
+            per_issue_rate_limit_bucket_size_minutes?: number | null;
         };
         /**
          * @description * `server` - Server
@@ -10450,6 +10492,16 @@ export interface components {
             post_to_slack: boolean;
             default_columns?: string[];
             readonly media_preview_urls?: string[];
+        };
+        PatchedErrorTrackingSettings: {
+            /** @description Maximum number of exception events ingested per bucket for the entire project. Null removes the limit. */
+            project_rate_limit_value?: number | null;
+            /** @description Bucket window over which the project-wide rate limit applies, in minutes. */
+            project_rate_limit_bucket_size_minutes?: number | null;
+            /** @description Maximum number of exception events ingested per bucket for each individual issue. Null removes the limit. */
+            per_issue_rate_limit_value?: number | null;
+            /** @description Bucket window over which the per-issue rate limit applies, in minutes. */
+            per_issue_rate_limit_bucket_size_minutes?: number | null;
         };
         /** @description A holdout group — a stable slice of users excluded from experiment exposure. */
         PatchedExperimentHoldout: {
@@ -19284,6 +19336,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Team"];
+                };
+            };
+        };
+    };
+    error_tracking_settings_retrieve_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorTrackingSettings"];
+                };
+            };
+        };
+    };
+    error_tracking_settings_update_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedErrorTrackingSettings"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedErrorTrackingSettings"];
+                "multipart/form-data": components["schemas"]["PatchedErrorTrackingSettings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorTrackingSettings"];
                 };
             };
         };
