@@ -58,6 +58,64 @@ If the resource's API has no `tags` field, the identity carrier changes but the 
 
 The safety invariant survives because rows without the marker (or with the marker no longer at end-of-string) are invisible to the CLI.
 
+### Choosing the identity carrier (decision tree)
+
+Almost none of the remaining resources have a `tags` field. Pick the identity
+carrier in this order — the first that applies wins:
+
+1. **`tags` field** → `iac:<resources>:<key>` tag. The dashboards / insights /
+   feature-flags / actions / event-definitions pattern. Preferred whenever the
+   API round-trips a `tags` array.
+2. **A natural unique key the API enforces** (e.g. endpoints' `code_name`,
+   warehouse saved queries' `name`) → use it directly as the resource key. The
+   hash marker still needs a home: put it in a free-text field if one exists,
+   otherwise fall back to a state-comparison diff (no hash short-circuit — the
+   diff compares the projected spec against the server row every apply).
+3. **A free-text field the API round-trips** (`description`, `content`) →
+   trailing HTML-comment marker, the endpoints pattern documented above.
+4. **None of the above** → design the identity per-resource _before_ writing any
+   code, and record the decision in `docs/implementation/parity-plan.md`.
+   Candidates that land here: annotations, alerts, subscriptions, warehouse view
+   links, some error-tracking rules. Options include treating a composite of
+   natural fields as the key (e.g. `(date_marker, scope)` for annotations, or
+   `(source_table, joining_table, field_name)` for view links) or a visible
+   marker in a user-facing text field.
+
+Singletons (one row per project) skip this entirely — see
+`add-singleton-resource`. Order-sensitive collections (a server-side `order` /
+`reorder` endpoint, e.g. logs sampling rules or error-tracking rules) need an
+order-aware diff on top of whichever carrier you pick.
+
+## Expose the API operations (codegen)
+
+Every resource client imports its request/response types from
+`src/generated/api.d.ts` (`import type { components } from "../../generated/api.js"`).
+That file is **generated** — it is a trimmed projection of PostHog's OpenAPI
+schema, and it only contains the operations allowlisted in
+`openapi-filter.yaml`. A new resource whose operations are not in the allowlist
+has no generated types, so its `client.ts` will not typecheck.
+
+This is the first commit in the resource's series (`chore(codegen): expose
+<resource> operations`), kept separate because the generated diff is large and
+reviewers skip it.
+
+1. Find the resource's `operationId`s in the spec. They follow the pattern
+   `<collection>_list`, `_create`, `_retrieve`, `_partial_update`, `_destroy`
+   (env-scoped collections are prefixed, e.g. `environments_endpoints_list`).
+   Grep the raw schema or the prod OpenAPI JSON for the collection name.
+2. Add them to `openapi-filter.yaml` under `inverseOperationIds`, in a new
+   block matching the existing grouping (one blank-line-separated block per
+   resource). Include only the verbs the resource actually uses — most need
+   `list` / `create` / `retrieve` / `partial_update`; add `destroy` only if the
+   resource supports pruning.
+3. Run `pnpm codegen`. It fetches the schema
+   (`https://us.posthog.com/api/schema/?format=json` by default, override with
+   `POSTHOG_OPENAPI_URL`), filters to the allowlist, prunes orphaned component
+   schemas, and rewrites `src/generated/api.d.ts`.
+4. `pnpm typecheck` to confirm the new `components["schemas"][...]` names
+   resolve, then commit **only** `openapi-filter.yaml` and
+   `src/generated/api.d.ts`.
+
 ## Directory layout for a new resource
 
 Each new resource lives in its own self-contained directory under `src/resources/<resource>/`. The directory is the unit of contribution: everything a reviewer needs to understand the resource is co-located, and the generic pipeline (under `src/apply/`) is the only thing that depends on it.
@@ -308,6 +366,37 @@ Match the existing style — see `examples/posthog/cohorts/`, `examples/posthog/
 - **Top-of-file comments explain what the _file_ demonstrates**, not what the resource is ("Reusable property group: events that touch billing share this shape so the typed client can enforce consistent property names …"). The reader already knows what a cohort is; they're skimming to learn how to author one.
 
 Then run `pnpm dev apply --dry-run --dir examples/posthog` and confirm the new files load cleanly with no validation errors. The full examples directory is part of the verification flow below — this is just the quick local check.
+
+## Smoke fixture (required)
+
+`scripts/smoke.sh` seeds **one of each collection resource** against a real
+project, then round-trips it through `apply → pull → verify → edit → apply`. It
+is the end-to-end regression net; a new resource must join it (its own commit,
+`test(smoke): seed <resource>`).
+
+Wire in the new resource by supplying:
+
+- **A fixture** — the `.ts` definition the seed writes and applies, keyed off
+  the per-run `${STAMP}` so reruns never collide (e.g.
+  `smoke-<resource>-${STAMP}`). Match the cross-resource dependency graph if the
+  resource references another (create dependencies before dependents).
+- **The seed wiring** — the key variable, the `SMOKE_KINDS` entry (the `--kind`
+  list that both the pull and the no-op assertion are scoped to), and the
+  cleanup argument passed to `scripts/smoke-cleanup.ts` (`--<resource>=<key>`)
+  so the trap deletes the row on exit. `smoke-cleanup.ts` needs the resource's
+  `list*` + delete wrappers imported so it can find and remove the tagged row.
+
+  The goal state is a table-driven seed registry where these three touch-points
+  collapse into a single entry alongside the fixture file — if that refactor has
+  landed, add one registry row instead of editing the seed in three places.
+
+Singletons are intentionally excluded from the smoke seed — applying them would
+mutate a project-wide row the script can't restore (see the header comment in
+`scripts/smoke.sh`).
+
+Run it with `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID` set:
+`pnpm smoke`. The run must end with the no-op assertion passing and the trap
+cleanup deleting every row it created.
 
 ## Verification (manual, end-to-end)
 
