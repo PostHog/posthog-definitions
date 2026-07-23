@@ -86,6 +86,12 @@ inverseOperationIds:
   - actions_partial_update
   - actions_destroy
 
+  - dashboard_templates_list
+  - dashboard_templates_create
+  - dashboard_templates_retrieve
+  - dashboard_templates_partial_update
+  - dashboard_templates_destroy
+
 unusedComponents:
   - schemas
   - parameters
