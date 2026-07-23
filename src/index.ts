@@ -75,5 +75,14 @@ export type {
 export { projectSettings } from "./resources/project-settings/index.js";
 export type { ProjectSettings } from "./resources/project-settings/index.js";
 
+export { hogFlow } from "./resources/hog-flow/index.js";
+export type {
+  HogFlow,
+  HogFlowStatus,
+  HogFlowExitCondition,
+  HogFlowAction,
+  HogFlowEdge,
+} from "./resources/hog-flow/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";
