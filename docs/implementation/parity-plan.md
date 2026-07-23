@@ -67,7 +67,7 @@ carrier in this order:
       one env var + fixture + cleanup arg per resource; with ~25 resources
       incoming, derive seeded kinds from a fixture registry so a new resource
       is one fixture file + one entry.
-- [ ] `fix(spec): migrate to current prod spec` — a plain codegen refresh is
+- [x] `fix(spec): migrate to current prod spec` — a plain codegen refresh is
       blocked: since the last regeneration the spec moved endpoints from the
       `environments/` router to `projects/` (operationIds renamed), renamed
       write schemas (`PatchedDashboard` → `PatchedPatchedDashboardOpenApi`,
@@ -76,6 +76,18 @@ carrier in this order:
       update `openapi-filter.yaml`, regenerate `api.d.ts`, migrate the
       endpoint / dashboard / experiment clients, verify with live smoke.
       Hard prerequisite for every subsequent codegen commit.
+- [x] `feat(action): pull codegen` — discovered during Phase 0: actions was
+      the only resource without pull support, breaking `pull --kind actions`
+      and the smoke gate.
+- [x] `fix(dashboard): persist tiles via insight linkage` — discovered during
+      Phase 0: the server made `Dashboard.tiles` read-only, so inline tile
+      writes were silently ignored. Insight tiles now persist via the
+      insight's `dashboards` field (its designated replacement
+      `dashboard_tiles` is read-only upstream — no API path for insight-tile
+      layout/color, so those fields left the SDK; text tiles keep full
+      fidelity via the tile endpoints; dashboards gained `insightLayout`).
+      Upstream gap worth a posthog issue: the deprecation message points at
+      a read-only field.
 
 ## Wave 1 — product config, identity carrier exists
 
