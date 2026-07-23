@@ -2,7 +2,7 @@
 
 What PostHog exposes via API vs. what `posthog-definitions` can manage as code.
 
-Legend: ✅ supported · 🟡 partial / read-only / inline-only · ❌ not supported (yet) · — not applicable for IaC
+Legend: ✅ supported · 🟡 partial / read-only / inline-only · ❌ not supported (yet) · 🚫 excluded (API or charter blocks it) · — not applicable for IaC
 
 Source of truth for the API column: registered viewsets in [`posthog/posthog/api/__init__.py`](https://github.com/PostHog/posthog/blob/master/posthog/api/__init__.py). Last refreshed against `master` on 2026-05-13.
 
@@ -77,8 +77,8 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Assignment rules       | ✅ `environments/{id}/error_tracking/assignment_rules`       | ❌                  |       |
 | Grouping rules         | ✅ `environments/{id}/error_tracking/grouping_rules`         | ❌                  |       |
 | Suppression rules      | ✅ `environments/{id}/error_tracking/suppression_rules`      | ❌                  |       |
-| Spike detection config | ✅ `environments/{id}/error_tracking/spike_detection_config` | ❌                  |       |
-| Settings               | ✅ `environments/{id}/error_tracking/settings`               | ❌                  |       |
+| Spike detection config | ✅ `environments/{id}/error_tracking/spike_detection_config` | 🚫                  | Excluded — the `update_config` write endpoint rejects personal API key access ("does not support personal API key access"), so the CLI can't manage it. |
+| Settings               | ✅ `environments/{id}/error_tracking/settings`               | ✅                  | Singleton (no key). Field-scoped PATCH of the exception-ingestion rate limits; only declared fields are written. Full matrix refresh tracked in #78. |
 
 ## Project & org configuration
 
