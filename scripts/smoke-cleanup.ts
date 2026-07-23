@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedDashboardTemplates } from "../src/resources/dashboard-template/client.js";
+import {
+  dashboardTemplateKeyFromTags,
+  pruneDashboardTemplate,
+} from "../src/resources/dashboard-template/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "dashboard-template"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "dashboard-template",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["dashboard-template"]) {
+    await deleteByKey(
+      "dashboard-template",
+      args["dashboard-template"],
+      config,
+      listManagedDashboardTemplates,
+      (row) => dashboardTemplateKeyFromTags(row.tags),
+      (c, row) => pruneDashboardTemplate(c, row),
     );
   }
 }
