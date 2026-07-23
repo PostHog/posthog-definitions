@@ -18,6 +18,13 @@ export type ApplyOkDryRun = {
   ok: true;
   dryRun: true;
   applied: false;
+  /**
+   * When `--kind` scoped the run, the list of kinds that were scanned;
+   * `null` means every kind was in scope. Kinds NOT in this list were not
+   * scanned at all — their absence from `byResource` is not "0 changes",
+   * it is "not looked at".
+   */
+  scope: string[] | null;
   plan: {
     totalOps: number;
     byResource: Array<{
@@ -34,6 +41,8 @@ export type ApplyOkApplied = {
   ok: true;
   dryRun: false;
   applied: true;
+  /** Kinds scanned when `--kind` scoped the run; `null` means all kinds. */
+  scope: string[] | null;
   totals: {
     created: number;
     updated: number;
@@ -51,7 +60,7 @@ export type ApplyOkApplied = {
 export type ApplyErr = {
   ok: false;
   /** Where in the pipeline the error occurred. */
-  stage: "config" | "load" | "validate" | "fetch" | "apply";
+  stage: "config" | "args" | "load" | "validate" | "fetch" | "apply";
   /** Short human-readable error message. Suitable for `error: …` prose output. */
   error: string;
   /** Validation issues, populated when stage === "validate". */

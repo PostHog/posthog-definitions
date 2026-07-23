@@ -26,6 +26,7 @@ function applyArgs(dir: string, overrides: Partial<ApplyArgs> = {}): ApplyArgs {
     verbose: false,
     prune: false,
     json: true,
+    kinds: [],
     ...overrides,
   };
 }
