@@ -75,5 +75,8 @@ export type {
 export { projectSettings } from "./resources/project-settings/index.js";
 export type { ProjectSettings } from "./resources/project-settings/index.js";
 
+export { logsView } from "./resources/logs-view/index.js";
+export type { LogsView, LogsViewColumn, LogsViewColumnType } from "./resources/logs-view/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";
