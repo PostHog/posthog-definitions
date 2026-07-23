@@ -18,6 +18,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Alerts              | ✅ `environments/{id}/alerts`            | ❌                  |                                               |
 | Insight variables   | ✅ `environments/{id}/insight_variables` | ❌                  |                                               |
 | Comments            | ✅ `projects/{id}/comments`              | —                   | Ephemeral by nature                           |
+| Session recording playlists | ✅ `projects/{id}/session_recording_playlists` | ✅        | Identity via `iac:session-recording-playlists:<key>` marker in `description`. Filter-based (dynamic) playlists only; pinned-recording (collection) membership is runtime data, same treatment as static cohorts. Full matrix refresh tracked in #78. |
 
 ## Behavior & experimentation
 
