@@ -616,6 +616,38 @@ export interface paths {
         patch: operations["insights_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/messaging_templates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["messaging_templates_list"];
+        put?: never;
+        post: operations["messaging_templates_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/messaging_templates/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["messaging_templates_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["messaging_templates_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/schema_property_groups/": {
         parameters: {
             query?: never;
@@ -3302,6 +3334,31 @@ export interface components {
              * @default null
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
+        };
+        EmailTemplate: {
+            /** @description Email subject line. Supports Liquid templating. Required for email-type templates. */
+            subject?: string;
+            /** @description Plain-text fallback body for clients that can't render the email. */
+            text?: string;
+            /** @description Rendered email body — derived from the design at save time. The visual editor's save path supplies it directly; omit it otherwise. */
+            html?: string;
+            /** @description Design JSON for PostHog's visual email editor — the authoring surface and source of truth. The server renders the sent email from it, and it opens as editable blocks in the editor. Full schema in the designing-email-templates skill. */
+            design?: {
+                /** @description Highest htmlID suffix per element type, e.g. {"u_row": 1, "u_content_text": 2}. */
+                counters?: Record<string, never>;
+                /** @description Design schema version, e.g. 16. */
+                schemaVersion: number;
+                body: {
+                    /** @description Any unique string. */
+                    id?: string;
+                    /** @description Rows of {id, cells, columns[{id, contents[{id, type, values}], values}], values}. */
+                    rows: Record<string, never>[];
+                    headers?: Record<string, never>[];
+                    footers?: Record<string, never>[];
+                    /** @description Body-level settings: backgroundColor, contentWidth ('600px'), fontFamily, textColor. */
+                    values?: Record<string, never>;
+                };
+            };
         };
         /** EmptyPropertyFilter */
         EmptyPropertyFilter: {
@@ -9787,6 +9844,46 @@ export interface components {
          * @enum {string}
          */
         MeanRetentionCalculation: "simple" | "weighted" | "none";
+        MessageTemplate: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description Human-readable template name shown in the library. */
+            name: string;
+            /** @description What the template is for and when to use it. */
+            description?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** @description Template content keyed by channel. Replaced as a whole on update, not merged. */
+            content?: components["schemas"]["MessageTemplateContent"];
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** @description Message channel of the template. Currently 'email'. */
+            type?: string;
+            /**
+             * Format: uuid
+             * @description Message category ID to file the template under. Must belong to the same project.
+             */
+            message_category?: string | null;
+            /** @description Soft-delete flag. Set true to remove the template from the library. */
+            deleted?: boolean;
+        };
+        MessageTemplateContent: {
+            /**
+             * @description Templating language for the email content. Always 'liquid' — Liquid tags pass through verbatim.
+             *
+             *     * `liquid` - liquid
+             * @default liquid
+             */
+            templating: components["schemas"]["MessageTemplateContentTemplatingEnum"];
+            /** @description Email message content. Replaced as a whole on update — send the complete object. */
+            email?: components["schemas"]["EmailTemplate"] | null;
+        };
+        /**
+         * @description * `liquid` - liquid
+         * @enum {string}
+         */
+        MessageTemplateContentTemplatingEnum: "liquid";
         /** MetricPropertyFilter */
         MetricPropertyFilter: {
             /** Key */
@@ -10287,6 +10384,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Insight"][];
         };
+        PaginatedMessageTemplateList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["MessageTemplate"][];
+        };
         PaginatedSchemaPropertyGroupList: {
             /** @example 123 */
             count: number;
@@ -10691,6 +10803,30 @@ export interface components {
             readonly last_viewed_at?: string | null;
             /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
             readonly search_match_type?: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        PatchedMessageTemplate: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** @description Human-readable template name shown in the library. */
+            name?: string;
+            /** @description What the template is for and when to use it. */
+            description?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            /** @description Template content keyed by channel. Replaced as a whole on update, not merged. */
+            content?: components["schemas"]["MessageTemplateContent"];
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** @description Message channel of the template. Currently 'email'. */
+            type?: string;
+            /**
+             * Format: uuid
+             * @description Message category ID to file the template under. Must belong to the same project.
+             */
+            message_category?: string | null;
+            /** @description Soft-delete flag. Set true to remove the template from the library. */
+            deleted?: boolean;
         };
         /**
          * @description OpenAPI-only PATCH body for dashboards (agents/MCP).
@@ -20498,6 +20634,115 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Insight"];
                     "text/csv": components["schemas"]["Insight"];
+                };
+            };
+        };
+    };
+    messaging_templates_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMessageTemplateList"];
+                };
+            };
+        };
+    };
+    messaging_templates_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageTemplate"];
+                "application/x-www-form-urlencoded": components["schemas"]["MessageTemplate"];
+                "multipart/form-data": components["schemas"]["MessageTemplate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageTemplate"];
+                };
+            };
+        };
+    };
+    messaging_templates_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this message template. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageTemplate"];
+                };
+            };
+        };
+    };
+    messaging_templates_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this message template. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedMessageTemplate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedMessageTemplate"];
+                "multipart/form-data": components["schemas"]["PatchedMessageTemplate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageTemplate"];
                 };
             };
         };
