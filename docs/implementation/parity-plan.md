@@ -177,19 +177,26 @@ Retrospective lessons now baked into the guidance below:
 No `tags`, no free-text field, or ordering semantics. Each needs a short
 identity design recorded here before its codegen commit.
 
-- [ ] **Annotations** — `projects/{id}/annotations`. ✅ Investigated,
-      buildable: `content` round-trips a trailing marker (live-verified);
-      soft-delete via PATCH; optional dashboard/insight refs resolve by key.
+- [x] **Annotations** — `projects/{id}/annotations`. Shipped (#94).
+      Content marker (invisible in chart tooltips — LemonMarkdown strips
+      HTML comments — visible only in the annotations list scene);
+      dashboard/insight refs by key via new `dashboardIdByKey` context;
+      also fixed pull's topoOrder to tolerate pulling a dependent kind alone.
 - [ ] **Alerts (insight alerts)** — `environments/{id}/alerts`.
       ⛔ **Deferred.** Only marker home is `name`, which appears in
       notification emails and Slack subject lines — a marker there leaks
       into every "Alert 'X' triggered" message. A markerless composite key
       `(insight, name)` cannot satisfy the safety invariant (would adopt
       hand-built alerts). Revisit if the API grows a description field.
-- [ ] **Subscriptions** — `environments/{id}/subscriptions`. ✅ Investigated,
-      buildable: `title` round-trips a marker (low UI prominence, absent
-      from delivery payloads); soft-delete via PATCH; insight-or-dashboard
-      ref resolves by key; Slack `integration_id` is environment-specific.
+- [x] **Subscriptions** — `environments/{id}/subscriptions`. Shipped (#95).
+      Title marker with one real constraint: `title` caps at 100 chars
+      including the marker → ~45 char budget for title+key, enforced by a
+      fail-fast validation guard. `send_test_now` defaults true upstream —
+      client forces it false so applies never trigger deliveries. Excluded
+      from smoke seed (STAMP keys exceed the title budget); verified in
+      isolation. Carrier-investigation lesson recorded: probe a candidate
+      marker field's maxLength with realistic key+title, not just
+      round-trip.
 - [ ] **Error tracking assignment rules** — `environments/{id}/error_tracking/assignment_rules`.
 - [ ] **Error tracking grouping rules** — has `description` → marker.
 - [ ] **Error tracking suppression rules**.
