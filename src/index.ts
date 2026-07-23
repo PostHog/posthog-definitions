@@ -31,6 +31,9 @@ export type {
   ActionStepProperty,
 } from "./resources/action/index.js";
 
+export { earlyAccessFeature } from "./resources/early-access-feature/index.js";
+export type { EarlyAccessFeature, EarlyAccessStage } from "./resources/early-access-feature/index.js";
+
 export { featureFlag } from "./resources/feature-flag/index.js";
 export type {
   FeatureFlag,

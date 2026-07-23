@@ -75,6 +75,8 @@ export type ApplyContext = {
   experimentHoldoutIdByKey: Map<string, number>;
   /** Experiment-saved-metric server id by spec key. Populated by the experiment-saved-metric module's executor; read by the experiment module's resolver. */
   experimentSavedMetricIdByKey: Map<string, number>;
+  /** Feature-flag server id by spec key. Populated by the feature-flag module's executor; read by resources that link flags (surveys, early access features). */
+  featureFlagIdByKey: Map<string, number>;
 };
 
 export function newApplyContext(): ApplyContext {
@@ -84,6 +86,7 @@ export function newApplyContext(): ApplyContext {
     propertyGroupIdByKey: new Map(),
     experimentHoldoutIdByKey: new Map(),
     experimentSavedMetricIdByKey: new Map(),
+    featureFlagIdByKey: new Map(),
   };
 }
 

@@ -188,20 +188,27 @@ async function assertManagedFeatureFlag(
 export async function runFeatureFlagOp(
   config: ClientConfig,
   op: ResourceOp<FeatureFlag, ServerFeatureFlag>,
-  _ctx: ApplyContext,
+  ctx: ApplyContext,
   options: { verbose?: boolean } = {},
 ): Promise<void> {
-  if (op.kind === "unchanged") return;
+  // Record the server id by key so dependents (surveys, early access features)
+  // can resolve flag references — including for unchanged flags.
+  if (op.kind === "unchanged") {
+    ctx.featureFlagIdByKey.set(op.spec.key, op.server.id);
+    return;
+  }
 
   const payload = featureFlagPayload(op.spec, featureFlagHash(op.spec));
 
   if (op.kind === "create") {
-    await createFeatureFlag(config, payload, options);
+    const created = await createFeatureFlag(config, payload, options);
+    ctx.featureFlagIdByKey.set(op.spec.key, created.id);
     return;
   }
 
   await assertManagedFeatureFlag(config, op.server.id, op.spec.key, options);
-  await updateFeatureFlag(config, op.server.id, payload, options);
+  const updated = await updateFeatureFlag(config, op.server.id, payload, options);
+  ctx.featureFlagIdByKey.set(op.spec.key, updated.id);
 }
 
 export async function pruneFeatureFlag(
