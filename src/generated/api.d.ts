@@ -648,6 +648,72 @@ export interface paths {
         patch: operations["schema_property_groups_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/surveys/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["surveys_list"];
+        put?: never;
+        post: operations["surveys_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/surveys/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["surveys_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["surveys_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["surveys_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/surveys/{id}/launch/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Launch a survey by setting `start_date` to the current time. No-op if the survey is already launched (start_date set in the past) — returns the existing state unchanged. Does not affect archived surveys or surveys with an end_date in the past; unarchive or extend the end_date first. */
+        post: operations["surveys_launch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/surveys/{id}/stop/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Stop a survey by setting `end_date` to the current time. No new responses are accepted after this; existing responses remain available. No-op if the survey already has an end_date in the past. */
+        post: operations["surveys_stop"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3264,10 +3330,23 @@ export interface components {
          */
         DaysOfWeekEnum: 1 | 2 | 3 | 4 | 5 | 6 | 7;
         /**
+         * @description * `html` - html
+         *     * `text` - text
+         * @enum {string}
+         */
+        DescriptionContentTypeEnum: "html" | "text";
+        /**
          * DetailedResultsAggregationType
          * @enum {string}
          */
         DetailedResultsAggregationType: "total" | "average" | "median";
+        /**
+         * @description * `Desktop` - Desktop
+         *     * `Mobile` - Mobile
+         *     * `Tablet` - Tablet
+         * @enum {string}
+         */
+        DeviceTypesEnum: "Desktop" | "Mobile" | "Tablet";
         /**
          * DisplayType
          * @enum {string}
@@ -10302,6 +10381,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
         };
+        PaginatedSurveyList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Survey"][];
+        };
         /**
          * ParserMode
          * @enum {string}
@@ -10736,6 +10830,197 @@ export interface components {
             /** Format: date-time */
             readonly updated_at?: string;
             readonly created_by?: components["schemas"]["UserBasic"];
+        };
+        PatchedSurveySerializerCreateUpdateOnlySchema: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** @description Survey name. */
+            name?: string;
+            /** @description Survey description. */
+            description?: string;
+            /**
+             * @description Survey type.
+             *
+             *     * `popover` - popover
+             *     * `widget` - widget
+             *     * `external_survey` - external survey
+             *     * `api` - api
+             */
+            type?: components["schemas"]["SurveyType"];
+            /**
+             * @description Survey scheduling behavior: 'once' = show once per user (default), 'recurring' = repeat based on iteration_count and iteration_frequency_days settings, 'always' = show every time conditions are met (mainly for widget surveys)
+             *
+             *     * `once` - once
+             *     * `recurring` - recurring
+             *     * `always` - always
+             */
+            schedule?: components["schemas"]["ScheduleEnum"] | components["schemas"]["NullEnum"];
+            readonly linked_flag?: components["schemas"]["MinimalFeatureFlag"];
+            /** @description The feature flag linked to this survey. */
+            linked_flag_id?: number | null;
+            linked_insight_id?: number | null;
+            /** @description An existing targeting flag to use for this survey. */
+            targeting_flag_id?: number;
+            readonly targeting_flag?: components["schemas"]["MinimalFeatureFlag"];
+            readonly internal_targeting_flag?: components["schemas"]["MinimalFeatureFlag"];
+            /** @description Target specific users based on their properties. Example: {groups: [{properties: [{key: 'email', value: ['@company.com'], operator: 'icontains'}], rollout_percentage: 100}]} */
+            targeting_flag_filters?: components["schemas"]["FeatureFlagFiltersSchema"] | null;
+            /** @description Set to true to completely remove all targeting filters from the survey, making it visible to all users (subject to other display conditions like URL matching). */
+            remove_targeting_flag?: boolean | null;
+            /**
+             * @description The `array` of questions included in the survey. Each question must conform to one of the defined question types: Basic, Link, Rating, or Multiple Choice.
+             *
+             *             Basic (open-ended question)
+             *             - `id`: The question ID
+             *             - `type`: `open`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Link (a question with a link)
+             *             - `id`: The question ID
+             *             - `type`: `link`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `link`: The URL associated with the question.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Rating (a question with a rating scale)
+             *             - `id`: The question ID
+             *             - `type`: `rating`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `display`: Display style of the rating (`number` or `emoji`).
+             *             - `scale`: The scale of the rating (`number`).
+             *             - `lowerBoundLabel`: Label for the lower bound of the scale.
+             *             - `upperBoundLabel`: Label for the upper bound of the scale.
+             *             - `isNpsQuestion`: Whether the question is an NPS rating.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Multiple choice
+             *             - `id`: The question ID
+             *             - `type`: `single_choice` or `multiple_choice`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `choices`: An array of choices for the question.
+             *             - `shuffleOptions`: Whether to shuffle the order of the choices (`boolean`).
+             *             - `hasOpenChoice`: Whether the question allows an open-ended response (`boolean`).
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Branching logic can be one of the following types:
+             *
+             *             Next question: Proceeds to the next question
+             *             ```json
+             *             {
+             *                 "type": "next_question"
+             *             }
+             *             ```
+             *
+             *             End: Ends the survey, optionally displaying a confirmation message.
+             *             ```json
+             *             {
+             *                 "type": "end"
+             *             }
+             *             ```
+             *
+             *             Response-based: Branches based on the response values. Available for the `rating` and `single_choice` question types.
+             *             ```json
+             *             {
+             *                 "type": "response_based",
+             *                 "responseValues": {
+             *                     "responseKey": "value"
+             *                 }
+             *             }
+             *             ```
+             *
+             *             Specific question: Proceeds to a specific question by index.
+             *             ```json
+             *             {
+             *                 "type": "specific_question",
+             *                 "index": 2
+             *             }
+             *             ```
+             *
+             *             Translations: Each question can include inline translations.
+             *             - `translations`: Object mapping language codes to translated fields.
+             *             - Language codes: Canonical BCP-47-ish strings (e.g., "es", "es-MX", "zh-CN"). Aliases like "english" or "default" are rejected. The survey's `base_language` (default "en") declares the language of the untranslated text and cannot also appear as a translation key.
+             *             - Translatable fields: `question`, `description`, `buttonText`, `choices`, `lowerBoundLabel`, `upperBoundLabel`, `link`
+             *
+             *             Example with translations:
+             *             ```json
+             *             {
+             *                 "id": "uuid",
+             *                 "type": "rating",
+             *                 "question": "How satisfied are you?",
+             *                 "lowerBoundLabel": "Not satisfied",
+             *                 "upperBoundLabel": "Very satisfied",
+             *                 "translations": {
+             *                     "es": {
+             *                         "question": "¿Qué tan satisfecho estás?",
+             *                         "lowerBoundLabel": "No satisfecho",
+             *                         "upperBoundLabel": "Muy satisfecho"
+             *                     },
+             *                     "fr": {
+             *                         "question": "Dans quelle mesure êtes-vous satisfait?"
+             *                     }
+             *                 }
+             *             }
+             *             ```
+             */
+            questions?: components["schemas"]["SurveyQuestionInputSchema"][] | null;
+            /** @description Display and targeting conditions for the survey. */
+            conditions?: components["schemas"]["SurveyConditionsSchema"] | null;
+            /** @description Survey appearance customization. */
+            appearance?: components["schemas"]["SurveyAppearanceSchema"] | null;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /**
+             * Format: date-time
+             * @description Setting this will launch the survey immediately. Don't add a start_date unless explicitly requested to do so.
+             */
+            start_date?: string | null;
+            /**
+             * Format: date-time
+             * @description When the survey stopped being shown to users. Setting this will complete the survey.
+             */
+            end_date?: string | null;
+            /** @description Archive state for the survey. */
+            archived?: boolean;
+            /** @description The maximum number of responses before automatically stopping the survey. */
+            responses_limit?: number | null;
+            /** @description For a recurring schedule, this field specifies the number of times the survey should be shown to the user. Use 1 for 'once every X days', higher numbers for multiple repetitions. Works together with iteration_frequency_days to determine the overall survey schedule. */
+            iteration_count?: number | null;
+            /** @description For a recurring schedule, this field specifies the interval in days between each survey instance shown to the user, used alongside iteration_count for precise scheduling. */
+            iteration_frequency_days?: number | null;
+            iteration_start_dates?: (string | null)[] | null;
+            current_iteration?: number | null;
+            /** Format: date-time */
+            current_iteration_start_date?: string | null;
+            /** Format: date-time */
+            response_sampling_start_date?: string | null;
+            response_sampling_interval_type?: components["schemas"]["ResponseSamplingIntervalTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            response_sampling_interval?: number | null;
+            response_sampling_limit?: number | null;
+            /** @description When at least one question is answered, the response is stored (true). The response is stored when all questions are answered (false). */
+            enable_partial_responses?: boolean | null;
+            enable_iframe_embedding?: boolean | null;
+            /** @description BCP-47 language code (e.g. 'en', 'es', 'es-MX') describing the language of the survey's untranslated text. Defaults to 'en'. Cannot also appear as a key in `translations`. */
+            base_language?: string;
+            /** create in folder */
+            _create_in_folder?: string;
         };
         PatchedTeam: {
             readonly id?: number;
@@ -13536,6 +13821,13 @@ export interface components {
             warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
+         * @description * `day` - day
+         *     * `week` - week
+         *     * `month` - month
+         * @enum {string}
+         */
+        ResponseSamplingIntervalTypeEnum: "day" | "week" | "month";
+        /**
          * @description * `21` - Everyone in the project can edit
          *     * `37` - Only those invited to this dashboard can edit
          * @enum {integer}
@@ -14680,6 +14972,13 @@ export interface components {
          * @enum {string}
          */
         Scale: "linear" | "logarithmic";
+        /**
+         * @description * `once` - once
+         *     * `recurring` - recurring
+         *     * `always` - always
+         * @enum {string}
+         */
+        ScheduleEnum: "once" | "recurring" | "always";
         SchemaPropertyGroup: {
             /** Format: uuid */
             readonly id: string;
@@ -15558,6 +15857,819 @@ export interface components {
          * @enum {string}
          */
         Style: "none" | "number" | "short" | "percent";
+        /** @description Mixin for serializers to add user access control fields */
+        Survey: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            description?: string;
+            type: components["schemas"]["SurveyType"];
+            schedule?: string | null;
+            readonly linked_flag: components["schemas"]["MinimalFeatureFlag"];
+            linked_flag_id?: number | null;
+            linked_insight_id?: number | null;
+            readonly targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            readonly internal_targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            /**
+             * @description The `array` of questions included in the survey. Each question must conform to one of the defined question types: Basic, Link, Rating, or Multiple Choice.
+             *
+             *             Basic (open-ended question)
+             *             - `id`: The question ID
+             *             - `type`: `open`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Link (a question with a link)
+             *             - `id`: The question ID
+             *             - `type`: `link`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `link`: The URL associated with the question.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Rating (a question with a rating scale)
+             *             - `id`: The question ID
+             *             - `type`: `rating`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `display`: Display style of the rating (`number` or `emoji`).
+             *             - `scale`: The scale of the rating (`number`).
+             *             - `lowerBoundLabel`: Label for the lower bound of the scale.
+             *             - `upperBoundLabel`: Label for the upper bound of the scale.
+             *             - `isNpsQuestion`: Whether the question is an NPS rating.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Multiple choice
+             *             - `id`: The question ID
+             *             - `type`: `single_choice` or `multiple_choice`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `choices`: An array of choices for the question.
+             *             - `shuffleOptions`: Whether to shuffle the order of the choices (`boolean`).
+             *             - `hasOpenChoice`: Whether the question allows an open-ended response (`boolean`).
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Branching logic can be one of the following types:
+             *
+             *             Next question: Proceeds to the next question
+             *             ```json
+             *             {
+             *                 "type": "next_question"
+             *             }
+             *             ```
+             *
+             *             End: Ends the survey, optionally displaying a confirmation message.
+             *             ```json
+             *             {
+             *                 "type": "end"
+             *             }
+             *             ```
+             *
+             *             Response-based: Branches based on the response values. Available for the `rating` and `single_choice` question types.
+             *             ```json
+             *             {
+             *                 "type": "response_based",
+             *                 "responseValues": {
+             *                     "responseKey": "value"
+             *                 }
+             *             }
+             *             ```
+             *
+             *             Specific question: Proceeds to a specific question by index.
+             *             ```json
+             *             {
+             *                 "type": "specific_question",
+             *                 "index": 2
+             *             }
+             *             ```
+             *
+             *             Translations: Each question can include inline translations.
+             *             - `translations`: Object mapping language codes to translated fields.
+             *             - Language codes: Canonical BCP-47-ish strings (e.g., "es", "es-MX", "zh-CN"). Aliases like "english" or "default" are rejected. The survey's `base_language` (default "en") declares the language of the untranslated text and cannot also appear as a translation key.
+             *             - Translatable fields: `question`, `description`, `buttonText`, `choices`, `lowerBoundLabel`, `upperBoundLabel`, `link`
+             *
+             *             Example with translations:
+             *             ```json
+             *             {
+             *                 "id": "uuid",
+             *                 "type": "rating",
+             *                 "question": "How satisfied are you?",
+             *                 "lowerBoundLabel": "Not satisfied",
+             *                 "upperBoundLabel": "Very satisfied",
+             *                 "translations": {
+             *                     "es": {
+             *                         "question": "¿Qué tan satisfecho estás?",
+             *                         "lowerBoundLabel": "No satisfecho",
+             *                         "upperBoundLabel": "Muy satisfecho"
+             *                     },
+             *                     "fr": {
+             *                         "question": "Dans quelle mesure êtes-vous satisfait?"
+             *                     }
+             *                 }
+             *             }
+             *             ```
+             */
+            questions?: unknown;
+            readonly conditions: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            archived?: boolean;
+            responses_limit?: number | null;
+            readonly feature_flag_keys: {
+                [key: string]: string | null;
+            }[];
+            iteration_count?: number | null;
+            iteration_frequency_days?: number | null;
+            iteration_start_dates?: (string | null)[] | null;
+            current_iteration?: number | null;
+            /** Format: date-time */
+            current_iteration_start_date?: string | null;
+            /** Format: date-time */
+            response_sampling_start_date?: string | null;
+            response_sampling_interval_type?: components["schemas"]["ResponseSamplingIntervalTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            response_sampling_interval?: number | null;
+            response_sampling_limit?: number | null;
+            enable_partial_responses?: boolean | null;
+            enable_iframe_embedding?: boolean | null;
+            /** @description BCP-47 language code (e.g. 'en', 'es', 'es-MX') describing the language of the survey's untranslated text. Defaults to 'en'. Cannot also appear as a key in `translations`. */
+            base_language?: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+            /** @description How this row matched the `search` query parameter: `exact` (the term is a case-insensitive substring of a searched field) or `similar` (a fuzzy trigram match, returned only when no exact match exists). Null when the list is not filtered by `search`. */
+            readonly search_match_type: components["schemas"]["SearchMatchTypeEnum"] | components["schemas"]["NullEnum"];
+        };
+        SurveyAppearanceSchema: {
+            backgroundColor?: string;
+            submitButtonColor?: string;
+            textColor?: string;
+            submitButtonText?: string;
+            submitButtonTextColor?: string;
+            descriptionTextColor?: string;
+            ratingButtonColor?: string;
+            ratingButtonActiveColor?: string;
+            ratingButtonHoverColor?: string;
+            whiteLabel?: boolean;
+            autoDisappear?: boolean;
+            displayThankYouMessage?: boolean;
+            thankYouMessageHeader?: string;
+            thankYouMessageDescription?: string;
+            thankYouMessageDescriptionContentType?: components["schemas"]["DescriptionContentTypeEnum"];
+            thankYouMessageCloseButtonText?: string;
+            borderColor?: string;
+            placeholder?: string;
+            shuffleQuestions?: boolean;
+            surveyPopupDelaySeconds?: number;
+            /** @description Whether to show a 'Back' button on web surveys after the first question, letting respondents return to a previously visited question. Defaults to false. */
+            allowGoBack?: boolean;
+            /** @description Optional override for the back button label. Defaults to 'Back'. */
+            backButtonText?: string;
+            widgetType?: components["schemas"]["WidgetTypeEnum"];
+            widgetSelector?: string;
+            widgetLabel?: string;
+            widgetColor?: string;
+            fontFamily?: string;
+            maxWidth?: string;
+            zIndex?: string;
+            disabledButtonOpacity?: string;
+            boxPadding?: string;
+        };
+        SurveyBranchingSchema: components["schemas"]["SurveyNextQuestionBranching"] | components["schemas"]["SurveyEndBranching"] | components["schemas"]["SurveySpecificQuestionBranching"] | components["schemas"]["SurveyResponseBasedBranching"];
+        SurveyConditionEventValueSchema: {
+            /** @description Event name that triggers the survey. */
+            name: string;
+        };
+        SurveyConditionsSchema: {
+            url?: string;
+            selector?: string;
+            /** @description Don't show this survey to users who saw any survey in the last x days. */
+            seenSurveyWaitPeriodInDays?: number;
+            /**
+             * @description URL/device matching types: 'regex' (matches regex pattern), 'not_regex' (does not match regex pattern), 'exact' (exact string match), 'is_not' (not exact match), 'icontains' (case-insensitive contains), 'not_icontains' (case-insensitive does not contain).
+             *
+             *     * `regex` - regex
+             *     * `not_regex` - not_regex
+             *     * `exact` - exact
+             *     * `is_not` - is_not
+             *     * `icontains` - icontains
+             *     * `not_icontains` - not_icontains
+             */
+            urlMatchType?: components["schemas"]["StringMatchOperatorEnum"];
+            events?: components["schemas"]["SurveyEventsConditionSchema"];
+            /** @description Device types that should match for this survey to be shown. */
+            deviceTypes?: components["schemas"]["DeviceTypesEnum"][];
+            /**
+             * @description URL/device matching types: 'regex' (matches regex pattern), 'not_regex' (does not match regex pattern), 'exact' (exact string match), 'is_not' (not exact match), 'icontains' (case-insensitive contains), 'not_icontains' (case-insensitive does not contain).
+             *
+             *     * `regex` - regex
+             *     * `not_regex` - not_regex
+             *     * `exact` - exact
+             *     * `is_not` - is_not
+             *     * `icontains` - icontains
+             *     * `not_icontains` - not_icontains
+             */
+            deviceTypesMatchType?: components["schemas"]["StringMatchOperatorEnum"];
+            /** @description The variant of the feature flag linked to this survey. */
+            linkedFlagVariant?: string;
+        };
+        SurveyEndBranching: {
+            /**
+             * @description End the survey.
+             *
+             *     * `end` - end
+             */
+            type: components["schemas"]["SurveyEndBranchingTypeEnum"];
+        };
+        /**
+         * @description * `end` - end
+         * @enum {string}
+         */
+        SurveyEndBranchingTypeEnum: "end";
+        SurveyEventsConditionSchema: {
+            /** @description Whether to show the survey every time one of the events is triggered (true), or just once (false). */
+            repeatedActivation?: boolean;
+            /** @description Array of event names that trigger the survey. */
+            values?: components["schemas"]["SurveyConditionEventValueSchema"][];
+        };
+        SurveyLinkQuestionSchema: {
+            /** @description Stable question identifier (UUID). When editing an existing question, send back its current id so its responses (keyed by $survey_response_<id>) stay attached; omit it for new questions and the server generates one. */
+            id?: string;
+            type: components["schemas"]["SurveyLinkQuestionSchemaTypeEnum"];
+            /** @description Question text shown to respondents. */
+            question: string;
+            /** @description Optional helper text. */
+            description?: string;
+            /**
+             * @description Format for the description field.
+             *
+             *     * `text` - text
+             *     * `html` - html
+             */
+            descriptionContentType?: components["schemas"]["DescriptionContentTypeEnum"];
+            /** @description Whether respondents may skip this question. */
+            optional?: boolean;
+            /** @description Custom button label. */
+            buttonText?: string;
+            /** @description HTTPS or mailto URL for link questions. */
+            link: string;
+        };
+        /**
+         * @description * `link` - link
+         * @enum {string}
+         */
+        SurveyLinkQuestionSchemaTypeEnum: "link";
+        SurveyMultipleChoiceQuestionSchema: {
+            /** @description Stable question identifier (UUID). When editing an existing question, send back its current id so its responses (keyed by $survey_response_<id>) stay attached; omit it for new questions and the server generates one. */
+            id?: string;
+            type: components["schemas"]["SurveyMultipleChoiceQuestionSchemaTypeEnum"];
+            /** @description Question text shown to respondents. */
+            question: string;
+            /** @description Optional helper text. */
+            description?: string;
+            /**
+             * @description Format for the description field.
+             *
+             *     * `text` - text
+             *     * `html` - html
+             */
+            descriptionContentType?: components["schemas"]["DescriptionContentTypeEnum"];
+            /** @description Whether respondents may skip this question. */
+            optional?: boolean;
+            /** @description Custom button label. */
+            buttonText?: string;
+            /** @description Array of choice options. Multiple selections allowed. No branching logic supported. */
+            choices: string[];
+            /** @description Whether to randomize the order of choices for each respondent. */
+            shuffleOptions?: boolean;
+            /** @description Whether the final option should be an open-text choice (for example, 'Other'). */
+            hasOpenChoice?: boolean;
+        };
+        /**
+         * @description * `multiple_choice` - multiple_choice
+         * @enum {string}
+         */
+        SurveyMultipleChoiceQuestionSchemaTypeEnum: "multiple_choice";
+        SurveyNextQuestionBranching: {
+            /**
+             * @description Continue to the next question in sequence.
+             *
+             *     * `next_question` - next_question
+             */
+            type: components["schemas"]["SurveyNextQuestionBranchingTypeEnum"];
+        };
+        /**
+         * @description * `next_question` - next_question
+         * @enum {string}
+         */
+        SurveyNextQuestionBranchingTypeEnum: "next_question";
+        SurveyOpenQuestionSchema: {
+            /** @description Stable question identifier (UUID). When editing an existing question, send back its current id so its responses (keyed by $survey_response_<id>) stay attached; omit it for new questions and the server generates one. */
+            id?: string;
+            type: components["schemas"]["SurveyOpenQuestionSchemaTypeEnum"];
+            /** @description Question text shown to respondents. */
+            question: string;
+            /** @description Optional helper text. */
+            description?: string;
+            /**
+             * @description Format for the description field.
+             *
+             *     * `text` - text
+             *     * `html` - html
+             */
+            descriptionContentType?: components["schemas"]["DescriptionContentTypeEnum"];
+            /** @description Whether respondents may skip this question. */
+            optional?: boolean;
+            /** @description Custom button label. */
+            buttonText?: string;
+        };
+        /**
+         * @description * `open` - open
+         * @enum {string}
+         */
+        SurveyOpenQuestionSchemaTypeEnum: "open";
+        SurveyQuestionInputSchema: components["schemas"]["SurveyOpenQuestionSchema"] | components["schemas"]["SurveyLinkQuestionSchema"] | components["schemas"]["SurveyRatingQuestionSchema"] | components["schemas"]["SurveySingleChoiceQuestionSchema"] | components["schemas"]["SurveyMultipleChoiceQuestionSchema"];
+        SurveyRatingQuestionSchema: {
+            /** @description Stable question identifier (UUID). When editing an existing question, send back its current id so its responses (keyed by $survey_response_<id>) stay attached; omit it for new questions and the server generates one. */
+            id?: string;
+            type: components["schemas"]["SurveyRatingQuestionSchemaTypeEnum"];
+            /** @description Question text shown to respondents. */
+            question: string;
+            /** @description Optional helper text. */
+            description?: string;
+            /**
+             * @description Format for the description field.
+             *
+             *     * `text` - text
+             *     * `html` - html
+             */
+            descriptionContentType?: components["schemas"]["DescriptionContentTypeEnum"];
+            /** @description Whether respondents may skip this question. */
+            optional?: boolean;
+            /** @description Custom button label. */
+            buttonText?: string;
+            /**
+             * @description Display format: 'number' shows numeric scale, 'emoji' shows emoji scale.
+             *
+             *     * `number` - number
+             *     * `emoji` - emoji
+             */
+            display?: components["schemas"]["SurveyRatingQuestionSchemaDisplayEnum"];
+            /** @description Rating scale can be one of 3, 5, or 7 */
+            scale?: number;
+            /** @description Label for the lowest rating (e.g., 'Very Poor') */
+            lowerBoundLabel?: string;
+            /** @description Label for the highest rating (e.g., 'Excellent') */
+            upperBoundLabel?: string;
+            branching?: components["schemas"]["SurveyBranchingSchema"] | null;
+        };
+        /**
+         * @description * `number` - number
+         *     * `emoji` - emoji
+         * @enum {string}
+         */
+        SurveyRatingQuestionSchemaDisplayEnum: "number" | "emoji";
+        /**
+         * @description * `rating` - rating
+         * @enum {string}
+         */
+        SurveyRatingQuestionSchemaTypeEnum: "rating";
+        SurveyResponseBasedBranching: {
+            /**
+             * @description Branch based on the selected or entered response.
+             *
+             *     * `response_based` - response_based
+             */
+            type: components["schemas"]["SurveyResponseBasedBranchingTypeEnum"];
+            /** @description Response-based branching map. Values can be a question index or 'end'. */
+            responseValues: {
+                [key: string]: number | "end";
+            };
+        };
+        /**
+         * @description * `response_based` - response_based
+         * @enum {string}
+         */
+        SurveyResponseBasedBranchingTypeEnum: "response_based";
+        SurveySerializerCreateUpdateOnly: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            description?: string;
+            type: components["schemas"]["SurveyType"];
+            schedule?: string | null;
+            readonly linked_flag: components["schemas"]["MinimalFeatureFlag"];
+            linked_flag_id?: number | null;
+            linked_insight_id?: number | null;
+            targeting_flag_id?: number;
+            readonly targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            readonly internal_targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            targeting_flag_filters?: unknown;
+            remove_targeting_flag?: boolean | null;
+            /**
+             * @description The `array` of questions included in the survey. Each question must conform to one of the defined question types: Basic, Link, Rating, or Multiple Choice.
+             *
+             *             Basic (open-ended question)
+             *             - `id`: The question ID
+             *             - `type`: `open`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Link (a question with a link)
+             *             - `id`: The question ID
+             *             - `type`: `link`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `link`: The URL associated with the question.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Rating (a question with a rating scale)
+             *             - `id`: The question ID
+             *             - `type`: `rating`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `display`: Display style of the rating (`number` or `emoji`).
+             *             - `scale`: The scale of the rating (`number`).
+             *             - `lowerBoundLabel`: Label for the lower bound of the scale.
+             *             - `upperBoundLabel`: Label for the upper bound of the scale.
+             *             - `isNpsQuestion`: Whether the question is an NPS rating.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Multiple choice
+             *             - `id`: The question ID
+             *             - `type`: `single_choice` or `multiple_choice`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `choices`: An array of choices for the question.
+             *             - `shuffleOptions`: Whether to shuffle the order of the choices (`boolean`).
+             *             - `hasOpenChoice`: Whether the question allows an open-ended response (`boolean`).
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Branching logic can be one of the following types:
+             *
+             *             Next question: Proceeds to the next question
+             *             ```json
+             *             {
+             *                 "type": "next_question"
+             *             }
+             *             ```
+             *
+             *             End: Ends the survey, optionally displaying a confirmation message.
+             *             ```json
+             *             {
+             *                 "type": "end"
+             *             }
+             *             ```
+             *
+             *             Response-based: Branches based on the response values. Available for the `rating` and `single_choice` question types.
+             *             ```json
+             *             {
+             *                 "type": "response_based",
+             *                 "responseValues": {
+             *                     "responseKey": "value"
+             *                 }
+             *             }
+             *             ```
+             *
+             *             Specific question: Proceeds to a specific question by index.
+             *             ```json
+             *             {
+             *                 "type": "specific_question",
+             *                 "index": 2
+             *             }
+             *             ```
+             *
+             *             Translations: Each question can include inline translations.
+             *             - `translations`: Object mapping language codes to translated fields.
+             *             - Language codes: Canonical BCP-47-ish strings (e.g., "es", "es-MX", "zh-CN"). Aliases like "english" or "default" are rejected. The survey's `base_language` (default "en") declares the language of the untranslated text and cannot also appear as a translation key.
+             *             - Translatable fields: `question`, `description`, `buttonText`, `choices`, `lowerBoundLabel`, `upperBoundLabel`, `link`
+             *
+             *             Example with translations:
+             *             ```json
+             *             {
+             *                 "id": "uuid",
+             *                 "type": "rating",
+             *                 "question": "How satisfied are you?",
+             *                 "lowerBoundLabel": "Not satisfied",
+             *                 "upperBoundLabel": "Very satisfied",
+             *                 "translations": {
+             *                     "es": {
+             *                         "question": "¿Qué tan satisfecho estás?",
+             *                         "lowerBoundLabel": "No satisfecho",
+             *                         "upperBoundLabel": "Muy satisfecho"
+             *                     },
+             *                     "fr": {
+             *                         "question": "Dans quelle mesure êtes-vous satisfait?"
+             *                     }
+             *                 }
+             *             }
+             *             ```
+             */
+            questions?: unknown;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            start_date?: string | null;
+            /** Format: date-time */
+            end_date?: string | null;
+            archived?: boolean;
+            responses_limit?: number | null;
+            iteration_count?: number | null;
+            iteration_frequency_days?: number | null;
+            iteration_start_dates?: (string | null)[] | null;
+            current_iteration?: number | null;
+            /** Format: date-time */
+            current_iteration_start_date?: string | null;
+            /** Format: date-time */
+            response_sampling_start_date?: string | null;
+            response_sampling_interval_type?: components["schemas"]["ResponseSamplingIntervalTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            response_sampling_interval?: number | null;
+            response_sampling_limit?: number | null;
+            enable_partial_responses?: boolean | null;
+            enable_iframe_embedding?: boolean | null;
+            /** @description BCP-47 language code (e.g. 'en', 'es', 'es-MX') describing the language of the survey's untranslated text. Defaults to 'en'. Cannot also appear as a key in `translations`. */
+            base_language?: string;
+            /** create in folder */
+            _create_in_folder?: string;
+        };
+        SurveySerializerCreateUpdateOnlySchema: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description Survey name. */
+            name: string;
+            /** @description Survey description. */
+            description?: string;
+            /**
+             * @description Survey type.
+             *
+             *     * `popover` - popover
+             *     * `widget` - widget
+             *     * `external_survey` - external survey
+             *     * `api` - api
+             */
+            type: components["schemas"]["SurveyType"];
+            /**
+             * @description Survey scheduling behavior: 'once' = show once per user (default), 'recurring' = repeat based on iteration_count and iteration_frequency_days settings, 'always' = show every time conditions are met (mainly for widget surveys)
+             *
+             *     * `once` - once
+             *     * `recurring` - recurring
+             *     * `always` - always
+             */
+            schedule?: components["schemas"]["ScheduleEnum"] | components["schemas"]["NullEnum"];
+            readonly linked_flag: components["schemas"]["MinimalFeatureFlag"];
+            /** @description The feature flag linked to this survey. */
+            linked_flag_id?: number | null;
+            linked_insight_id?: number | null;
+            /** @description An existing targeting flag to use for this survey. */
+            targeting_flag_id?: number;
+            readonly targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            readonly internal_targeting_flag: components["schemas"]["MinimalFeatureFlag"];
+            /** @description Target specific users based on their properties. Example: {groups: [{properties: [{key: 'email', value: ['@company.com'], operator: 'icontains'}], rollout_percentage: 100}]} */
+            targeting_flag_filters?: components["schemas"]["FeatureFlagFiltersSchema"] | null;
+            /** @description Set to true to completely remove all targeting filters from the survey, making it visible to all users (subject to other display conditions like URL matching). */
+            remove_targeting_flag?: boolean | null;
+            /**
+             * @description The `array` of questions included in the survey. Each question must conform to one of the defined question types: Basic, Link, Rating, or Multiple Choice.
+             *
+             *             Basic (open-ended question)
+             *             - `id`: The question ID
+             *             - `type`: `open`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Link (a question with a link)
+             *             - `id`: The question ID
+             *             - `type`: `link`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `link`: The URL associated with the question.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Rating (a question with a rating scale)
+             *             - `id`: The question ID
+             *             - `type`: `rating`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `display`: Display style of the rating (`number` or `emoji`).
+             *             - `scale`: The scale of the rating (`number`).
+             *             - `lowerBoundLabel`: Label for the lower bound of the scale.
+             *             - `upperBoundLabel`: Label for the upper bound of the scale.
+             *             - `isNpsQuestion`: Whether the question is an NPS rating.
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Multiple choice
+             *             - `id`: The question ID
+             *             - `type`: `single_choice` or `multiple_choice`
+             *             - `question`: The text of the question.
+             *             - `description`: Optional description of the question.
+             *             - `descriptionContentType`: Content type of the description (`html` or `text`).
+             *             - `optional`: Whether the question is optional (`boolean`).
+             *             - `buttonText`: Text displayed on the submit button.
+             *             - `choices`: An array of choices for the question.
+             *             - `shuffleOptions`: Whether to shuffle the order of the choices (`boolean`).
+             *             - `hasOpenChoice`: Whether the question allows an open-ended response (`boolean`).
+             *             - `branching`: Branching logic for the question. See branching types below for details.
+             *
+             *             Branching logic can be one of the following types:
+             *
+             *             Next question: Proceeds to the next question
+             *             ```json
+             *             {
+             *                 "type": "next_question"
+             *             }
+             *             ```
+             *
+             *             End: Ends the survey, optionally displaying a confirmation message.
+             *             ```json
+             *             {
+             *                 "type": "end"
+             *             }
+             *             ```
+             *
+             *             Response-based: Branches based on the response values. Available for the `rating` and `single_choice` question types.
+             *             ```json
+             *             {
+             *                 "type": "response_based",
+             *                 "responseValues": {
+             *                     "responseKey": "value"
+             *                 }
+             *             }
+             *             ```
+             *
+             *             Specific question: Proceeds to a specific question by index.
+             *             ```json
+             *             {
+             *                 "type": "specific_question",
+             *                 "index": 2
+             *             }
+             *             ```
+             *
+             *             Translations: Each question can include inline translations.
+             *             - `translations`: Object mapping language codes to translated fields.
+             *             - Language codes: Canonical BCP-47-ish strings (e.g., "es", "es-MX", "zh-CN"). Aliases like "english" or "default" are rejected. The survey's `base_language` (default "en") declares the language of the untranslated text and cannot also appear as a translation key.
+             *             - Translatable fields: `question`, `description`, `buttonText`, `choices`, `lowerBoundLabel`, `upperBoundLabel`, `link`
+             *
+             *             Example with translations:
+             *             ```json
+             *             {
+             *                 "id": "uuid",
+             *                 "type": "rating",
+             *                 "question": "How satisfied are you?",
+             *                 "lowerBoundLabel": "Not satisfied",
+             *                 "upperBoundLabel": "Very satisfied",
+             *                 "translations": {
+             *                     "es": {
+             *                         "question": "¿Qué tan satisfecho estás?",
+             *                         "lowerBoundLabel": "No satisfecho",
+             *                         "upperBoundLabel": "Muy satisfecho"
+             *                     },
+             *                     "fr": {
+             *                         "question": "Dans quelle mesure êtes-vous satisfait?"
+             *                     }
+             *                 }
+             *             }
+             *             ```
+             */
+            questions?: components["schemas"]["SurveyQuestionInputSchema"][] | null;
+            /** @description Display and targeting conditions for the survey. */
+            conditions?: components["schemas"]["SurveyConditionsSchema"] | null;
+            /** @description Survey appearance customization. */
+            appearance?: components["schemas"]["SurveyAppearanceSchema"] | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /**
+             * Format: date-time
+             * @description Setting this will launch the survey immediately. Don't add a start_date unless explicitly requested to do so.
+             */
+            start_date?: string | null;
+            /**
+             * Format: date-time
+             * @description When the survey stopped being shown to users. Setting this will complete the survey.
+             */
+            end_date?: string | null;
+            /** @description Archive state for the survey. */
+            archived?: boolean;
+            /** @description The maximum number of responses before automatically stopping the survey. */
+            responses_limit?: number | null;
+            /** @description For a recurring schedule, this field specifies the number of times the survey should be shown to the user. Use 1 for 'once every X days', higher numbers for multiple repetitions. Works together with iteration_frequency_days to determine the overall survey schedule. */
+            iteration_count?: number | null;
+            /** @description For a recurring schedule, this field specifies the interval in days between each survey instance shown to the user, used alongside iteration_count for precise scheduling. */
+            iteration_frequency_days?: number | null;
+            iteration_start_dates?: (string | null)[] | null;
+            current_iteration?: number | null;
+            /** Format: date-time */
+            current_iteration_start_date?: string | null;
+            /** Format: date-time */
+            response_sampling_start_date?: string | null;
+            response_sampling_interval_type?: components["schemas"]["ResponseSamplingIntervalTypeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            response_sampling_interval?: number | null;
+            response_sampling_limit?: number | null;
+            /** @description When at least one question is answered, the response is stored (true). The response is stored when all questions are answered (false). */
+            enable_partial_responses?: boolean | null;
+            enable_iframe_embedding?: boolean | null;
+            /** @description BCP-47 language code (e.g. 'en', 'es', 'es-MX') describing the language of the survey's untranslated text. Defaults to 'en'. Cannot also appear as a key in `translations`. */
+            base_language?: string;
+            /** create in folder */
+            _create_in_folder?: string;
+        };
+        SurveySingleChoiceQuestionSchema: {
+            /** @description Stable question identifier (UUID). When editing an existing question, send back its current id so its responses (keyed by $survey_response_<id>) stay attached; omit it for new questions and the server generates one. */
+            id?: string;
+            type: components["schemas"]["SurveySingleChoiceQuestionSchemaTypeEnum"];
+            /** @description Question text shown to respondents. */
+            question: string;
+            /** @description Optional helper text. */
+            description?: string;
+            /**
+             * @description Format for the description field.
+             *
+             *     * `text` - text
+             *     * `html` - html
+             */
+            descriptionContentType?: components["schemas"]["DescriptionContentTypeEnum"];
+            /** @description Whether respondents may skip this question. */
+            optional?: boolean;
+            /** @description Custom button label. */
+            buttonText?: string;
+            /** @description Array of choice options. Choice indices (0, 1, 2, ...) are used for branching logic. */
+            choices: string[];
+            /** @description Whether to randomize the order of choices for each respondent. */
+            shuffleOptions?: boolean;
+            /** @description Whether the final option should be an open-text choice (for example, 'Other'). */
+            hasOpenChoice?: boolean;
+            branching?: components["schemas"]["SurveyBranchingSchema"] | null;
+        };
+        /**
+         * @description * `single_choice` - single_choice
+         * @enum {string}
+         */
+        SurveySingleChoiceQuestionSchemaTypeEnum: "single_choice";
+        SurveySpecificQuestionBranching: {
+            /**
+             * @description Jump to a specific question index.
+             *
+             *     * `specific_question` - specific_question
+             */
+            type: components["schemas"]["SurveySpecificQuestionBranchingTypeEnum"];
+            /** @description 0-based index of the next question. */
+            index: number;
+        };
+        /**
+         * @description * `specific_question` - specific_question
+         * @enum {string}
+         */
+        SurveySpecificQuestionBranchingTypeEnum: "specific_question";
+        /**
+         * @description * `popover` - popover
+         *     * `widget` - widget
+         *     * `external_survey` - external survey
+         *     * `api` - api
+         * @enum {string}
+         */
+        SurveyType: "popover" | "widget" | "external_survey" | "api";
         /** TableSettings */
         TableSettings: {
             /**
@@ -18173,6 +19285,13 @@ export interface components {
          * @enum {integer}
          */
         WeekStartDayEnum: 0 | 1;
+        /**
+         * @description * `button` - button
+         *     * `tab` - tab
+         *     * `selector` - selector
+         * @enum {string}
+         */
+        WidgetTypeEnum: "button" | "tab" | "selector";
         /** WorkflowVariablePropertyFilter */
         WorkflowVariablePropertyFilter: {
             /** Key */
@@ -20630,6 +21749,198 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaPropertyGroup"];
+                };
+            };
+        };
+    };
+    surveys_list: {
+        parameters: {
+            query?: {
+                archived?: boolean;
+                /** @description Multiple values may be separated by commas. */
+                ids?: string[];
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Match against survey `name` and `description`. Returns exact (case-insensitive substring) matches only; if no exact match exists, returns similar (fuzzy trigram — typos, prefix-as-you-type) matches instead. Each result's `search_match_type` is `exact` or `similar`. */
+                search?: string;
+                /**
+                 * @description * `popover` - popover
+                 *     * `widget` - widget
+                 *     * `external_survey` - external survey
+                 *     * `api` - api
+                 */
+                type?: "api" | "external_survey" | "popover" | "widget";
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSurveyList"];
+                };
+            };
+        };
+    };
+    surveys_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveySerializerCreateUpdateOnlySchema"];
+                "application/x-www-form-urlencoded": components["schemas"]["SurveySerializerCreateUpdateOnlySchema"];
+                "multipart/form-data": components["schemas"]["SurveySerializerCreateUpdateOnlySchema"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveySerializerCreateUpdateOnly"];
+                };
+            };
+        };
+    };
+    surveys_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this survey. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Survey"];
+                };
+            };
+        };
+    };
+    surveys_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this survey. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    surveys_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this survey. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSurveySerializerCreateUpdateOnlySchema"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSurveySerializerCreateUpdateOnlySchema"];
+                "multipart/form-data": components["schemas"]["PatchedSurveySerializerCreateUpdateOnlySchema"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveySerializerCreateUpdateOnly"];
+                };
+            };
+        };
+    };
+    surveys_launch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this survey. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Survey"];
+                };
+            };
+        };
+    };
+    surveys_stop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this survey. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Survey"];
                 };
             };
         };
