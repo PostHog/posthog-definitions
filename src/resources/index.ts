@@ -2,6 +2,7 @@ import type { ResourceModule } from "./types.js";
 import { topoOrder } from "./order.js";
 import { actionResource } from "./action/index.js";
 import { cohortResource } from "./cohort/index.js";
+import { annotationResource } from "./annotation/index.js";
 import { dashboardResource } from "./dashboard/index.js";
 import { endpointResource } from "./endpoint/index.js";
 import { featureFlagResource } from "./feature-flag/index.js";
@@ -31,6 +32,7 @@ const REGISTRY: ReadonlyArray<ResourceModule<unknown, unknown>> = [
   insightResource as ResourceModule<unknown, unknown>,
   projectSettingsResource as ResourceModule<unknown, unknown>,
   propertyGroupResource as ResourceModule<unknown, unknown>,
+  annotationResource as ResourceModule<unknown, unknown>,
 ];
 
 /**
@@ -48,6 +50,7 @@ export { cohortResource } from "./cohort/index.js";
 export { featureFlagResource } from "./feature-flag/index.js";
 export { endpointResource } from "./endpoint/index.js";
 export { propertyGroupResource } from "./property-group/index.js";
+export { annotationResource } from "./annotation/index.js";
 export { eventDefinitionResource } from "./event-definition/index.js";
 export { experimentHoldoutResource } from "./experiment-holdout/index.js";
 export { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";

@@ -7,6 +7,7 @@ import { topoOrder } from "./order.js";
 import { RESOURCES } from "./index.js";
 import { actionResource } from "./action/index.js";
 import { cohortResource } from "./cohort/index.js";
+import { annotationResource } from "./annotation/index.js";
 import { dashboardResource } from "./dashboard/index.js";
 import { endpointResource } from "./endpoint/index.js";
 import { eventDefinitionResource } from "./event-definition/index.js";
@@ -185,6 +186,7 @@ describe("RESOURCES (real registry)", () => {
         insightResource,
         projectSettingsResource,
         propertyGroupResource,
+        annotationResource,
       ].map((r) => r.name),
     );
     expect(new Set(RESOURCES.map((r) => r.name))).toEqual(expected);

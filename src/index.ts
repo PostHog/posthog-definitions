@@ -23,6 +23,9 @@ export type {
 export { cohort } from "./resources/cohort/index.js";
 export type { Cohort, CohortFilters, CohortType } from "./resources/cohort/index.js";
 
+export { annotation } from "./resources/annotation/index.js";
+export type { Annotation, AnnotationScope, AnnotationCreationType } from "./resources/annotation/index.js";
+
 export { action } from "./resources/action/index.js";
 export type {
   Action,
