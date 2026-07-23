@@ -34,11 +34,15 @@ export default dashboard({
         name: "Weekly signups",
         query: trends({ series: [{ event: "user signed up" }], interval: "week" }),
       }),
-      layout: { x: 0, y: 0, w: 6, h: 4 },
     },
   ],
 });
 ```
+
+> **Insight tiles carry only their insight** — the PostHog API can't persist a
+> per-insight-tile layout or color. Use the dashboard-level
+> `insightLayout: "preserve" | "two_column" | "full_width"` for coarse packing.
+> Text and button tiles keep full `layout` (and `color`).
 
 ## Workflow
 

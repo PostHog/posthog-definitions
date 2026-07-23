@@ -68,13 +68,18 @@ export default dashboard({
     "Smoke-test dashboard managed by posthog-definitions. Tracks pageviews, dashboard views, queries, exceptions, and feature flag evaluations on the dev project.",
   pinned: false,
   tags: ["dev-usage"],
+  // Insight tiles carry only their insight — the PostHog API can't persist a
+  // per-insight-tile layout/color. The optional dashboard-level `insightLayout`
+  // ("preserve" | "two_column" | "full_width") picks the coarse packing;
+  // "preserve" (the default here) lets PostHog auto-arrange them. Text tiles
+  // keep full layout + color.
   tiles: [
-    { insight: weeklyActive, layout: { x: 0, y: 0, w: 6, h: 4 } },
-    { insight: dailyPageviews, layout: { x: 6, y: 0, w: 6, h: 4 } },
-    { insight: dashboardsViewed, layout: { x: 0, y: 4, w: 6, h: 4 } },
-    { insight: queriesCompleted, layout: { x: 6, y: 4, w: 6, h: 4 } },
-    { insight: exceptionsDaily, layout: { x: 0, y: 8, w: 6, h: 4 } },
-    { insight: featureFlagsEvaluated, layout: { x: 6, y: 8, w: 6, h: 4 } },
+    { insight: weeklyActive },
+    { insight: dailyPageviews },
+    { insight: dashboardsViewed },
+    { insight: queriesCompleted },
+    { insight: exceptionsDaily },
+    { insight: featureFlagsEvaluated },
     text({
       body: "Managed by posthog-definitions. Edit `examples/posthog/dashboards/growth.ts` and run `apply`.",
       layout: { x: 0, y: 12, w: 12, h: 1 },

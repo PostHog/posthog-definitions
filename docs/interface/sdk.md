@@ -68,15 +68,8 @@ MVP ships `trends` and `hogql`. The rest land as soon as the schema is exposed; 
 
 ```ts
 type Tile =
-  | {
-      insight: Insight;
-      layout: Layout;
-      color?: string;
-      filtersOverride?: Filters;
-      showDescription?: boolean;
-      transparent?: boolean;
-    }
-  | { kind: "text"; body: string; layout: Layout }
+  | { insight: Insight } // no layout/color — see below
+  | { kind: "text"; body: string; layout: Layout; color?: string }
   | {
       kind: "button";
       url: string;
@@ -84,12 +77,20 @@ type Tile =
       placement?: "left" | "right";
       style?: "primary" | "secondary";
       layout: Layout;
+      color?: string;
     };
 
 type Layout = { x: number; y: number; w: number; h: number };
+
+// On the dashboard itself, for insight-tile packing:
+type InsightLayout = "preserve" | "two_column" | "full_width"; // default "preserve"
 ```
 
-`text({...})` and `button({...})` are helpers that fill in `kind`. Insight tiles are written as plain object literals because they pair an external `Insight` with a layout.
+`text({...})` and `button({...})` are helpers that fill in `kind`. Insight tiles are written as plain object literals that pair with an external `Insight`.
+
+**Insight tiles have no `layout` or `color`.** The 2026-07-23 PostHog API cannot persist an insight tile's position or color (`Dashboard.tiles` is read-only; there is no endpoint to set an insight tile's layout). Only *which* insight appears on a dashboard is persistable, so the SDK exposes only that — declaring `layout`/`color` on an insight tile is a **compile error** (`?: never`), not silent loss. For coarse insight-tile arrangement, set the dashboard-level `insightLayout` (mapped to the `reorder_tiles` endpoint; `"preserve"` — the default — issues no reorder). A non-`preserve` `insightLayout` repacks *every* tile, so declared text-tile layouts are not preserved under it. Text and button tiles keep full `layout` and `color`.
+
+**Migrating existing definition files:** delete `layout` and `color` from any insight tile (`{ insight: x, layout: {…} }` → `{ insight: x }`); optionally add `insightLayout: "two_column" | "full_width"` on the dashboard. Text/button tiles are unchanged.
 
 ## Validation
 

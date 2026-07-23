@@ -35,12 +35,7 @@ function buildDashboard(key: string, name: string, insight: Insight): Dashboard 
     key,
     name,
     description: "Created by pipeline.acceptance.test.ts",
-    tiles: [
-      {
-        insight,
-        layout: { x: 0, y: 0, w: 6, h: 5 },
-      },
-    ],
+    tiles: [{ insight }],
   };
 }
 

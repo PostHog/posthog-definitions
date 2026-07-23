@@ -163,30 +163,19 @@ function renderInsightTile(
     usedVarNames.add(entry.varName);
     insightImports.push({ varName: entry.varName, filename: entry.filename });
   }
-
-  const layout = pickLayout(tile.layouts);
-  if (!layout) {
-    ctx.warn(`Insight tile for insight id=${srv.id} had no layout; using default.`);
-  }
-  const layoutLiteral = renderLayout(layout ?? { x: 0, y: 0, w: 6, h: 4 });
-
-  const fields: Record<string, string> = {
-    insight: entry.varName,
-    layout: layoutLiteral,
-  };
-  if (tile.color) fields.color = stringLiteral(tile.color);
-  return renderObject(fields, 4);
+  // Insight tiles carry only their insight reference — the API exposes no
+  // settable layout/color for them (see dashboard/sdk.ts).
+  return renderObject({ insight: entry.varName }, 4);
 }
 
 function renderTextTile(tile: ServerTile): string {
   const layout = pickLayout(tile.layouts) ?? { x: 0, y: 0, w: 12, h: 2 };
-  return `text(${renderObject(
-    {
-      body: stringLiteral(tile.text?.body ?? ""),
-      layout: renderLayout(layout),
-    },
-    4,
-  )})`;
+  const fields: Record<string, string> = {
+    body: stringLiteral(tile.text?.body ?? ""),
+    layout: renderLayout(layout),
+  };
+  if (tile.color) fields.color = stringLiteral(tile.color);
+  return `text(${renderObject(fields, 4)})`;
 }
 
 function pickLayout(

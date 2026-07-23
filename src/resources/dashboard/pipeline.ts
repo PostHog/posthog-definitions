@@ -20,7 +20,6 @@ import type { Insight } from "../insight/sdk.js";
 import {
   type ButtonTile,
   type Dashboard,
-  type InsightTile,
   isButtonTile,
   isInsightTile,
   isTextTile,
@@ -30,12 +29,16 @@ import {
 } from "./sdk.js";
 import {
   createDashboard,
+  createTextTile,
   deleteDashboard,
+  deleteTile,
   getDashboard,
+  reorderTiles,
   type ServerDashboard,
   type ServerTile,
   updateDashboard,
 } from "./client.js";
+import { getInsightDashboardIds, setInsightDashboardIds } from "../insight/client.js";
 
 export const DASHBOARD_TAG_PREFIX = "iac:dashboards:";
 export const HASH_TAG_PREFIX = "iac:hash:";
@@ -80,26 +83,62 @@ function mergeTags(userTags: string[] | undefined, managedTags: string[]): strin
   return result;
 }
 
+export function insightLayoutOf(spec: Dashboard): "preserve" | "two_column" | "full_width" {
+  return spec.insightLayout ?? "preserve";
+}
+
+/** Markdown encoding for a button tile's body (round-trips via parseMarkdownButton). */
+function buttonBody(tile: ButtonTile): string {
+  return `[${tile.text}](${tile.url})`;
+}
+
+/**
+ * Hash only what the API can actually persist:
+ *  - dashboard fields (name/description/pinned/restriction/tags),
+ *  - insight-tile MEMBERSHIP by key (sorted — the API doesn't preserve a
+ *    stable insight-tile order we can set),
+ *  - text/button tile content + color (always) and layout (ONLY under
+ *    `preserve`; a non-preserve `insightLayout` repacks every tile via
+ *    `reorder_tiles`, so the declared text layout wouldn't survive and must
+ *    not enter the hash),
+ *  - `insightLayout`.
+ * Insight-tile layout/color are absent from the SDK entirely — the API can't
+ * set them — so they never reach the hash.
+ */
 function dashboardSpecForHash(spec: Dashboard): unknown {
+  const layoutMode = insightLayoutOf(spec);
+  const keepLayout = layoutMode === "preserve";
+  const insightKeys = spec.tiles
+    .filter(isInsightTile)
+    .map((t) => t.insight.key)
+    .sort();
+  const textTiles = spec.tiles.filter((t) => !isInsightTile(t)).map((tile) => {
+    if (isTextTile(tile)) {
+      return {
+        kind: "text",
+        body: tile.body,
+        color: tile.color ?? null,
+        ...(keepLayout && { layout: tile.layout }),
+      };
+    }
+    const btn = tile as ButtonTile;
+    return {
+      kind: "button",
+      body: buttonBody(btn),
+      color: btn.color ?? null,
+      ...(keepLayout && { layout: btn.layout }),
+    };
+  });
   return {
     key: spec.key,
     name: spec.name,
     description: spec.description ?? null,
     pinned: spec.pinned ?? false,
     restriction: spec.restriction,
-    tags: spec.tags ?? [],
-    tiles: spec.tiles.map((tile) => {
-      if (isInsightTile(tile)) {
-        return {
-          kind: "insight",
-          insightKey: tile.insight.key,
-          layout: tile.layout,
-          color: tile.color,
-          filtersOverride: tile.filtersOverride,
-        };
-      }
-      return tile;
-    }),
+    tags: filterUserTags(spec.tags),
+    insightLayout: layoutMode,
+    insightKeys,
+    textTiles,
   };
 }
 
@@ -107,70 +146,25 @@ export function dashboardHash(spec: Dashboard): string {
   return specHash(dashboardSpecForHash(spec));
 }
 
-function layoutsFor(layout: Layout): Record<string, Layout> {
-  return { sm: layout, lg: layout };
-}
-
-function serializeInsightTile(tile: InsightTile, insightIdByKey: Map<string, number>): unknown {
-  const id = insightIdByKey.get(tile.insight.key);
-  if (id === undefined) {
-    throw new Error(
-      `Insight "${tile.insight.key}" was not created before its dashboard tile. This is a bug in the executor ordering.`,
-    );
-  }
-  return {
-    insight: { id },
-    layouts: layoutsFor(tile.layout),
-    ...(tile.color !== undefined && { color: tile.color }),
-    ...(tile.filtersOverride !== undefined && {
-      filters_hash: null,
-      filters: tile.filtersOverride,
-    }),
-  };
-}
-
-function serializeTextTile(tile: TextTile): unknown {
-  return {
-    text: { body: tile.body },
-    layouts: layoutsFor(tile.layout),
-  };
-}
-
-function serializeButtonTile(tile: ButtonTile): unknown {
-  return {
-    text: { body: `[${tile.text}](${tile.url})` },
-    layouts: layoutsFor(tile.layout),
-  };
-}
-
-function serializeTile(tile: Tile, insightIdByKey: Map<string, number>): unknown {
-  if (isInsightTile(tile)) return serializeInsightTile(tile, insightIdByKey);
-  if (isTextTile(tile)) return serializeTextTile(tile);
-  if (isButtonTile(tile)) return serializeButtonTile(tile);
-  throw new Error(`Unknown tile shape: ${JSON.stringify(tile)}`);
-}
-
 export function dashboardPayload(
   spec: Dashboard,
   hash: string,
-  insightIdByKey: Map<string, number>,
 ): {
   name: string;
-  description: string | null;
+  description?: string;
   pinned: boolean;
   tags: string[];
   restriction_level?: number;
-  tiles: unknown[];
 } {
   return {
     name: spec.name,
-    description: spec.description ?? null,
+    // Omit when undefined — the API 400s on an explicit `description: null`.
+    ...(spec.description !== undefined && { description: spec.description }),
     pinned: spec.pinned ?? false,
     tags: mergeTags(spec.tags, [dashboardTag(spec.key), hashTag(hash)]),
     ...(spec.restriction !== undefined && {
       restriction_level: RESTRICTION_TO_LEVEL[spec.restriction],
     }),
-    tiles: spec.tiles.map((tile) => serializeTile(tile, insightIdByKey)),
   };
 }
 
@@ -205,11 +199,11 @@ function validateTile(
 ): void {
   const where = `dashboard "${dashboardKey}" tile[${index}]`;
   if (isInsightTile(tile)) {
+    // Insight tiles have no layout — the API can't set one (see sdk.ts).
     if (!tile.insight) issues.push(`${where}: missing insight`);
     else if (!knownInsightKeys.has(tile.insight.key)) {
       issues.push(`${where}: references unknown insight "${tile.insight.key}"`);
     }
-    validateLayout(issues, where, tile.layout);
   } else if (isTextTile(tile)) {
     if (!tile.body) issues.push(`${where}: text tile body is empty`);
     validateLayout(issues, where, tile.layout);
@@ -275,15 +269,110 @@ export async function runDashboardOp(
 ): Promise<void> {
   if (op.kind === "unchanged") return;
 
-  const payload = dashboardPayload(op.spec, dashboardHash(op.spec), ctx.insightIdByKey);
+  const payload = dashboardPayload(op.spec, dashboardHash(op.spec));
 
+  let dashboardId: number;
+  let currentTiles: ServerTile[];
   if (op.kind === "create") {
-    await createDashboard(config, payload, options);
-    return;
+    const created = await createDashboard(config, payload, options);
+    dashboardId = created.id;
+    currentTiles = [];
+  } else {
+    await assertManagedDashboard(config, op.server.id, op.spec.key, options);
+    const updated = await updateDashboard(config, op.server.id, payload, options);
+    dashboardId = updated.id;
+    // Re-fetch full tiles to converge from actual server state.
+    currentTiles = (await getDashboard(config, dashboardId, options)).tiles ?? [];
   }
 
-  await assertManagedDashboard(config, op.server.id, op.spec.key, options);
-  await updateDashboard(config, op.server.id, payload, options);
+  await syncTiles(config, dashboardId, op.spec, ctx, currentTiles, options);
+}
+
+/**
+ * Converge a managed dashboard's tiles to `spec`. Insight tiles are (un)linked
+ * via the insight's `dashboards` membership; text/button tiles are
+ * delete-then-recreate (bounded churn — this only runs on create or a
+ * hash-changing update); a non-preserve `insightLayout` repacks via
+ * `reorder_tiles` last.
+ */
+async function syncTiles(
+  config: ClientConfig,
+  dashboardId: number,
+  spec: Dashboard,
+  ctx: ApplyContext,
+  currentTiles: ServerTile[],
+  options: { verbose?: boolean },
+): Promise<void> {
+  // --- Insight-tile membership (add missing, drop no-longer-desired) ---
+  const desiredInsightIds = new Set<number>();
+  for (const tile of spec.tiles) {
+    if (!isInsightTile(tile)) continue;
+    const id = ctx.insightIdByKey.get(tile.insight.key);
+    if (id === undefined) {
+      throw new Error(
+        `Insight "${tile.insight.key}" was not created before its dashboard tile. This is a bug in the executor ordering.`,
+      );
+    }
+    desiredInsightIds.add(id);
+  }
+  const currentInsightIds = new Set<number>();
+  for (const t of currentTiles) {
+    if (t.insight && typeof t.insight.id === "number") currentInsightIds.add(t.insight.id);
+  }
+  for (const insightId of desiredInsightIds) {
+    if (!currentInsightIds.has(insightId)) {
+      await setInsightMembership(config, insightId, dashboardId, true, options);
+    }
+  }
+  for (const insightId of currentInsightIds) {
+    if (!desiredInsightIds.has(insightId)) {
+      await setInsightMembership(config, insightId, dashboardId, false, options);
+    }
+  }
+
+  // --- Text/button tiles: delete existing, recreate desired ---
+  for (const t of currentTiles) {
+    if (t.text && typeof t.id === "number") await deleteTile(config, dashboardId, t.id, options);
+  }
+  for (const tile of spec.tiles) {
+    if (isTextTile(tile)) {
+      await createTextTile(config, dashboardId, tile.body, tile.layout, tile.color, options);
+    } else if (isButtonTile(tile)) {
+      await createTextTile(config, dashboardId, buttonBody(tile), tile.layout, tile.color, options);
+    }
+  }
+
+  // --- insightLayout packing (repacks ALL tiles; only on non-preserve) ---
+  const mode = insightLayoutOf(spec);
+  if (mode !== "preserve") {
+    const fresh = await getDashboard(config, dashboardId, options);
+    const order = (fresh.tiles ?? [])
+      .map((t) => t.id)
+      .filter((x): x is number => typeof x === "number");
+    if (order.length > 0) await reorderTiles(config, dashboardId, order, mode, options);
+  }
+}
+
+/**
+ * Add or remove `dashboardId` from an insight's dashboard membership without
+ * disturbing its other memberships. Reads the current set first, so it never
+ * clobbers tiles this dashboard doesn't own.
+ */
+async function setInsightMembership(
+  config: ClientConfig,
+  insightId: number,
+  dashboardId: number,
+  add: boolean,
+  options: { verbose?: boolean },
+): Promise<void> {
+  const current = await getInsightDashboardIds(config, insightId, options);
+  const set = new Set(current);
+  const had = set.has(dashboardId);
+  if (add) set.add(dashboardId);
+  else set.delete(dashboardId);
+  if (set.has(dashboardId) !== had) {
+    await setInsightDashboardIds(config, insightId, [...set], options);
+  }
 }
 
 export async function pruneDashboard(
@@ -319,90 +408,80 @@ function restrictionFromLevel(level: number | undefined): string | null {
   return null;
 }
 
-function displayTileSpec(tile: Tile): DisplayValue {
-  if (isInsightTile(tile)) {
-    return obj([
-      ["kind", scalar("insight")],
-      ["insightKey", scalar(tile.insight.key)],
-      ["layout", displayJson(tile.layout)],
-      ...(tile.color !== undefined
-        ? ([["color", scalar(tile.color)]] as Array<[string, DisplayValue]>)
-        : []),
-    ]);
-  }
-  if (isTextTile(tile)) {
-    return obj([
-      ["kind", scalar("text")],
-      ["body", scalar(tile.body)],
-      ["layout", displayJson(tile.layout)],
-    ]);
-  }
-  if (isButtonTile(tile)) {
-    return obj([
-      ["kind", scalar("button")],
-      ["text", scalar(tile.text)],
-      ["url", scalar(tile.url)],
-      ["layout", displayJson(tile.layout)],
-    ]);
-  }
-  return scalar(JSON.stringify(tile));
-}
-
-function displayServerTile(
-  tile: ServerTile,
-  insightKeyByServerId: Map<number, string>,
-): DisplayValue {
-  if (tile.insight && typeof tile.insight.id === "number") {
-    const key = insightKeyByServerId.get(tile.insight.id) ?? `id:${tile.insight.id}`;
-    return obj([
-      ["kind", scalar("insight")],
-      ["insightKey", scalar(key)],
-      ["layout", displayJson(pickLayout(tile.layouts))],
-      ...(tile.color != null
-        ? ([["color", scalar(tile.color)]] as Array<[string, DisplayValue]>)
-        : []),
-    ]);
-  }
-  if (tile.text && typeof tile.text.body === "string") {
-    const button = parseMarkdownButton(tile.text.body);
-    if (button) {
-      return obj([
+function displayTextTileSpec(tile: TextTile | ButtonTile, keepLayout: boolean): DisplayValue {
+  const rows: Array<[string, DisplayValue]> = isTextTile(tile)
+    ? [
+        ["kind", scalar("text")],
+        ["body", scalar(tile.body)],
+      ]
+    : [
         ["kind", scalar("button")],
-        ["text", scalar(button.text)],
-        ["url", scalar(button.url)],
-        ["layout", displayJson(pickLayout(tile.layouts))],
-      ]);
-    }
-    return obj([
-      ["kind", scalar("text")],
-      ["body", scalar(tile.text.body)],
-      ["layout", displayJson(pickLayout(tile.layouts))],
-    ]);
-  }
-  return scalar(JSON.stringify(tile));
+        ["text", scalar(tile.text)],
+        ["url", scalar(tile.url)],
+      ];
+  if (tile.color !== undefined) rows.push(["color", scalar(tile.color)]);
+  if (keepLayout) rows.push(["layout", displayJson(tile.layout)]);
+  return obj(rows);
 }
 
 export function displayDashboard(spec: Dashboard): DisplayValue {
+  const keepLayout = insightLayoutOf(spec) === "preserve";
+  const insightKeys = spec.tiles
+    .filter(isInsightTile)
+    .map((t) => t.insight.key)
+    .sort();
+  const textTiles = spec.tiles.filter((t): t is TextTile | ButtonTile => !isInsightTile(t));
   return obj([
     ["name", scalar(spec.name)],
     ["description", scalar(spec.description ?? null)],
     ["pinned", scalar(spec.pinned ?? false)],
     ["restriction", scalar(spec.restriction ?? null)],
     ["tags", arr(filterUserTags(spec.tags).map(scalar))],
-    ["tiles", arr(spec.tiles.map(displayTileSpec))],
+    ["insightLayout", scalar(insightLayoutOf(spec))],
+    ["insightTiles", arr(insightKeys.map(scalar))],
+    ["textTiles", arr(textTiles.map((t) => displayTextTileSpec(t, keepLayout)))],
   ]);
+}
+
+function displayServerTextTile(tile: ServerTile, keepLayout: boolean): DisplayValue {
+  const body = tile.text?.body ?? "";
+  const button = parseMarkdownButton(body);
+  const rows: Array<[string, DisplayValue]> = button
+    ? [
+        ["kind", scalar("button")],
+        ["text", scalar(button.text)],
+        ["url", scalar(button.url)],
+      ]
+    : [
+        ["kind", scalar("text")],
+        ["body", scalar(body)],
+      ];
+  if (tile.color != null) rows.push(["color", scalar(tile.color)]);
+  if (keepLayout) rows.push(["layout", displayJson(pickLayout(tile.layouts))]);
+  return obj(rows);
 }
 
 export function displayDashboardFromServer(
   server: ServerDashboard,
   insightKeyByServerId: Map<number, string>,
 ): DisplayValue {
+  const tiles = server.tiles ?? [];
+  const insightKeys = tiles
+    .filter((t) => t.insight && typeof t.insight.id === "number")
+    .map((t) => insightKeyByServerId.get(t.insight!.id) ?? `id:${t.insight!.id}`)
+    .sort();
+  const textTiles = tiles.filter((t) => t.text && typeof t.text.body === "string");
+  // insightLayout isn't a persisted server field; the diff engine only reaches
+  // here for a hash-changed op, so mirror the "preserve" projection (text
+  // layout shown) — server rows are always displayed as their concrete layout.
   return obj([
     ["name", scalar(server.name)],
     ["description", scalar(server.description ?? null)],
     ["pinned", scalar(server.pinned ?? false)],
     ["restriction", scalar(restrictionFromLevel(server.restriction_level))],
     ["tags", arr(filterUserTags(server.tags).map(scalar))],
-    ["tiles", arr((server.tiles ?? []).map((t) => displayServerTile(t, insightKeyByServerId)))],
+    ["insightLayout", scalar("preserve")],
+    ["insightTiles", arr(insightKeys.map(scalar))],
+    ["textTiles", arr(textTiles.map((t) => displayServerTextTile(t, true)))],
   ]);
 }

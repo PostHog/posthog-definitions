@@ -18,12 +18,7 @@ function spec(key: string, insightKey: string): Dashboard {
   return {
     key,
     name: `Dashboard ${key}`,
-    tiles: [
-      {
-        insight: insightSpec(insightKey),
-        layout: { x: 0, y: 0, w: 6, h: 4 },
-      },
-    ],
+    tiles: [{ insight: insightSpec(insightKey) }],
   };
 }
 
@@ -96,5 +91,46 @@ describe("dashboard pipeline", () => {
     const slice = result.get("dashboards")!;
     expect(slice.ops.length).toBe(0);
     expect(slice.orphans.length).toBe(0);
+  });
+});
+
+describe("dashboard hash (settable fields only)", () => {
+  const withTiles = (key: string, tiles: Dashboard["tiles"], insightLayout?: Dashboard["insightLayout"]): Dashboard => ({
+    key,
+    name: `Dashboard ${key}`,
+    ...(insightLayout && { insightLayout }),
+    tiles,
+  });
+
+  it("insight-tile membership is order-insensitive", () => {
+    const a = withTiles("d", [{ insight: insightSpec("x") }, { insight: insightSpec("y") }]);
+    const b = withTiles("d", [{ insight: insightSpec("y") }, { insight: insightSpec("x") }]);
+    expect(dashboardHash(a)).toBe(dashboardHash(b));
+  });
+
+  it("changing insightLayout changes the hash", () => {
+    const preserve = withTiles("d", [{ insight: insightSpec("x") }]);
+    const twoCol = withTiles("d", [{ insight: insightSpec("x") }], "two_column");
+    expect(dashboardHash(preserve)).not.toBe(dashboardHash(twoCol));
+  });
+
+  it("text-tile layout is hashed under preserve but not under a repacking mode", () => {
+    const t1 = withTiles("d", [{ kind: "text", body: "n", layout: { x: 0, y: 0, w: 6, h: 1 } }]);
+    const t2 = withTiles("d", [{ kind: "text", body: "n", layout: { x: 6, y: 0, w: 6, h: 1 } }]);
+    // preserve: different layout ⇒ different hash
+    expect(dashboardHash(t1)).not.toBe(dashboardHash(t2));
+    // two_column repacks everything, so text layout is excluded ⇒ equal hash
+    const c1 = withTiles("d", [{ kind: "text", body: "n", layout: { x: 0, y: 0, w: 6, h: 1 } }], "two_column");
+    const c2 = withTiles("d", [{ kind: "text", body: "n", layout: { x: 6, y: 0, w: 6, h: 1 } }], "two_column");
+    expect(dashboardHash(c1)).toBe(dashboardHash(c2));
+  });
+
+  it("insight-tile layout/color are not part of the type or hash", () => {
+    // Text color IS hashed; insight tiles have no such field.
+    const noColor = withTiles("d", [{ kind: "text", body: "n", layout: { x: 0, y: 0, w: 6, h: 1 } }]);
+    const withColor = withTiles("d", [
+      { kind: "text", body: "n", layout: { x: 0, y: 0, w: 6, h: 1 }, color: "blue" },
+    ]);
+    expect(dashboardHash(noColor)).not.toBe(dashboardHash(withColor));
   });
 });

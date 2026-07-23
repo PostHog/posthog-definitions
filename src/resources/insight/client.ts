@@ -128,6 +128,50 @@ export async function updateInsight(
   return toServerInsight(data!);
 }
 
+/**
+ * Read the set of dashboard ids this insight is a tile on. The `dashboards`
+ * field is deprecated and omitted from token-auth responses unless
+ * `include_dashboards=true` is passed, so we request it explicitly.
+ */
+export async function getInsightDashboardIds(
+  config: ClientConfig,
+  id: number,
+  options: { verbose?: boolean } = {},
+): Promise<number[]> {
+  const api = createApiClient(config, { verbose: options.verbose });
+  const { data } = await api.GET("/api/projects/{project_id}/insights/{id}/", {
+    params: {
+      path: { project_id: config.projectId, id },
+      query: { include_dashboards: true },
+    },
+  });
+  const raw = (data as { dashboards?: unknown })?.dashboards;
+  return Array.isArray(raw) ? raw.filter((x): x is number => typeof x === "number") : [];
+}
+
+/**
+ * Set the insight's dashboard membership. This is a REPLACE (set semantics):
+ * PostHog adds tiles for newly-listed dashboards and removes tiles for
+ * dropped ones. The dashboard executor reads the current set first, then adds
+ * or removes only its own id so it never clobbers other dashboards' tiles.
+ *
+ * Rides the deprecated `dashboards` write field: its designated replacement
+ * `dashboard_tiles` is read-only on the current API, so this is the only path
+ * that persists insight-tile membership. Revisit when tile writes open up.
+ */
+export async function setInsightDashboardIds(
+  config: ClientConfig,
+  id: number,
+  dashboardIds: number[],
+  options: { verbose?: boolean } = {},
+): Promise<void> {
+  const api = createApiClient(config, { verbose: options.verbose });
+  await api.PATCH("/api/projects/{project_id}/insights/{id}/", {
+    params: { path: { project_id: config.projectId, id } },
+    body: { dashboards: dashboardIds } as unknown as PatchedInsightBody,
+  });
+}
+
 export async function deleteInsight(
   config: ClientConfig,
   id: number,

@@ -15,6 +15,10 @@ inverseOperationIds:
   - dashboards_update
   - dashboards_partial_update
   - dashboards_destroy
+  - dashboards_create_text_tile_create
+  - dashboards_update_text_tile_create
+  - dashboards_delete_tile
+  - dashboards_reorder_tiles_create
 
   - feature_flags_list
   - feature_flags_create
