@@ -79,6 +79,12 @@ carrier in this order:
 - [x] `feat(action): pull codegen` — discovered during Phase 0: actions was
       the only resource without pull support, breaking `pull --kind actions`
       and the smoke gate.
+- [ ] `feat(apply): --kind scoping for plan and prune` — discovered in Wave 1:
+      `apply --prune` has no kind filter, so on a shared project a prune pass
+      deletes every orphan of every kind (a global prune against the shared
+      dev project would have swept ~500 rows belonging to other sessions).
+      Add `--kind` to `apply` (mirroring `pull --kind`) so scoped prune is
+      expressible; until then `--prune` is unsafe outside throwaway projects.
 - [x] `fix(dashboard): persist tiles via insight linkage` — discovered during
       Phase 0: the server made `Dashboard.tiles` read-only, so inline tile
       writes were silently ignored. Insight tiles now persist via the
@@ -98,19 +104,34 @@ pattern.
       endpoints (`launch`, `stop`) — declarative `status` like experiments.
       References feature flags (`linked_flag`, `targeting_flag`): resolve by
       key at execute time, exclude ids from hash. Scope `survey:read/write`.
-- [ ] **Early access features** — `projects/{id}/early_access_feature`.
+- [x] **Early access features** — `projects/{id}/early_access_feature`.
       Description marker. References a feature flag; `stage` transitions.
 - [ ] **Insight variables** — `environments/{id}/insight_variables`.
-      Natural key: `code_name`. Insights/endpoints already consume variables —
-      wire cross-references where applicable.
-- [ ] **Dashboard templates** — `projects/{id}/dashboard_templates`. Has
-      `tags` — plain dashboards pattern.
-- [ ] **Session recording playlists** — `projects/{id}/session_recording_playlists`.
+      ⛔ **Deferred, blocked on upstream.** No field can carry an ownership
+      marker: `code_name` is read-only (server-slugified from `name`), and
+      `description`/`tags`/`metadata` are silently dropped by the create
+      serializer (live-verified). Without a marker the CLI cannot distinguish
+      managed from hand-built variables — natural-key-as-ownership would let
+      apply adopt or prune hand-built rows, violating the safety invariant.
+      Revisit if PostHog round-trips a metadata field, or if we accept an
+      `iac_`-prefixed `code_name` namespace (user-visible in HogQL as
+      `{variables.iac_*}`) as the marker.
+- [x] **Dashboard templates** — `projects/{id}/dashboard_templates`. Has
+      `tags` — plain dashboards pattern. Shipped (#86): `team`-scope only;
+      template tiles are an inline passthrough bag (upstream serializer
+      schema omits tiles/variables/dashboard_filters but they round-trip);
+      soft-delete via PATCH; needs its own `dashboard_template:*` API scope.
+- [x] **Session recording playlists** — `projects/{id}/session_recording_playlists`.
       Description marker. Filter-based (dynamic) playlists only; pinned-recording
       (static) membership is runtime data, same treatment as static cohorts.
-- [ ] **Data color themes** — `environments/{id}/data_color_themes`. Currently
-      🟡 (referenced by `dataColorThemeKey`, never synced). Natural key
-      candidate: `name`. Closes the loop on an existing dangling reference.
+      Shipped (#87): addressed by `short_id`; updates must resend `filters`;
+      soft-delete via PATCH (DELETE → 405); synthetic/collection rows skipped.
+- [ ] **Data color themes** — `environments/{id}/data_color_themes`.
+      ⛔ **Deferred.** Only possible identity carrier is a marker embedded in
+      `name`, which is the visible label in the theme picker (UI pollution on
+      a cosmetic resource), and `name` is not unique-enforced so it can't be
+      a bare natural key either (live-verified). Stays 🟡 (referenced by
+      `dataColorThemeKey`, unsynced) until a cleaner carrier appears.
 - [ ] **Hog functions** — `environments/{id}/hog_functions` (destinations /
       transformations / site apps). Description marker. Secret inputs are
       masked on read — hash must exclude masked values; document that secret
@@ -185,6 +206,21 @@ Custom property definitions & sources · data catalog metrics · LLM analytics
 score definitions / evaluations · vision scanners · signals scout configs ·
 taggers · pulse brief configs · tracing views · quick filters · links ·
 loops · mcp_server_installations · customer profile configs.
+
+## Upstream issues worth filing against PostHog/posthog
+
+Live-verified API gaps found during this campaign; each blocks or constrains
+an IaC capability. Collected here for the maintainer to file.
+
+1. **Dashboard tile writes**: `Dashboard.tiles` and the insight-side
+   `dashboard_tiles` are read-only, while the only working insight↔dashboard
+   link field (`insights.dashboards`) is deprecated *in favor of the
+   read-only field*. There is no API path at all for insight-tile
+   layout/color.
+2. **Insight variables**: `code_name` is not settable (server-slugified from
+   `name`), and unknown create fields (`description`, `tags`, `metadata`)
+   are silently dropped instead of rejected — leaving no round-tripped
+   field for external tools to carry identity metadata.
 
 ## Excluded (with reasons)
 
