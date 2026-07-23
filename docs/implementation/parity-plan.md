@@ -50,7 +50,7 @@ carrier in this order:
 
 ## Phase 0 — loop infrastructure
 
-- [ ] `docs: refresh resources.md against 2026-07-23 prod spec` — add rows for
+- [x] `docs: refresh resources.md against 2026-07-23 prod spec` — add rows for
       API surface that did not exist at the 2026-05-13 refresh: logs
       (views / alerts / metric rules / sampling rules), error tracking
       bypass rules + spike detection, LLM analytics (score definitions,
@@ -59,17 +59,23 @@ carrier in this order:
       configs, customer profile configs / journeys, accounts & relationship
       definitions, datasets, tasks, product tours moved out of beta, etc.
 - [x] `docs: add parity plan` — this file.
-- [ ] `skill(add-resource): document codegen-filter step, smoke fixture step,
+- [x] `skill(add-resource): document codegen-filter step, smoke fixture step,
       and the identity decision tree` — the skill currently omits
       `openapi-filter.yaml`/`pnpm codegen` and the smoke seed, both required
       for every resource.
-- [ ] `test(smoke): table-driven seed registry` — smoke.sh currently hardcodes
+- [x] `test(smoke): table-driven seed registry` — smoke.sh currently hardcodes
       one env var + fixture + cleanup arg per resource; with ~25 resources
       incoming, derive seeded kinds from a fixture registry so a new resource
       is one fixture file + one entry.
-- [ ] `chore(codegen): refresh api.d.ts from current spec` — baseline
-      regeneration before any new operations, so later codegen commits only
-      show their own additions.
+- [ ] `fix(spec): migrate to current prod spec` — a plain codegen refresh is
+      blocked: since the last regeneration the spec moved endpoints from the
+      `environments/` router to `projects/` (operationIds renamed), renamed
+      write schemas (`PatchedDashboard` → `PatchedPatchedDashboardOpenApi`,
+      `PatchedExperiment` → `PatchedExperimentWrite`), and reduced the
+      experiment list serializer to `PaginatedExperimentBasicList`. One PR:
+      update `openapi-filter.yaml`, regenerate `api.d.ts`, migrate the
+      endpoint / dashboard / experiment clients, verify with live smoke.
+      Hard prerequisite for every subsequent codegen commit.
 
 ## Wave 1 — product config, identity carrier exists
 
