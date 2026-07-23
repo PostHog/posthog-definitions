@@ -152,7 +152,7 @@ export async function runPull(
   // global registry. Reusing topoOrder over the targets — it tolerates missing
   // edges (a target whose dependency isn't a target still works; the
   // optional-import path covers that case).
-  const orderedTargets = topoOrder(options.resources.slice());
+  const orderedTargets = topoOrder(options.resources.slice(), { lenient: true });
 
   for (const resource of orderedTargets) {
     if (resource.kind === "singleton") {
