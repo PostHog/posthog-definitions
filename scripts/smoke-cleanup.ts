@@ -19,6 +19,9 @@ import { loadConfig } from "../src/client/config.js";
 
 // --- Imports per resource ---------------------------------------------------
 
+import { listManagedSurveys } from "../src/resources/survey/client.js";
+import { surveyKeyFromServer, pruneSurvey } from "../src/resources/survey/pipeline.js";
+
 import { listManagedExperiments } from "../src/resources/experiment/client.js";
 import {
   experimentKeyFromServer,
@@ -85,6 +88,7 @@ import {
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
+  survey?: string;
   experiment?: string;
   "feature-flag"?: string;
   "experiment-holdout"?: string;
@@ -99,6 +103,7 @@ type Args = {
 };
 
 const ARG_KEYS: Array<keyof Args> = [
+  "survey",
   "experiment",
   "feature-flag",
   "experiment-holdout",
@@ -159,7 +164,17 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const config = loadConfig();
 
-  // Order matters — dependents before their deps.
+  // Order matters — dependents before their deps (surveys/experiments link flags).
+  if (args["survey"]) {
+    await deleteByKey(
+      "survey",
+      args["survey"],
+      config,
+      listManagedSurveys,
+      (row) => surveyKeyFromServer(row),
+      (c, row) => pruneSurvey(c, row),
+    );
+  }
   if (args["experiment"]) {
     await deleteByKey(
       "experiment",

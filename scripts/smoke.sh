@@ -63,6 +63,7 @@ SAVED_METRIC_KEY="smoke-metric-${STAMP}"
 EXPERIMENT_KEY="smoke-experiment-${STAMP}"
 COHORT_KEY="smoke-cohort-${STAMP}"
 ENDPOINT_KEY="smoke-endpoint-${STAMP}"
+SURVEY_KEY="smoke-survey-${STAMP}"
 
 # Names that round-trip cleanly through pull's slug-from-name. We use the
 # event-definition `name` as both the spec key AND the on-the-wire event
@@ -71,7 +72,7 @@ EVENT_NAME="${EVENT_DEFINITION_KEY}"
 
 # Resource kinds we'll seed and pull. Used both in --kind for pull and in
 # the no-op assertion's filter (we don't want unrelated kinds dirtying it).
-SMOKE_KINDS="insights,dashboards,property-groups,event-definitions,actions,feature-flags,experiment-holdouts,experiment-saved-metrics,experiments,cohorts,endpoints"
+SMOKE_KINDS="insights,dashboards,property-groups,event-definitions,actions,feature-flags,experiment-holdouts,experiment-saved-metrics,experiments,cohorts,endpoints,surveys"
 
 cleanup() {
   echo
@@ -88,6 +89,7 @@ cleanup() {
     "--property-group=${PROPERTY_GROUP_KEY}" \
     "--cohort=${COHORT_KEY}" \
     "--endpoint=${ENDPOINT_KEY}" \
+    "--survey=${SURVEY_KEY}" \
     || echo "smoke: cleanup hit an error (continuing)"
   echo "smoke: removing workdir $WORK_DIR"
   rm -rf "$WORK_DIR"
@@ -153,7 +155,8 @@ mkdir -p \
   "$SEED_DIR/experiment-saved-metrics" \
   "$SEED_DIR/experiments" \
   "$SEED_DIR/cohorts" \
-  "$SEED_DIR/endpoints"
+  "$SEED_DIR/endpoints" \
+  "$SEED_DIR/surveys"
 
 # Insight — referenced by the dashboard tile below.
 cat > "$SEED_DIR/insights/smoke-insight.ts" <<EOF
@@ -222,6 +225,23 @@ export default featureFlag({
       ],
     },
   },
+});
+EOF
+
+# Survey — links the feature flag; launched (status running) to exercise lifecycle.
+cat > "$SEED_DIR/surveys/smoke-survey.ts" <<EOF
+import { survey } from "@posthog/definitions";
+import smokeFlag from "../feature-flags/smoke-flag.js";
+export default survey({
+  key: "${SURVEY_KEY}",
+  name: "${SURVEY_KEY}",
+  description: "Smoke fixture survey",
+  type: "popover",
+  status: "running",
+  linkedFlag: smokeFlag,
+  questions: [
+    { type: "rating", question: "Rate us", display: "number", scale: 10 },
+  ],
 });
 EOF
 
