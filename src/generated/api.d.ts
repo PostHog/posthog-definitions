@@ -65,6 +65,39 @@ export interface paths {
         patch: operations["cohorts_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/dashboard_templates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["dashboard_templates_list"];
+        put?: never;
+        post: operations["dashboard_templates_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/dashboard_templates/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["dashboard_templates_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Hard delete of this model is not allowed. Use a patch API call to set "deleted" to true */
+        delete: operations["dashboard_templates_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["dashboard_templates_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/dashboards/": {
         parameters: {
             query?: never;
@@ -2681,6 +2714,33 @@ export interface components {
          * @enum {string}
          */
         DashboardPatchWidgetOpenApiWidgetTypeEnum: "activity_events_list" | "error_tracking_list" | "experiment_results" | "experiments_list" | "logs_list" | "session_replay_list" | "survey_results";
+        DashboardTemplate: {
+            /** Format: uuid */
+            readonly id: string;
+            template_name?: string | null;
+            dashboard_description?: string | null;
+            tags?: string[] | null;
+            deleted?: boolean | null;
+            /** Format: date-time */
+            readonly created_at: string | null;
+            readonly created_by: components["schemas"]["UserBasic"];
+            image_url?: string | null;
+            readonly team_id: number | null;
+            scope?: components["schemas"]["DashboardTemplateScopeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            availability_contexts?: string[] | null;
+            /** @description Manually curated; used to highlight templates in the UI. */
+            is_featured?: boolean;
+            /** @description Read-only. Project-specific references (actions, cohorts, data warehouse tables) embedded in this template's tiles that may not resolve when it is used in another project. Events and properties are matched by name and are portable, so they are not reported here. */
+            readonly non_portable_references: components["schemas"]["NonPortableReferences"];
+        };
+        /**
+         * @description * `team` - Only team
+         *     * `organization` - Organization
+         *     * `global` - Global
+         *     * `feature_flag` - Feature Flag
+         * @enum {string}
+         */
+        DashboardTemplateScopeEnum: "team" | "organization" | "global" | "feature_flag";
         DashboardTileBasic: {
             readonly id: number;
             readonly dashboard_id: number;
@@ -10048,6 +10108,14 @@ export interface components {
              */
             warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
+        NonPortableReferences: {
+            /** @description Count of distinct action references in the template's tiles that are specific to the source project. */
+            actions: number;
+            /** @description Count of distinct cohort references in the template's tiles that are specific to the source project. */
+            cohorts: number;
+            /** @description Names of data warehouse tables referenced by the template's tiles that are specific to the source project. */
+            warehouse_tables: string[];
+        };
         NullEnum: null;
         /** @description Matches numeric values with comparison operators. */
         NumericPropertyFilter: {
@@ -10166,6 +10234,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["DashboardBasic"][];
+        };
+        PaginatedDashboardTemplateList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["DashboardTemplate"][];
         };
         PaginatedEndpointResponseList: {
             /** @example 123 */
@@ -10385,6 +10468,25 @@ export interface components {
              * @default []
              */
             _create_static_person_ids: string[];
+        };
+        PatchedDashboardTemplate: {
+            /** Format: uuid */
+            readonly id?: string;
+            template_name?: string | null;
+            dashboard_description?: string | null;
+            tags?: string[] | null;
+            deleted?: boolean | null;
+            /** Format: date-time */
+            readonly created_at?: string | null;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            image_url?: string | null;
+            readonly team_id?: number | null;
+            scope?: components["schemas"]["DashboardTemplateScopeEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            availability_contexts?: string[] | null;
+            /** @description Manually curated; used to highlight templates in the UI. */
+            is_featured?: boolean;
+            /** @description Read-only. Project-specific references (actions, cohorts, data warehouse tables) embedded in this template's tiles that may not resolve when it is used in another project. Events and properties are matched by name and are portable, so they are not reported here. */
+            readonly non_portable_references?: components["schemas"]["NonPortableReferences"];
         };
         /** @description Schema for creating/updating endpoints. OpenAPI docs only — validation uses Pydantic. */
         PatchedEndpointRequest: {
@@ -18876,6 +18978,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Cohort"];
+                };
+            };
+        };
+    };
+    dashboard_templates_list: {
+        parameters: {
+            query?: {
+                /** @description Omit for all templates. When set, filter by featured flag; parsed with str_to_bool (same as other API query booleans). */
+                is_featured?: boolean;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Optional. When not using `search`, results are sorted with featured templates first (`is_featured=true`), then by `template_name` (case-insensitive A–Z; `-template_name` for Z–A) or by `created_at` (`-created_at` for newest first). When `search` is set, order is featured first, then relevance rank, then case-insensitive name for ties. */
+                ordering?: "-created_at" | "-template_name" | "created_at" | "template_name";
+                /** @description Optional. `global`: official templates only. `team`: this project's saved templates only (`scope=team` rows for the current project). `organization`: templates shared across all projects in this organization. `feature_flag`: feature-flag dashboard templates only. Omit for official, organization, and this project's templates (default dashboard template picker behavior). */
+                scope?: "feature_flag" | "global" | "organization" | "team";
+                /** @description Optional. Full-text search across template name, tags, and description, ranked by relevance. Use it to find templates for a topic (e.g. `retention`, `revenue`, `product analytics`). */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedDashboardTemplateList"];
+                };
+            };
+        };
+    };
+    dashboard_templates_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DashboardTemplate"];
+                "application/x-www-form-urlencoded": components["schemas"]["DashboardTemplate"];
+                "multipart/form-data": components["schemas"]["DashboardTemplate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardTemplate"];
+                };
+            };
+        };
+    };
+    dashboard_templates_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this dashboard template. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardTemplate"];
+                };
+            };
+        };
+    };
+    dashboard_templates_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this dashboard template. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    dashboard_templates_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this dashboard template. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedDashboardTemplate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedDashboardTemplate"];
+                "multipart/form-data": components["schemas"]["PatchedDashboardTemplate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardTemplate"];
                 };
             };
         };
