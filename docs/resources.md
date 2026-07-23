@@ -32,7 +32,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Surveys                  | ✅ `projects/{id}/surveys`                  | ❌                  |                                                                                                        |
 | Early access features    | ✅ `projects/{id}/early_access_feature`     | ❌                  |                                                                                                        |
 | Web experiments          | ✅ `projects/{id}/web_experiments`          | ❌                  |                                                                                                        |
-| Product tours            | ✅ `projects/{id}/product_tours`            | ❌                  |                                                                                                        |
+| Product tours            | ✅ `projects/{id}/product_tours`            | ✅                  | Identity via `iac:product-tours:<key>` marker in `description`. Tour `content` round-tripped as a passthrough bag; scheduling (`autoLaunch` / `startDate` / `endDate` / `archived`) declared directly. Targeting flags are server-managed (read-only). Full matrix refresh tracked in #78. |
 | Scheduled changes        | ✅ `projects/{id}/scheduled_changes`        | ❌                  | Time-bound flag/cohort rollout changes                                                                 |
 
 ## Data & taxonomy

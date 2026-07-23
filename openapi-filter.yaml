@@ -86,6 +86,12 @@ inverseOperationIds:
   - actions_partial_update
   - actions_destroy
 
+  - product_tours_list
+  - product_tours_create
+  - product_tours_retrieve
+  - product_tours_partial_update
+  - product_tours_destroy
+
 unusedComponents:
   - schemas
   - parameters

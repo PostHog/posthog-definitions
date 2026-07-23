@@ -17,6 +17,7 @@ import { featureFlagResource } from "./feature-flag/index.js";
 import { insightResource } from "./insight/index.js";
 import { projectSettingsResource } from "./project-settings/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
+import { productTourResource } from "./product-tour/index.js";
 
 describe("topoOrder", () => {
   it("returns an empty array for empty input", () => {
@@ -185,6 +186,7 @@ describe("RESOURCES (real registry)", () => {
         insightResource,
         projectSettingsResource,
         propertyGroupResource,
+        productTourResource,
       ].map((r) => r.name),
     );
     expect(new Set(RESOURCES.map((r) => r.name))).toEqual(expected);
