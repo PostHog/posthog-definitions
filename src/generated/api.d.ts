@@ -648,6 +648,38 @@ export interface paths {
         patch: operations["schema_property_groups_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/subscriptions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["subscriptions_list"];
+        put?: never;
+        post: operations["subscriptions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/subscriptions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["subscriptions_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["subscriptions_partial_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -657,6 +689,35 @@ export interface components {
          * @enum {string}
          */
         AIEventType: "$ai_generation" | "$ai_embedding" | "$ai_span" | "$ai_trace" | "$ai_metric" | "$ai_feedback" | "$ai_evaluation" | "$ai_tag" | "$ai_trace_summary" | "$ai_generation_summary" | "$ai_trace_clusters" | "$ai_generation_clusters";
+        AIPromptConfig: {
+            /** @description Analysis window for the report. Omitted = 'since_last_sent' (everything since the previous scheduled delivery). */
+            window?: components["schemas"]["AIWindowConfig"];
+        };
+        AIWindowConfig: {
+            /**
+             * @description What the report analyzes each run:
+             *     * `since_last_sent` (default) — everything since the previous successful scheduled delivery (gap-free; test/manual sends don't move the anchor)
+             *     * `last_n_days` — a fixed trailing window of start_days_ago days
+             *     * `days_ago_range` — the explicit range from start_days_ago to end_days_ago days ago
+             *
+             *     * `since_last_sent` - Since last report
+             *     * `last_n_days` - Last N days
+             *     * `days_ago_range` - Between X and Y days ago
+             * @default since_last_sent
+             */
+            mode: components["schemas"]["AIWindowConfigModeEnum"];
+            /** @description Lower bound of the analysis window, in days before the run. Required for 'last_n_days' (the N) and 'days_ago_range'; ignored for 'since_last_sent'. 1-365. */
+            start_days_ago?: number | null;
+            /** @description Upper bound of the analysis window, in days before the run (0 = now). Required for 'days_ago_range' and must be less than start_days_ago; ignored for other modes. 0-365. */
+            end_days_ago?: number | null;
+        };
+        /**
+         * @description * `since_last_sent` - Since last report
+         *     * `last_n_days` - Last N days
+         *     * `days_ago_range` - Between X and Y days ago
+         * @enum {string}
+         */
+        AIWindowConfigModeEnum: "since_last_sent" | "last_n_days" | "days_ago_range";
         /** AccessControlFilterWarning */
         AccessControlFilterWarning: {
             /**
@@ -10302,6 +10363,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SchemaPropertyGroup"][];
         };
+        PaginatedSubscriptionList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Subscription"][];
+        };
         /**
          * ParserMode
          * @enum {string}
@@ -10736,6 +10812,89 @@ export interface components {
             /** Format: date-time */
             readonly updated_at?: string;
             readonly created_by?: components["schemas"]["UserBasic"];
+        };
+        /** @description Standard Subscription serializer. */
+        PatchedSubscription: {
+            readonly id?: number;
+            /**
+             * @description What the subscription delivers: 'insight' (snapshot of one insight), 'dashboard' (snapshot of one dashboard), or 'ai_prompt' (LLM-generated report). Read-only — derived from the populated target (insight → insight, dashboard → dashboard, prompt → ai_prompt).
+             *
+             *     * `insight` - Insight
+             *     * `dashboard` - Dashboard
+             *     * `ai_prompt` - AI prompt
+             */
+            readonly resource_type?: components["schemas"]["ResourceTypeEnum"];
+            /** @description Dashboard ID to subscribe to (mutually exclusive with insight on create). */
+            dashboard?: number | null;
+            /** @description Insight ID to subscribe to (mutually exclusive with dashboard on create). */
+            insight?: number | null;
+            readonly insight_short_id?: string | null;
+            readonly resource_name?: string | null;
+            /** @description List of insight IDs from the dashboard to include. Required for dashboard subscriptions, max 6. */
+            dashboard_export_insights?: number[];
+            /** @description Free-text prompt that drives the AI-generated report. Required when resource_type is 'ai_prompt'. Max 4000 characters. */
+            prompt?: string | null;
+            /** @description Configuration for AI report subscriptions (analysis window, future knobs). Only valid when resource_type is 'ai_prompt'. Replaced wholesale on writes. */
+            ai_prompt_config?: components["schemas"]["AIPromptConfig"];
+            /**
+             * @description Delivery channel: email or slack.
+             *
+             *     * `email` - Email
+             *     * `slack` - Slack
+             */
+            target_type?: components["schemas"]["TargetTypeEnum"];
+            /** @description Recipient(s): comma-separated email addresses for email, or Slack channel name/ID for slack. */
+            target_value?: string;
+            /**
+             * @description How often to deliver: daily, weekly, monthly, or yearly.
+             *
+             *     * `daily` - Daily
+             *     * `weekly` - Weekly
+             *     * `monthly` - Monthly
+             *     * `yearly` - Yearly
+             */
+            frequency?: components["schemas"]["RecurrenceIntervalEnum"];
+            /** @description Interval multiplier (e.g. 2 with weekly frequency means every 2 weeks). Required on create; must be 1 or greater. */
+            interval?: number;
+            /** @description Days of week for weekly subscriptions: monday, tuesday, wednesday, thursday, friday, saturday, sunday. */
+            byweekday?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday")[] | null;
+            /** @description Position within byweekday set for monthly frequency (e.g. 1 for first, -1 for last). */
+            bysetpos?: number | null;
+            /** @description Total number of deliveries before the subscription stops. Null for unlimited. */
+            count?: number | null;
+            /**
+             * Format: date-time
+             * @description When to start delivering (ISO 8601 datetime).
+             */
+            start_date?: string;
+            /**
+             * Format: date-time
+             * @description When to stop delivering (ISO 8601 datetime). Null for indefinite.
+             */
+            until_date?: string | null;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** @description Set to true to soft-delete. Subscriptions cannot be hard-deleted. */
+            deleted?: boolean;
+            /** @description Whether the subscription is active. Set to false to pause delivery without deleting. Auto-set to false when the delivery integration becomes invalid. */
+            enabled?: boolean;
+            /** @description Human-readable name for this subscription. */
+            title?: string | null;
+            /** @description Human-readable schedule summary, e.g. 'sent daily'. */
+            readonly summary?: string;
+            /** Format: date-time */
+            readonly next_delivery_date?: string | null;
+            /** @description ID of a connected Slack integration. Required when target_type is slack. */
+            integration_id?: number | null;
+            /** @description Optional message included in the invitation email when adding new recipients. */
+            invite_message?: string | null;
+            /** @description Whether to immediately deliver the subscription once on save so the editor can confirm it looks right. Defaults to true on create. When omitted on update, a delivery is sent only if the edit changed what gets delivered (recipient, channel, source) or re-enabled the subscription. The recurring schedule is unaffected. */
+            send_test_now?: boolean;
+            /** @description Whether to attach an AI-generated summary to each delivery (insight and dashboard subscriptions only). Requires the organization to have approved AI data processing, and is subject to the org's active-summary cap and AI credit budget; otherwise the write is rejected. Not applicable to prompt subscriptions, which are themselves AI-generated. */
+            summary_enabled?: boolean;
+            /** @description Optional free-text guidance (max 500 chars) steering the AI summary, e.g. which metrics to emphasize. Only settable when AI summary context is enabled for the organization; clearing it (empty string) is always allowed. */
+            summary_prompt_guide?: string;
         };
         PatchedTeam: {
             readonly id?: number;
@@ -11589,6 +11748,14 @@ export interface components {
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
         };
+        /**
+         * @description * `daily` - Daily
+         *     * `weekly` - Weekly
+         *     * `monthly` - Monthly
+         *     * `yearly` - Yearly
+         * @enum {string}
+         */
+        RecurrenceIntervalEnum: "daily" | "weekly" | "monthly" | "yearly";
         /** ResolvedDateRangeResponse */
         ResolvedDateRangeResponse: {
             /**
@@ -11602,6 +11769,13 @@ export interface components {
              */
             date_to: string;
         };
+        /**
+         * @description * `insight` - Insight
+         *     * `dashboard` - Dashboard
+         *     * `ai_prompt` - AI prompt
+         * @enum {string}
+         */
+        ResourceTypeEnum: "insight" | "dashboard" | "ai_prompt";
         /** Response */
         Response: {
             /** Columns */
@@ -15558,6 +15732,89 @@ export interface components {
          * @enum {string}
          */
         Style: "none" | "number" | "short" | "percent";
+        /** @description Standard Subscription serializer. */
+        Subscription: {
+            readonly id: number;
+            /**
+             * @description What the subscription delivers: 'insight' (snapshot of one insight), 'dashboard' (snapshot of one dashboard), or 'ai_prompt' (LLM-generated report). Read-only — derived from the populated target (insight → insight, dashboard → dashboard, prompt → ai_prompt).
+             *
+             *     * `insight` - Insight
+             *     * `dashboard` - Dashboard
+             *     * `ai_prompt` - AI prompt
+             */
+            readonly resource_type: components["schemas"]["ResourceTypeEnum"];
+            /** @description Dashboard ID to subscribe to (mutually exclusive with insight on create). */
+            dashboard?: number | null;
+            /** @description Insight ID to subscribe to (mutually exclusive with dashboard on create). */
+            insight?: number | null;
+            readonly insight_short_id: string | null;
+            readonly resource_name: string | null;
+            /** @description List of insight IDs from the dashboard to include. Required for dashboard subscriptions, max 6. */
+            dashboard_export_insights?: number[];
+            /** @description Free-text prompt that drives the AI-generated report. Required when resource_type is 'ai_prompt'. Max 4000 characters. */
+            prompt?: string | null;
+            /** @description Configuration for AI report subscriptions (analysis window, future knobs). Only valid when resource_type is 'ai_prompt'. Replaced wholesale on writes. */
+            ai_prompt_config?: components["schemas"]["AIPromptConfig"];
+            /**
+             * @description Delivery channel: email or slack.
+             *
+             *     * `email` - Email
+             *     * `slack` - Slack
+             */
+            target_type: components["schemas"]["TargetTypeEnum"];
+            /** @description Recipient(s): comma-separated email addresses for email, or Slack channel name/ID for slack. */
+            target_value: string;
+            /**
+             * @description How often to deliver: daily, weekly, monthly, or yearly.
+             *
+             *     * `daily` - Daily
+             *     * `weekly` - Weekly
+             *     * `monthly` - Monthly
+             *     * `yearly` - Yearly
+             */
+            frequency: components["schemas"]["RecurrenceIntervalEnum"];
+            /** @description Interval multiplier (e.g. 2 with weekly frequency means every 2 weeks). Required on create; must be 1 or greater. */
+            interval: number;
+            /** @description Days of week for weekly subscriptions: monday, tuesday, wednesday, thursday, friday, saturday, sunday. */
+            byweekday?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday")[] | null;
+            /** @description Position within byweekday set for monthly frequency (e.g. 1 for first, -1 for last). */
+            bysetpos?: number | null;
+            /** @description Total number of deliveries before the subscription stops. Null for unlimited. */
+            count?: number | null;
+            /**
+             * Format: date-time
+             * @description When to start delivering (ISO 8601 datetime).
+             */
+            start_date: string;
+            /**
+             * Format: date-time
+             * @description When to stop delivering (ISO 8601 datetime). Null for indefinite.
+             */
+            until_date?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** @description Set to true to soft-delete. Subscriptions cannot be hard-deleted. */
+            deleted?: boolean;
+            /** @description Whether the subscription is active. Set to false to pause delivery without deleting. Auto-set to false when the delivery integration becomes invalid. */
+            enabled?: boolean;
+            /** @description Human-readable name for this subscription. */
+            title?: string | null;
+            /** @description Human-readable schedule summary, e.g. 'sent daily'. */
+            readonly summary: string;
+            /** Format: date-time */
+            readonly next_delivery_date: string | null;
+            /** @description ID of a connected Slack integration. Required when target_type is slack. */
+            integration_id?: number | null;
+            /** @description Optional message included in the invitation email when adding new recipients. */
+            invite_message?: string | null;
+            /** @description Whether to immediately deliver the subscription once on save so the editor can confirm it looks right. Defaults to true on create. When omitted on update, a delivery is sent only if the edit changed what gets delivered (recipient, channel, source) or re-enabled the subscription. The recurring schedule is unaffected. */
+            send_test_now?: boolean;
+            /** @description Whether to attach an AI-generated summary to each delivery (insight and dashboard subscriptions only). Requires the organization to have approved AI data processing, and is subject to the org's active-summary cap and AI credit budget; otherwise the write is rejected. Not applicable to prompt subscriptions, which are themselves AI-generated. */
+            summary_enabled?: boolean;
+            /** @description Optional free-text guidance (max 500 chars) steering the AI summary, e.g. which metrics to emphasize. Only settable when AI summary context is enabled for the organization; clearing it (empty string) is always allowed. */
+            summary_prompt_guide?: string;
+        };
         /** TableSettings */
         TableSettings: {
             /**
@@ -15581,6 +15838,12 @@ export interface components {
              */
             transpose: boolean | null;
         };
+        /**
+         * @description * `email` - Email
+         *     * `slack` - Slack
+         * @enum {string}
+         */
+        TargetTypeEnum: "email" | "slack";
         /**
          * TaxonomicFilterGroupType
          * @enum {string}
@@ -20630,6 +20893,133 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaPropertyGroup"];
+                };
+            };
+        };
+    };
+    subscriptions_list: {
+        parameters: {
+            query?: {
+                /** @description Filter by creator user UUID. */
+                created_by?: string;
+                /** @description Filter by dashboard ID. */
+                dashboard?: number;
+                /** @description Filter to subscriptions on insights that are tiles of the given dashboard ID. */
+                dashboard_tiles?: number;
+                /** @description Filter by insight ID. */
+                insight?: number;
+                /** @description Filter by a comma-separated list of insight IDs. */
+                insights?: string;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description Filter by subscription resource: insight, dashboard export, or AI report. */
+                resource_type?: "ai_prompt" | "dashboard" | "insight";
+                /** @description A search term. */
+                search?: string;
+                /** @description Filter by delivery channel (email or Slack). */
+                target_type?: "email" | "slack";
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSubscriptionList"];
+                };
+            };
+        };
+    };
+    subscriptions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Subscription"];
+                "application/x-www-form-urlencoded": components["schemas"]["Subscription"];
+                "multipart/form-data": components["schemas"]["Subscription"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+        };
+    };
+    subscriptions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this subscription. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+        };
+    };
+    subscriptions_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this subscription. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSubscription"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSubscription"];
+                "multipart/form-data": components["schemas"]["PatchedSubscription"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
                 };
             };
         };
