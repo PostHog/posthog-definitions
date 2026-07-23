@@ -44,7 +44,8 @@ export default dashboard({
 
 1. **Authenticate** — create a personal API key ([US](https://us.posthog.com/settings/user-api-keys) / [EU](https://eu.posthog.com/settings/user-api-keys)) with these scopes:
    - `insight:read`, `insight:write`
-   - `dashboard:read`, `dashboard:write` (also covers dashboard templates)
+   - `dashboard:read`, `dashboard:write`
+   - `dashboard_template:read`, `dashboard_template:write`
    - `feature_flag:read`, `feature_flag:write`
    - `action:read`, `action:write`
    - `endpoint:read`, `endpoint:write`
