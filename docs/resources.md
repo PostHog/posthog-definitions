@@ -62,7 +62,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Resource              | PostHog API                                  | posthog-definitions | Notes                          |
 | --------------------- | -------------------------------------------- | ------------------- | ------------------------------ |
 | Hog functions         | ✅ `environments/{id}/hog_functions`         | ❌                  | Destinations / transformations |
-| Hog flows             | ✅ `environments/{id}/hog_flows`             | ❌                  | Campaign builder               |
+| Hog flows             | ✅ `environments/{id}/hog_flows`             | ✅                  | Identity via `iac:hog-flows:<key>` marker in `description`. Action/edge graph round-tripped verbatim (author-defined node ids); status draft/active/archived. Full matrix refresh tracked in #78. |
 | Messaging templates   | ✅ `environments/{id}/messaging_templates`   | ❌                  |                                |
 | Messaging categories  | ✅ `environments/{id}/messaging_categories`  | ❌                  |                                |
 | Messaging preferences | ✅ `environments/{id}/messaging_preferences` | ❌                  |                                |

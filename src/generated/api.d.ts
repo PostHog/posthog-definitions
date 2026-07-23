@@ -543,6 +543,38 @@ export interface paths {
         patch: operations["feature_flags_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/hog_flows/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["hog_flows_list"];
+        put?: never;
+        post: operations["hog_flows_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/hog_flows/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["hog_flows_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["hog_flows_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["hog_flows_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/insights/": {
         parameters: {
             query?: never;
@@ -4743,6 +4775,14 @@ export interface components {
             operator: components["schemas"]["ExistenceOperatorEnum"];
         };
         /**
+         * @description * `exit_on_conversion` - Conversion
+         *     * `exit_on_trigger_not_matched` - Trigger Not Matched
+         *     * `exit_on_trigger_not_matched_or_conversion` - Trigger Not Matched Or Conversion
+         *     * `exit_only_at_end` - Only At End
+         * @enum {string}
+         */
+        ExitConditionEnum: "exit_on_conversion" | "exit_on_trigger_not_matched" | "exit_on_trigger_not_matched_or_conversion" | "exit_only_at_end";
+        /**
          * @description Full experiment representation for the detail, create, and update endpoints.
          *
          *     Extends the shared read-side fields in ``ExperimentBaseSerializer`` with the metric
@@ -8120,6 +8160,263 @@ export interface components {
          * @enum {string}
          */
         HeatmapSortOrder: "asc" | "desc";
+        /** @description Mixin for serializers to add user access control fields */
+        HogFlow: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description Workflow name. */
+            name?: string | null;
+            /**
+             * @description Optional description.
+             * @default
+             */
+            description: string;
+            readonly version: number;
+            /**
+             * @description draft (no execution), active (live), archived (disabled).
+             *
+             *     * `draft` - Draft
+             *     * `active` - Active
+             *     * `archived` - Archived
+             */
+            status?: components["schemas"]["HogFlowStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly trigger: unknown;
+            /** @description Optional dedup/throttle on an already-matched trigger: {hash: <HogQL template>, ttl: <seconds, 60-94608000>, threshold?: <int>}. Without threshold: fire once per hash, then suppress repeats within ttl (hash '{person.id}' = once per person per ttl). With threshold N: fire once per N matches of the same hash — a sampler, the 1st then every Nth. Throttles an already-qualifying trigger; it doesn't decide who enters. Server compiles bytecode from hash; omit to disable. */
+            trigger_masking?: components["schemas"]["HogFlowMasking"] | null;
+            /** @description Conversion goal. filters: ARRAY of property conditions [{key, value, operator, type: event|person|group}]; events: event-based goals [{filters: {events: [...]}}]; window_minutes: minutes after entry. Required for exit_on_conversion / exit_on_trigger_not_matched_or_conversion. bytecode compiled server-side. */
+            conversion?: components["schemas"]["HogFlowConversion"] | null;
+            /**
+             * @description exit_only_at_end: only at exit node (default). exit_on_conversion: also on conversion (needs 'conversion'; silent no-op otherwise). exit_on_trigger_not_matched: also when trigger filter stops matching. exit_on_trigger_not_matched_or_conversion: both (needs 'conversion').
+             *
+             *     * `exit_on_conversion` - Conversion
+             *     * `exit_on_trigger_not_matched` - Trigger Not Matched
+             *     * `exit_on_trigger_not_matched_or_conversion` - Trigger Not Matched Or Conversion
+             *     * `exit_only_at_end` - Only At End
+             */
+            exit_condition?: components["schemas"]["ExitConditionEnum"];
+            /** @description Graph edges: [{from, to, type: 'continue'|'branch', index?}]. 'continue' = fall-through (sequential, or no-match path of conditional_branch). 'branch' requires 'index': matches config.conditions[index] on conditional_branch / wait_until_condition. Every non-exit action needs a reachable next action ('No next action found' otherwise). */
+            edges?: components["schemas"]["HogFlowEdge"][];
+            /** @description Ordered action nodes. Exactly one type='trigger' required. Typically one type='exit' too. */
+            actions: components["schemas"]["HogFlowAction"][];
+            readonly abort_action: string | null;
+            /** @description Workflow vars (key, type, default). Total <5KB. */
+            variables?: {
+                [key: string]: string;
+            }[];
+            readonly billable_action_types: unknown;
+            /** @description Recurring schedules attached to this workflow (read-only here; manage via the schedules sub-resource). A batch/schedule workflow only fires when it's active AND has an active schedule. Empty for non-scheduled workflows. */
+            readonly schedules: components["schemas"]["HogFlowSchedule"][];
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+            /** @description Staged content changes awaiting publish — a full snapshot of the workflow's actions, edges and settings. Null when there's nothing staged. Test it with a use_draft test run, then promote it with the publish endpoint or throw it away with discard_draft. */
+            readonly draft: unknown;
+            /**
+             * Format: date-time
+             * @description When the draft was last written; null when there's no staged draft. Pass this to publish (and as base_updated_at on further draft edits) so a concurrent editor's changes aren't clobbered — a mismatch returns 409.
+             */
+            readonly draft_updated_at: string | null;
+            /** @description Skip-forward map for deleted steps: {deleted_action_id: next surviving action_id}. Maintained automatically when a live graph edit deletes actions, so in-flight runs parked on a deleted step continue at its surviving successor instead of exiting. Null when no live deletions have occurred. */
+            readonly action_redirects: {
+                [key: string]: string;
+            } | null;
+        };
+        HogFlowAction: {
+            /** @description Unique node ID within the workflow. */
+            id: string;
+            /** @description Display name. */
+            name: string;
+            /**
+             * @description Optional description.
+             * @default
+             */
+            description: string;
+            /**
+             * @description On failure: continue (skip the action and proceed) or abort (stop the run).
+             *
+             *     * `continue` - continue
+             *     * `abort` - abort
+             */
+            on_error?: components["schemas"]["OnErrorEnum"] | components["schemas"]["NullEnum"];
+            /** @description Created at (epoch ms). Frontend-managed. */
+            created_at?: number;
+            /** @description Updated at (epoch ms). Frontend-managed. */
+            updated_at?: number;
+            /** @description Property filters gating this action. */
+            filters?: components["schemas"]["HogFunctionFilters"] | null;
+            /** @description trigger | function | function_email | function_sms | delay | conditional_branch | wait_until_condition | wait_until_time_window | random_cohort_branch | exit. */
+            type: string;
+            /** @description Type-specific config keyed by action type. trigger: {type: event|webhook|manual|batch|schedule|tracking_pixel, filters?}. filters shape: {events: [{id, name, type:'events', properties:[<cond>]}], properties:[<cond>], actions:[...], filter_test_accounts:<bool>}. <cond>: {key, value, operator, type: event|person|group}. function*: {template_id, inputs: {<key>: {value: <str>}}}. Wrap values in {value:...} to enable hog templating ({person.x}, {event.x}); flat strings won't interpolate. Dictionary input values are template strings too — write booleans/numbers as single-expression templates ('{true}', '{42}'), which evaluate to the typed value. delay: {delay_duration: '<number><unit>'} where unit is m|h|d. Fractions OK ('0.5m'=30s; seconds unsupported). Per-unit max m<=60, h<=24, d<=30; values above are SILENTLY CLAMPED. Max 30d. conditional_branch: {conditions: [{filters}, ...]}. Index N matches the 'branch' edge with index:N. wait_until_condition: {condition: {filters}, events?: [{filters: {events: [{id, name, type: 'events'}], actions?: [...]}, name?}], max_wait_duration: <duration>} (same rules as delay). Continues when condition.filters match OR any events entry fires; each events entry must target at least one event or action. On resolution (a condition match or any events entry firing) it advances via the 'branch' edge with index:0; the max_wait_duration timeout falls through the 'continue' edge. exit: {reason}. */
+            config: {
+                [key: string]: unknown;
+            } | {
+                /** @description Property-based wait condition; continues when the person matches. A condition with no property filters is ignored — the wait then relies on 'events' and the max_wait_duration timeout. */
+                condition?: {
+                    /** @description Property conditions, e.g. {properties: [{key, value, operator, type}]}. */
+                    filters?: components["schemas"]["HogFunctionFilters"] | null;
+                    /** @description Optional display name. */
+                    name?: string;
+                };
+                /** @description Events to wait for: continues when ANY entry fires (OR'd with 'condition'). Each entry: {filters: {events: [{id, name, type: 'events'}], actions?: [...]}, name?}. */
+                events?: {
+                    /** @description Event/action filters; the workflow wakes when a matching event fires. Must target at least one event or action (entries targeting neither are dropped). */
+                    filters?: components["schemas"]["HogFunctionFilters"] | null;
+                    /** @description Optional display name. */
+                    name?: string;
+                }[];
+                /** @description '<number><unit>' with unit m|h|d, e.g. '30m' (same rules as delay). */
+                max_wait_duration: string;
+            };
+            /** @description Output variable for downstream actions: {key, result_path?, spread?, label?} or a list of those. */
+            output_variable?: unknown;
+        };
+        HogFlowConversion: {
+            /** @description Property-based conversion conditions, as an ARRAY of property filters: [{key, value, operator, type: event|person|group}, ...]. Event-based goals do NOT go here — put them in 'events'. Empty array = any event within the window converts. */
+            filters?: {
+                [key: string]: unknown;
+            }[];
+            /** @description Event-based conversion goals: [{filters: {events: [{id, name, type: 'events'}], ...}}]. */
+            events?: components["schemas"]["HogFlowConversionEvent"][];
+            /** @description Conversion window in minutes after a person enters the workflow. null = no explicit window. */
+            window_minutes?: number | null;
+            /** @description Compiled server-side from 'filters'. Do not set; ignored if sent. */
+            bytecode?: unknown;
+        };
+        HogFlowConversionEvent: {
+            /** @description Event/action filters for this conversion event, same shape as trigger filters: {events: [{id, name, type: 'events', properties?: [<cond>]}], actions?: [...], properties?: [<cond>]}. bytecode is compiled server-side. */
+            filters: components["schemas"]["HogFunctionFilters"];
+        };
+        HogFlowEdge: {
+            /** @description Target action id. */
+            to: string;
+            /**
+             * @description continue: fall-through (sequential or the no-match path of conditional_branch). branch: requires 'index' matching config.conditions[index].
+             *
+             *     * `continue` - continue
+             *     * `branch` - branch
+             */
+            type: components["schemas"]["HogFlowEdgeTypeEnum"];
+            /** @description Required for type='branch'. conditional_branch: index into config.conditions[index]. wait_until_condition: use index:0 — it advances via the index:0 branch edge when it resolves (a condition match or an events entry firing). */
+            index?: number;
+            /** @description Source action id. */
+            from: string;
+        };
+        /**
+         * @description * `continue` - continue
+         *     * `branch` - branch
+         * @enum {string}
+         */
+        HogFlowEdgeTypeEnum: "continue" | "branch";
+        HogFlowMasking: {
+            /** @description Seconds (60 to ~94M / 3y) to suppress repeat firings of the same hash. */
+            ttl?: number | null;
+            /** @description Fire once per N matches of the same hash within ttl — a sampler: N=3 fires on the 1st, 4th, 7th… match. Omit to fire on the first match, then suppress repeats within ttl. */
+            threshold?: number | null;
+            /** @description HogQL template defining the dedup/grouping key, e.g. '{person.id}' (once per person) within ttl. */
+            hash: string;
+            /** @description Auto-compiled from hash. Do not set. */
+            bytecode?: unknown;
+        };
+        /** @description Mixin for serializers to add user access control fields */
+        HogFlowMinimal: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string | null;
+            readonly description: string;
+            readonly version: number;
+            readonly status: components["schemas"]["HogFlowStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly trigger: unknown;
+            readonly trigger_masking: unknown;
+            readonly conversion: unknown;
+            readonly exit_condition: components["schemas"]["ExitConditionEnum"];
+            readonly edges: unknown;
+            readonly actions: unknown;
+            readonly abort_action: string | null;
+            readonly variables: unknown;
+            readonly billable_action_types: unknown;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+        };
+        HogFlowSchedule: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description iCalendar RRULE string (e.g. 'FREQ=DAILY;INTERVAL=1'). Must produce occurrences at most once per hour. */
+            rrule: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 datetime the schedule starts from.
+             */
+            starts_at: string;
+            /** @description IANA timezone for interpreting the RRULE (default 'UTC'). */
+            timezone?: string;
+            /** @description Variable value overrides merged with the workflow defaults on each run. */
+            variables?: unknown;
+            /**
+             * @description active, paused, or completed (set once the RRULE's COUNT/UNTIL is exhausted).
+             *
+             *     * `active` - Active
+             *     * `paused` - Paused
+             *     * `completed` - Completed
+             */
+            readonly status: components["schemas"]["HogFlowScheduleStatusEnum"];
+            /**
+             * Format: date-time
+             * @description Next scheduled fire time, computed by the scheduler.
+             */
+            readonly next_run_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `active` - Active
+         *     * `paused` - Paused
+         *     * `completed` - Completed
+         * @enum {string}
+         */
+        HogFlowScheduleStatusEnum: "active" | "paused" | "completed";
+        /**
+         * @description * `draft` - Draft
+         *     * `active` - Active
+         *     * `archived` - Archived
+         * @enum {string}
+         */
+        HogFlowStatusEnum: "draft" | "active" | "archived";
+        HogFunctionFilters: {
+            /** @default events */
+            source: components["schemas"]["HogFunctionFiltersSourceEnum"];
+            actions?: {
+                [key: string]: unknown;
+            }[];
+            events?: {
+                [key: string]: unknown;
+            }[];
+            data_warehouse?: {
+                [key: string]: unknown;
+            }[];
+            properties?: {
+                [key: string]: unknown;
+            }[];
+            filter_test_accounts?: boolean;
+            bytecode_error?: string;
+        };
+        /**
+         * @description * `events` - events
+         *     * `person-updates` - person-updates
+         *     * `data-warehouse-table` - data-warehouse-table
+         * @enum {string}
+         */
+        HogFunctionFiltersSourceEnum: "events" | "person-updates" | "data-warehouse-table";
         /** HogQLFilter */
         HogQLFilter: {
             /**
@@ -10118,6 +10415,12 @@ export interface components {
          */
         NumericPropertyFilterOperatorEnum: "exact" | "is_not" | "gt" | "lt" | "gte" | "lte";
         /**
+         * @description * `continue` - continue
+         *     * `abort` - abort
+         * @enum {string}
+         */
+        OnErrorEnum: "continue" | "abort";
+        /**
          * OrderDirection2
          * @enum {string}
          */
@@ -10271,6 +10574,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["FeatureFlag"][];
+        };
+        PaginatedHogFlowMinimalList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["HogFlowMinimal"][];
         };
         PaginatedInsightList: {
             /** @example 123 */
@@ -10611,6 +10929,71 @@ export interface components {
              *     * `device_id` - Device ID
              */
             bucketing_identifier?: components["schemas"]["BucketingIdentifierEnum"] | components["schemas"]["NullEnum"];
+        };
+        /** @description Mixin for serializers to add user access control fields */
+        PatchedHogFlow: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** @description Workflow name. */
+            name?: string | null;
+            /**
+             * @description Optional description.
+             * @default
+             */
+            description: string;
+            readonly version?: number;
+            /**
+             * @description draft (no execution), active (live), archived (disabled).
+             *
+             *     * `draft` - Draft
+             *     * `active` - Active
+             *     * `archived` - Archived
+             */
+            status?: components["schemas"]["HogFlowStatusEnum"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["UserBasic"];
+            /** Format: date-time */
+            readonly updated_at?: string;
+            readonly trigger?: unknown;
+            /** @description Optional dedup/throttle on an already-matched trigger: {hash: <HogQL template>, ttl: <seconds, 60-94608000>, threshold?: <int>}. Without threshold: fire once per hash, then suppress repeats within ttl (hash '{person.id}' = once per person per ttl). With threshold N: fire once per N matches of the same hash — a sampler, the 1st then every Nth. Throttles an already-qualifying trigger; it doesn't decide who enters. Server compiles bytecode from hash; omit to disable. */
+            trigger_masking?: components["schemas"]["HogFlowMasking"] | null;
+            /** @description Conversion goal. filters: ARRAY of property conditions [{key, value, operator, type: event|person|group}]; events: event-based goals [{filters: {events: [...]}}]; window_minutes: minutes after entry. Required for exit_on_conversion / exit_on_trigger_not_matched_or_conversion. bytecode compiled server-side. */
+            conversion?: components["schemas"]["HogFlowConversion"] | null;
+            /**
+             * @description exit_only_at_end: only at exit node (default). exit_on_conversion: also on conversion (needs 'conversion'; silent no-op otherwise). exit_on_trigger_not_matched: also when trigger filter stops matching. exit_on_trigger_not_matched_or_conversion: both (needs 'conversion').
+             *
+             *     * `exit_on_conversion` - Conversion
+             *     * `exit_on_trigger_not_matched` - Trigger Not Matched
+             *     * `exit_on_trigger_not_matched_or_conversion` - Trigger Not Matched Or Conversion
+             *     * `exit_only_at_end` - Only At End
+             */
+            exit_condition?: components["schemas"]["ExitConditionEnum"];
+            /** @description Graph edges: [{from, to, type: 'continue'|'branch', index?}]. 'continue' = fall-through (sequential, or no-match path of conditional_branch). 'branch' requires 'index': matches config.conditions[index] on conditional_branch / wait_until_condition. Every non-exit action needs a reachable next action ('No next action found' otherwise). */
+            edges?: components["schemas"]["HogFlowEdge"][];
+            /** @description Ordered action nodes. Exactly one type='trigger' required. Typically one type='exit' too. */
+            actions?: components["schemas"]["HogFlowAction"][];
+            readonly abort_action?: string | null;
+            /** @description Workflow vars (key, type, default). Total <5KB. */
+            variables?: {
+                [key: string]: string;
+            }[];
+            readonly billable_action_types?: unknown;
+            /** @description Recurring schedules attached to this workflow (read-only here; manage via the schedules sub-resource). A batch/schedule workflow only fires when it's active AND has an active schedule. Empty for non-scheduled workflows. */
+            readonly schedules?: components["schemas"]["HogFlowSchedule"][];
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level?: string | null;
+            /** @description Staged content changes awaiting publish — a full snapshot of the workflow's actions, edges and settings. Null when there's nothing staged. Test it with a use_draft test run, then promote it with the publish endpoint or throw it away with discard_draft. */
+            readonly draft?: unknown;
+            /**
+             * Format: date-time
+             * @description When the draft was last written; null when there's no staged draft. Pass this to publish (and as base_updated_at on further draft edits) so a concurrent editor's changes aren't clobbered — a mismatch returns 409.
+             */
+            readonly draft_updated_at?: string | null;
+            /** @description Skip-forward map for deleted steps: {deleted_action_id: next surviving action_id}. Maintained automatically when a live graph edit deletes actions, so in-flight runs parked on a deleted step continue at its surviving successor instead of exiting. Null when no live deletions have occurred. */
+            readonly action_redirects?: {
+                [key: string]: string;
+            } | null;
         };
         /** @description Simplified serializer to speed response times when loading large amounts of objects. */
         PatchedInsight: {
@@ -20254,6 +20637,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeatureFlag"];
+                };
+            };
+        };
+    };
+    hog_flows_list: {
+        parameters: {
+            query?: {
+                created_at?: string;
+                created_by?: number;
+                id?: string;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /**
+                 * @description * `draft` - Draft
+                 *     * `active` - Active
+                 *     * `archived` - Archived
+                 */
+                status?: "active" | "archived" | "draft";
+                updated_at?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedHogFlowMinimalList"];
+                };
+            };
+        };
+    };
+    hog_flows_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HogFlow"];
+                "application/x-www-form-urlencoded": components["schemas"]["HogFlow"];
+                "multipart/form-data": components["schemas"]["HogFlow"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HogFlow"];
+                };
+            };
+        };
+    };
+    hog_flows_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this hog flow. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HogFlow"];
+                };
+            };
+        };
+    };
+    hog_flows_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this hog flow. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    hog_flows_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this hog flow. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHogFlow"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedHogFlow"];
+                "multipart/form-data": components["schemas"]["PatchedHogFlow"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HogFlow"];
                 };
             };
         };
