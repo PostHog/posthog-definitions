@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedMessageTemplates } from "../src/resources/messaging-template/client.js";
+import {
+  messageTemplateKeyFromServer,
+  pruneMessageTemplate,
+} from "../src/resources/messaging-template/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "messaging-template"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "messaging-template",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["messaging-template"]) {
+    await deleteByKey(
+      "messaging-template",
+      args["messaging-template"],
+      config,
+      listManagedMessageTemplates,
+      (row) => messageTemplateKeyFromServer(row),
+      (c, row) => pruneMessageTemplate(c, row),
     );
   }
 }

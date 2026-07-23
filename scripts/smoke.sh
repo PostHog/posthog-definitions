@@ -63,6 +63,7 @@ SAVED_METRIC_KEY="smoke-metric-${STAMP}"
 EXPERIMENT_KEY="smoke-experiment-${STAMP}"
 COHORT_KEY="smoke-cohort-${STAMP}"
 ENDPOINT_KEY="smoke-endpoint-${STAMP}"
+MESSAGING_TEMPLATE_KEY="smoke-msgtmpl-${STAMP}"
 
 # Names that round-trip cleanly through pull's slug-from-name. We use the
 # event-definition `name` as both the spec key AND the on-the-wire event
@@ -71,7 +72,7 @@ EVENT_NAME="${EVENT_DEFINITION_KEY}"
 
 # Resource kinds we'll seed and pull. Used both in --kind for pull and in
 # the no-op assertion's filter (we don't want unrelated kinds dirtying it).
-SMOKE_KINDS="insights,dashboards,property-groups,event-definitions,actions,feature-flags,experiment-holdouts,experiment-saved-metrics,experiments,cohorts,endpoints"
+SMOKE_KINDS="insights,dashboards,property-groups,event-definitions,actions,feature-flags,experiment-holdouts,experiment-saved-metrics,experiments,cohorts,endpoints,messaging-templates"
 
 cleanup() {
   echo
@@ -88,6 +89,7 @@ cleanup() {
     "--property-group=${PROPERTY_GROUP_KEY}" \
     "--cohort=${COHORT_KEY}" \
     "--endpoint=${ENDPOINT_KEY}" \
+    "--messaging-template=${MESSAGING_TEMPLATE_KEY}" \
     || echo "smoke: cleanup hit an error (continuing)"
   echo "smoke: removing workdir $WORK_DIR"
   rm -rf "$WORK_DIR"
@@ -153,7 +155,8 @@ mkdir -p \
   "$SEED_DIR/experiment-saved-metrics" \
   "$SEED_DIR/experiments" \
   "$SEED_DIR/cohorts" \
-  "$SEED_DIR/endpoints"
+  "$SEED_DIR/endpoints" \
+  "$SEED_DIR/messaging-templates"
 
 # Insight — referenced by the dashboard tile below.
 cat > "$SEED_DIR/insights/smoke-insight.ts" <<EOF
@@ -306,6 +309,17 @@ export default endpoint({
   key: "${ENDPOINT_KEY}",
   name: "${ENDPOINT_KEY}",
   query: { kind: "HogQLQuery", query: "select 1 as smoke" },
+});
+EOF
+
+# Messaging template — independent. Minimal email.
+cat > "$SEED_DIR/messaging-templates/smoke-msgtmpl.ts" <<EOF
+import { messageTemplate } from "@posthog/definitions";
+export default messageTemplate({
+  key: "${MESSAGING_TEMPLATE_KEY}",
+  name: "${MESSAGING_TEMPLATE_KEY}",
+  description: "Smoke fixture messaging template",
+  email: { subject: "Smoke {{ person.name }}", html: "<p>smoke</p>" },
 });
 EOF
 

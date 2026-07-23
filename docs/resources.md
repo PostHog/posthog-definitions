@@ -63,7 +63,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | --------------------- | -------------------------------------------- | ------------------- | ------------------------------ |
 | Hog functions         | ✅ `environments/{id}/hog_functions`         | ❌                  | Destinations / transformations |
 | Hog flows             | ✅ `environments/{id}/hog_flows`             | ❌                  | Campaign builder               |
-| Messaging templates   | ✅ `environments/{id}/messaging_templates`   | ❌                  |                                |
+| Messaging templates   | ✅ `environments/{id}/messaging_templates`   | ✅                  | Identity via `iac:messaging-templates:<key>` marker in `description`. Email content (subject/text/html/design) round-tripped as a passthrough bag. `message_category` is a raw uuid passthrough (categories not managed). Full matrix refresh tracked in #78. |
 | Messaging categories  | ✅ `environments/{id}/messaging_categories`  | ❌                  |                                |
 | Messaging preferences | ✅ `environments/{id}/messaging_preferences` | ❌                  |                                |
 | Links                 | ✅ `projects/{id}/links`                     | ❌                  | Short-link service             |
