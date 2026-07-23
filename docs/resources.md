@@ -61,7 +61,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 | Resource              | PostHog API                                  | posthog-definitions | Notes                          |
 | --------------------- | -------------------------------------------- | ------------------- | ------------------------------ |
-| Hog functions         | ✅ `environments/{id}/hog_functions`         | ❌                  | Destinations / transformations |
+| Hog functions         | ✅ `environments/{id}/hog_functions`         | ✅                  | Identity via `iac:hog-functions:<key>` marker in `description`. Template-based (destinations / transformations). Secret inputs come from env-var references (`secret("VAR")`) — never stored in files, excluded from the hash, sent on create, re-sent only on explicit rotation. Full matrix refresh tracked in #78. |
 | Hog flows             | ✅ `environments/{id}/hog_flows`             | ❌                  | Campaign builder               |
 | Messaging templates   | ✅ `environments/{id}/messaging_templates`   | ❌                  |                                |
 | Messaging categories  | ✅ `environments/{id}/messaging_categories`  | ❌                  |                                |

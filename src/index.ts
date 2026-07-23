@@ -75,5 +75,13 @@ export type {
 export { projectSettings } from "./resources/project-settings/index.js";
 export type { ProjectSettings } from "./resources/project-settings/index.js";
 
+export { hogFunction, secret } from "./resources/hog-function/index.js";
+export type {
+  HogFunction,
+  HogFunctionType,
+  HogFunctionInputValue,
+  SecretInput,
+} from "./resources/hog-function/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";
