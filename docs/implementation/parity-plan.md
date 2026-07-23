@@ -94,7 +94,7 @@ carrier in this order:
 High-value resources whose identity story is already solved by an existing
 pattern.
 
-- [ ] **Surveys** — `projects/{id}/surveys`. Description marker. Lifecycle
+- [x] **Surveys** — `projects/{id}/surveys`. Description marker. Lifecycle
       endpoints (`launch`, `stop`) — declarative `status` like experiments.
       References feature flags (`linked_flag`, `targeting_flag`): resolve by
       key at execute time, exclude ids from hash. Scope `survey:read/write`.
