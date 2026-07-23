@@ -98,6 +98,38 @@ export interface paths {
         patch: operations["dashboards_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/early_access_feature/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["early_access_feature_list"];
+        put?: never;
+        post: operations["early_access_feature_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/early_access_feature/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["early_access_feature_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["early_access_feature_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["early_access_feature_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/endpoints/": {
         parameters: {
             query?: never;
@@ -3278,6 +3310,76 @@ export interface components {
          * @enum {string}
          */
         DurationType: "duration" | "active_seconds" | "inactive_seconds";
+        /** @description Mixin for serializers to add user access control fields */
+        EarlyAccessFeature: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly feature_flag: components["schemas"]["MinimalFeatureFlag"];
+            /** @description The name of the early access feature. */
+            name: string;
+            /** @description A longer description of what this early access feature does, shown to users in the opt-in UI. */
+            description?: string;
+            /**
+             * @description Lifecycle stage. Valid values: draft, concept, alpha, beta, general-availability, archived. Moving to an active stage (alpha/beta/general-availability) enables the feature flag for opted-in users.
+             *
+             *     * `draft` - draft
+             *     * `concept` - concept
+             *     * `alpha` - alpha
+             *     * `beta` - beta
+             *     * `general-availability` - general availability
+             *     * `archived` - archived
+             */
+            stage: components["schemas"]["StageEnum"];
+            /**
+             * Format: uri
+             * @description URL to external documentation for this feature. Shown to users in the opt-in UI.
+             */
+            documentation_url?: string;
+            /** @description Feature flag payload for this early access feature */
+            readonly payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            readonly created_at: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+        };
+        /** @description Mixin for serializers to add user access control fields */
+        EarlyAccessFeatureSerializerCreateOnly: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description The name of the early access feature. */
+            name: string;
+            /** @description A longer description of what this early access feature does, shown to users in the opt-in UI. */
+            description?: string;
+            /**
+             * @description Lifecycle stage. Valid values: draft, concept, alpha, beta, general-availability, archived. Moving to an active stage (alpha/beta/general-availability) enables the feature flag for opted-in users.
+             *
+             *     * `draft` - draft
+             *     * `concept` - concept
+             *     * `alpha` - alpha
+             *     * `beta` - beta
+             *     * `general-availability` - general availability
+             *     * `archived` - archived
+             */
+            stage: components["schemas"]["StageEnum"];
+            /**
+             * Format: uri
+             * @description URL to external documentation for this feature. Shown to users in the opt-in UI.
+             */
+            documentation_url?: string;
+            /** @description Arbitrary JSON metadata associated with this feature. */
+            payload?: unknown;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** @description Optional ID of an existing feature flag to link. If omitted, a new flag is auto-created from the feature name. The flag must not already be linked to another feature, must not be group-based, and must not be multivariate. */
+            feature_flag_id?: number;
+            readonly feature_flag: components["schemas"]["MinimalFeatureFlag"];
+            /** create in folder */
+            _create_in_folder?: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level: string | null;
+        };
         /** @enum {integer} */
         EffectiveMembershipLevelEnum: 1 | 8 | 15;
         /** @enum {integer} */
@@ -10167,6 +10269,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["DashboardBasic"][];
         };
+        PaginatedEarlyAccessFeatureList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["EarlyAccessFeature"][];
+        };
         PaginatedEndpointResponseList: {
             /** @example 123 */
             count: number;
@@ -10385,6 +10502,40 @@ export interface components {
              * @default []
              */
             _create_static_person_ids: string[];
+        };
+        /** @description Mixin for serializers to add user access control fields */
+        PatchedEarlyAccessFeature: {
+            /** Format: uuid */
+            readonly id?: string;
+            readonly feature_flag?: components["schemas"]["MinimalFeatureFlag"];
+            /** @description The name of the early access feature. */
+            name?: string;
+            /** @description A longer description of what this early access feature does, shown to users in the opt-in UI. */
+            description?: string;
+            /**
+             * @description Lifecycle stage. Valid values: draft, concept, alpha, beta, general-availability, archived. Moving to an active stage (alpha/beta/general-availability) enables the feature flag for opted-in users.
+             *
+             *     * `draft` - draft
+             *     * `concept` - concept
+             *     * `alpha` - alpha
+             *     * `beta` - beta
+             *     * `general-availability` - general availability
+             *     * `archived` - archived
+             */
+            stage?: components["schemas"]["StageEnum"];
+            /**
+             * Format: uri
+             * @description URL to external documentation for this feature. Shown to users in the opt-in UI.
+             */
+            documentation_url?: string;
+            /** @description Feature flag payload for this early access feature */
+            readonly payload?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** @description The effective access level the user has for this object */
+            readonly user_access_level?: string | null;
         };
         /** @description Schema for creating/updating endpoints. OpenAPI docs only — validation uses Pydantic. */
         PatchedEndpointRequest: {
@@ -15227,6 +15378,16 @@ export interface components {
          */
         SpanPropertyFilterType: "span" | "span_attribute" | "span_resource_attribute";
         /**
+         * @description * `draft` - draft
+         *     * `concept` - concept
+         *     * `alpha` - alpha
+         *     * `beta` - beta
+         *     * `general-availability` - general availability
+         *     * `archived` - archived
+         * @enum {string}
+         */
+        StageEnum: "draft" | "concept" | "alpha" | "beta" | "general-availability" | "archived";
+        /**
          * StartHandling
          * @enum {string}
          */
@@ -19070,6 +19231,138 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Dashboard"];
                     "text/event-stream": components["schemas"]["Dashboard"];
+                };
+            };
+        };
+    };
+    early_access_feature_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEarlyAccessFeatureList"];
+                };
+            };
+        };
+    };
+    early_access_feature_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EarlyAccessFeatureSerializerCreateOnly"];
+                "application/x-www-form-urlencoded": components["schemas"]["EarlyAccessFeatureSerializerCreateOnly"];
+                "multipart/form-data": components["schemas"]["EarlyAccessFeatureSerializerCreateOnly"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarlyAccessFeatureSerializerCreateOnly"];
+                };
+            };
+        };
+    };
+    early_access_feature_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this early access feature. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarlyAccessFeature"];
+                };
+            };
+        };
+    };
+    early_access_feature_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this early access feature. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    early_access_feature_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this early access feature. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEarlyAccessFeature"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEarlyAccessFeature"];
+                "multipart/form-data": components["schemas"]["PatchedEarlyAccessFeature"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarlyAccessFeature"];
                 };
             };
         };
