@@ -82,6 +82,9 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedHogFlows } from "../src/resources/hog-flow/client.js";
+import { hogFlowKeyFromServer, pruneHogFlow } from "../src/resources/hog-flow/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +99,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "hog-flow"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +114,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "hog-flow",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +273,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["hog-flow"]) {
+    await deleteByKey(
+      "hog-flow",
+      args["hog-flow"],
+      config,
+      listManagedHogFlows,
+      (row) => hogFlowKeyFromServer(row),
+      (c, row) => pruneHogFlow(c, row),
     );
   }
 }
