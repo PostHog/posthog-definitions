@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedLogsSamplingRules } from "../src/resources/logs-sampling-rule/client.js";
+import {
+  logsSamplingRuleKeyFromServer,
+  pruneLogsSamplingRule,
+} from "../src/resources/logs-sampling-rule/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "logs-sampling-rule"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "logs-sampling-rule",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["logs-sampling-rule"]) {
+    await deleteByKey(
+      "logs-sampling-rule",
+      args["logs-sampling-rule"],
+      config,
+      listManagedLogsSamplingRules,
+      (row) => logsSamplingRuleKeyFromServer(row),
+      (c, row) => pruneLogsSamplingRule(c, row),
     );
   }
 }

@@ -80,6 +80,18 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Spike detection config | ✅ `environments/{id}/error_tracking/spike_detection_config` | ❌                  |       |
 | Settings               | ✅ `environments/{id}/error_tracking/settings`               | ❌                  |       |
 
+## Logs
+
+Rows added ahead of the full matrix refresh (#78). See the parity plan for the
+Wave-2 logs verdicts.
+
+| Resource            | PostHog API                            | posthog-definitions | Notes                                                                                                                                                                            |
+| ------------------- | -------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Logs sampling rules | ✅ `projects/{id}/logs/sampling_rules` | ✅                  | Identity via `iac:logs-sampling-rules:<key>` marker in `name`. **Order-sensitive** — `priority` (lower first, first-match-wins) is a settable, PATCH-updatable, hashed field. Real PATCH + real DELETE. |
+| Logs views          | ✅ `projects/{id}/logs/views`          | ❌                  | Buildable (shipped separately) — `name` marker.                                                                                                                                |
+| Logs metric rules   | ✅ `projects/{id}/logs/metric_rules`   | ❌                  | Gated behind org feature flag `logs-metric-rules`.                                                                                                                             |
+| Logs alerts         | ✅ `projects/{id}/logs/alerts`         | ❌                  | Deferred — `name`-only carrier is notification-facing; destinations are an unreadable imperative subresource.                                                                   |
+
 ## Project & org configuration
 
 | Resource                | PostHog API                                    | posthog-definitions | Notes                              |
@@ -96,7 +108,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 ## Summary
 
-Currently shipped: **12 resource types** — Dashboards, Insights, Feature flags, Endpoints, Schema property groups, Event definitions, Experiments, Experiment holdouts, Experiment saved metrics, Project settings, Cohorts, and Actions. Event definitions and property groups together feed `createTypedPostHog`, which wraps any `posthog-js`-shaped client and type-checks `.capture(name, properties)` at compile time against the same specs synced via `apply`. Experiments are declarative across the full lifecycle (draft / running / paused / stopped) — apply drives the launch / pause / resume / end transitions to match. Project settings is the first singleton resource: declared as one block, field-level diff against the live row, declared-only PATCH. Cohorts run before feature flags in the apply order, leaving the door open for cohort-by-key references inside flag conditions.
+Currently shipped: **13 resource types** — Dashboards, Insights, Feature flags, Endpoints, Schema property groups, Event definitions, Experiments, Experiment holdouts, Experiment saved metrics, Project settings, Cohorts, Actions, and Logs sampling rules. Event definitions and property groups together feed `createTypedPostHog`, which wraps any `posthog-js`-shaped client and type-checks `.capture(name, properties)` at compile time against the same specs synced via `apply`. Experiments are declarative across the full lifecycle (draft / running / paused / stopped) — apply drives the launch / pause / resume / end transitions to match. Project settings is the first singleton resource: declared as one block, field-level diff against the live row, declared-only PATCH. Cohorts run before feature flags in the apply order, leaving the door open for cohort-by-key references inside flag conditions.
 
 Reasonable IaC targets across the API surface: **~25–30** (cohorts, actions, surveys, annotations, alerts, hog functions/flows, error-tracking rules, warehouse queries, batch exports, …).
 
