@@ -15,6 +15,7 @@ import { experimentHoldoutResource } from "./experiment-holdout/index.js";
 import { experimentSavedMetricResource } from "./experiment-saved-metric/index.js";
 import { featureFlagResource } from "./feature-flag/index.js";
 import { insightResource } from "./insight/index.js";
+import { warehouseSavedQueryResource } from "./warehouse-saved-query/index.js";
 import { projectSettingsResource } from "./project-settings/index.js";
 import { propertyGroupResource } from "./property-group/index.js";
 
@@ -183,6 +184,7 @@ describe("RESOURCES (real registry)", () => {
         experimentSavedMetricResource,
         featureFlagResource,
         insightResource,
+        warehouseSavedQueryResource,
         projectSettingsResource,
         propertyGroupResource,
       ].map((r) => r.name),

@@ -75,5 +75,8 @@ export type {
 export { projectSettings } from "./resources/project-settings/index.js";
 export type { ProjectSettings } from "./resources/project-settings/index.js";
 
+export { warehouseSavedQuery } from "./resources/warehouse-saved-query/index.js";
+export type { WarehouseSavedQuery } from "./resources/warehouse-saved-query/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";

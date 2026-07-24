@@ -82,6 +82,12 @@ import {
   pruneAction,
 } from "../src/resources/action/pipeline.js";
 
+import { listManagedWarehouseSavedQueries } from "../src/resources/warehouse-saved-query/client.js";
+import {
+  warehouseSavedQueryKeyFromServer,
+  pruneWarehouseSavedQuery,
+} from "../src/resources/warehouse-saved-query/pipeline.js";
+
 import type { ClientConfig } from "../src/client/config.js";
 
 type Args = {
@@ -96,6 +102,7 @@ type Args = {
   "property-group"?: string;
   cohort?: string;
   endpoint?: string;
+  "warehouse-saved-query"?: string;
 };
 
 const ARG_KEYS: Array<keyof Args> = [
@@ -110,6 +117,7 @@ const ARG_KEYS: Array<keyof Args> = [
   "property-group",
   "cohort",
   "endpoint",
+  "warehouse-saved-query",
 ];
 
 function parseArgs(argv: string[]): Args {
@@ -268,6 +276,16 @@ async function main(): Promise<void> {
       listManagedEndpoints,
       (row) => endpointKeyFromServer(row),
       (c, row) => pruneEndpoint(c, row),
+    );
+  }
+  if (args["warehouse-saved-query"]) {
+    await deleteByKey(
+      "warehouse-saved-query",
+      args["warehouse-saved-query"],
+      config,
+      listManagedWarehouseSavedQueries,
+      (row) => warehouseSavedQueryKeyFromServer(row),
+      (c, row) => pruneWarehouseSavedQuery(c, row),
     );
   }
 }

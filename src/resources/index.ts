@@ -6,6 +6,7 @@ import { dashboardResource } from "./dashboard/index.js";
 import { endpointResource } from "./endpoint/index.js";
 import { featureFlagResource } from "./feature-flag/index.js";
 import { insightResource } from "./insight/index.js";
+import { warehouseSavedQueryResource } from "./warehouse-saved-query/index.js";
 import { eventDefinitionResource } from "./event-definition/index.js";
 import { experimentResource } from "./experiment/index.js";
 import { experimentHoldoutResource } from "./experiment-holdout/index.js";
@@ -29,6 +30,7 @@ const REGISTRY: ReadonlyArray<ResourceModule<unknown, unknown>> = [
   experimentSavedMetricResource as ResourceModule<unknown, unknown>,
   featureFlagResource as ResourceModule<unknown, unknown>,
   insightResource as ResourceModule<unknown, unknown>,
+  warehouseSavedQueryResource as ResourceModule<unknown, unknown>,
   projectSettingsResource as ResourceModule<unknown, unknown>,
   propertyGroupResource as ResourceModule<unknown, unknown>,
 ];
@@ -42,6 +44,7 @@ const REGISTRY: ReadonlyArray<ResourceModule<unknown, unknown>> = [
 export const RESOURCES: ReadonlyArray<ResourceModule<unknown, unknown>> = topoOrder(REGISTRY);
 
 export { insightResource } from "./insight/index.js";
+export { warehouseSavedQueryResource } from "./warehouse-saved-query/index.js";
 export { dashboardResource } from "./dashboard/index.js";
 export { actionResource } from "./action/index.js";
 export { cohortResource } from "./cohort/index.js";
