@@ -32,6 +32,38 @@ export interface paths {
         patch: operations["actions_partial_update"];
         trace?: never;
     };
+    "/api/projects/{project_id}/batch_exports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["batch_exports_list"];
+        put?: never;
+        post: operations["batch_exports_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/batch_exports/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["batch_exports_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["batch_exports_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["batch_exports_partial_update"];
+        trace?: never;
+    };
     "/api/projects/{project_id}/cohorts/": {
         parameters: {
             query?: never;
@@ -1321,9 +1353,6 @@ export interface components {
          *     * `track_costs` - track_costs
          *     * `set_up_llm_evaluation` - set_up_llm_evaluation
          *     * `run_ai_playground` - run_ai_playground
-         *     * `enable_revenue_analytics_viewset` - enable_revenue_analytics_viewset
-         *     * `connect_revenue_source` - connect_revenue_source
-         *     * `set_up_revenue_goal` - set_up_revenue_goal
          *     * `enable_log_capture` - enable_log_capture
          *     * `view_first_logs` - view_first_logs
          *     * `create_first_workflow` - create_first_workflow
@@ -1342,7 +1371,122 @@ export interface components {
          *     * `use_posthog_in_slack` - use_posthog_in_slack
          * @enum {string}
          */
-        AvailableSetupTaskIdsEnum: "ingest_first_event" | "set_up_reverse_proxy" | "create_first_insight" | "create_first_dashboard" | "track_custom_events" | "define_actions" | "set_up_cohorts" | "explore_trends_insight" | "create_funnel" | "explore_retention_insight" | "explore_paths_insight" | "explore_stickiness_insight" | "explore_lifecycle_insight" | "add_authorized_domain" | "set_up_web_vitals" | "review_web_analytics_dashboard" | "filter_web_analytics" | "set_up_web_analytics_conversion_goals" | "visit_web_vitals_dashboard" | "setup_session_recordings" | "watch_session_recording" | "configure_recording_settings" | "create_recording_playlist" | "enable_console_logs" | "create_feature_flag" | "implement_flag_in_code" | "update_feature_flag_release_conditions" | "create_multivariate_flag" | "set_up_flag_payloads" | "set_up_flag_evaluation_runtimes" | "create_experiment" | "implement_experiment_variants" | "launch_experiment" | "review_experiment_results" | "create_survey" | "launch_survey" | "collect_survey_responses" | "connect_source" | "run_first_query" | "join_external_data" | "create_saved_view" | "enable_error_tracking" | "upload_source_maps" | "view_first_error" | "resolve_first_error" | "ingest_first_llm_event" | "view_first_trace" | "track_costs" | "set_up_llm_evaluation" | "run_ai_playground" | "enable_revenue_analytics_viewset" | "connect_revenue_source" | "set_up_revenue_goal" | "enable_log_capture" | "view_first_logs" | "create_first_workflow" | "set_up_first_workflow_channel" | "configure_workflow_trigger" | "add_workflow_action" | "launch_workflow" | "create_first_endpoint" | "configure_endpoint" | "test_endpoint" | "create_early_access_feature" | "update_feature_stage" | "use_posthog_ai" | "use_posthog_code" | "use_posthog_mcp" | "use_posthog_in_slack";
+        AvailableSetupTaskIdsEnum: "ingest_first_event" | "set_up_reverse_proxy" | "create_first_insight" | "create_first_dashboard" | "track_custom_events" | "define_actions" | "set_up_cohorts" | "explore_trends_insight" | "create_funnel" | "explore_retention_insight" | "explore_paths_insight" | "explore_stickiness_insight" | "explore_lifecycle_insight" | "add_authorized_domain" | "set_up_web_vitals" | "review_web_analytics_dashboard" | "filter_web_analytics" | "set_up_web_analytics_conversion_goals" | "visit_web_vitals_dashboard" | "setup_session_recordings" | "watch_session_recording" | "configure_recording_settings" | "create_recording_playlist" | "enable_console_logs" | "create_feature_flag" | "implement_flag_in_code" | "update_feature_flag_release_conditions" | "create_multivariate_flag" | "set_up_flag_payloads" | "set_up_flag_evaluation_runtimes" | "create_experiment" | "implement_experiment_variants" | "launch_experiment" | "review_experiment_results" | "create_survey" | "launch_survey" | "collect_survey_responses" | "connect_source" | "run_first_query" | "join_external_data" | "create_saved_view" | "enable_error_tracking" | "upload_source_maps" | "view_first_error" | "resolve_first_error" | "ingest_first_llm_event" | "view_first_trace" | "track_costs" | "set_up_llm_evaluation" | "run_ai_playground" | "enable_log_capture" | "view_first_logs" | "create_first_workflow" | "set_up_first_workflow_channel" | "configure_workflow_trigger" | "add_workflow_action" | "launch_workflow" | "create_first_endpoint" | "configure_endpoint" | "test_endpoint" | "create_early_access_feature" | "update_feature_stage" | "use_posthog_ai" | "use_posthog_code" | "use_posthog_mcp" | "use_posthog_in_slack";
+        /**
+         * @description Typed configuration for an AWS S3 batch-export destination.
+         *
+         *     AWS credentials live in the linked aws-s3 Integration. Mirrors the non-credential fields of
+         *     `AwsS3BatchExportInputs` in `products/batch_exports/backend/service.py`.
+         */
+        AwsS3DestinationConfig: {
+            /** @description Name of the destination bucket. */
+            bucket_name: string;
+            /** @description Region the bucket is in (e.g. 'us-east-1'). */
+            region: string;
+            /** @description Object key prefix applied to every exported file. */
+            prefix: string;
+            /**
+             * @description Optional compression codec applied to exported files. Valid codecs depend on file_format.
+             *
+             *     * `brotli` - brotli
+             *     * `gzip` - gzip
+             *     * `lz4` - lz4
+             *     * `snappy` - snappy
+             *     * `zstd` - zstd
+             */
+            compression?: components["schemas"]["CompressionEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description File format used for exported objects.
+             *
+             *     * `Parquet` - Parquet
+             *     * `JSONLines` - JSONLines
+             * @default JSONLines
+             */
+            file_format: components["schemas"]["FileFormatEnum"];
+            /** @description If set, rolls to a new file once the current file exceeds this size in MB. */
+            max_file_size_mb?: number | null;
+            /** @description Optional S3 server-side encryption algorithm (e.g. 'AES256' or 'aws:kms'). */
+            encryption?: string | null;
+            /** @description KMS key ID to use when encryption is 'aws:kms'. */
+            kms_key_id?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "AwsS3";
+        };
+        /** @description Request shape for creating or updating an AWS S3 batch-export destination. */
+        AwsS3DestinationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "AwsS3";
+            /** @description ID of an aws-s3-kind Integration providing AWS credentials. Preferred over inline credentials. Use the integrations-list MCP tool to find one. */
+            integration_id?: number;
+            config: components["schemas"]["AwsS3DestinationConfig"];
+        };
+        /**
+         * @description * `AwsS3` - AwsS3
+         * @enum {string}
+         */
+        AwsS3DestinationRequestTypeEnum: "AwsS3";
+        /**
+         * @description Typed configuration for an Azure Blob Storage batch-export destination.
+         *
+         *     Credentials live in the linked Integration, not in this config. Mirrors
+         *     `AzureBlobBatchExportInputs` in `products/batch_exports/backend/service.py`.
+         */
+        AzureBlobDestinationConfig: {
+            /** @description Azure Blob Storage container name. */
+            container_name: string;
+            /**
+             * @description Object key prefix applied to every exported file.
+             * @default
+             */
+            prefix: string;
+            /**
+             * @description Optional compression codec applied to exported files. Valid codecs depend on file_format.
+             *
+             *     * `brotli` - brotli
+             *     * `gzip` - gzip
+             *     * `lz4` - lz4
+             *     * `snappy` - snappy
+             *     * `zstd` - zstd
+             */
+            compression?: components["schemas"]["CompressionEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description File format used for exported objects.
+             *
+             *     * `JSONLines` - JSONLines
+             *     * `Parquet` - Parquet
+             * @default JSONLines
+             */
+            file_format: components["schemas"]["FileFormatEnum"];
+            /** @description If set, rolls to a new file once the current file exceeds this size in MB. */
+            max_file_size_mb?: number | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "AzureBlob";
+        };
+        /** @description Request shape for creating or updating an Azure Blob Storage batch-export destination. */
+        AzureBlobDestinationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "AzureBlob";
+            /** @description ID of an azure-blob-kind Integration. Use the integrations-list MCP tool to find one. */
+            integration_id: number;
+            config: components["schemas"]["AzureBlobDestinationConfig"];
+        };
+        /**
+         * @description * `AzureBlob` - AzureBlob
+         * @enum {string}
+         */
+        AzureBlobDestinationRequestTypeEnum: "AzureBlob";
         /**
          * @description * `AED` - AED
          *     * `AFN` - AFN
@@ -1504,6 +1648,867 @@ export interface components {
          * @enum {string}
          */
         BaseMathType: "total" | "dau" | "weekly_active" | "monthly_active" | "unique_session" | "first_time_for_user" | "first_matching_event_for_user";
+        /** @description Serializer for a BatchExport model. */
+        BatchExport: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description The team this belongs to. */
+            readonly team_id: number;
+            /** @description A human-readable name for this BatchExport. */
+            name: string;
+            /**
+             * @description Which model this BatchExport is exporting.
+             *
+             *     * `events` - Events
+             *     * `persons` - Persons
+             *     * `sessions` - Sessions
+             */
+            model?: components["schemas"]["ModelEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"];
+            /** @description Destination configuration (type, config, and optional integration). */
+            destination: components["schemas"]["BatchExportDestination"];
+            /**
+             * @description How often the batch export should run.
+             *
+             *     * `hour` - hour
+             *     * `day` - day
+             *     * `week` - week
+             *     * `every 5 minutes` - every 5 minutes
+             *     * `every 15 minutes` - every 15 minutes
+             */
+            interval: components["schemas"]["BatchExportIntervalEnum"];
+            /** @description Whether this BatchExport is paused or not. */
+            paused?: boolean;
+            /**
+             * Format: date-time
+             * @description The timestamp at which this BatchExport was created.
+             */
+            readonly created_at: string;
+            /**
+             * Format: date-time
+             * @description The timestamp at which this BatchExport was last updated.
+             */
+            readonly last_updated_at: string;
+            /**
+             * Format: date-time
+             * @description The timestamp at which this BatchExport was last paused.
+             */
+            last_paused_at?: string | null;
+            /**
+             * Format: date-time
+             * @description Time before which any Batch Export runs won't be triggered.
+             */
+            start_at?: string | null;
+            /**
+             * Format: date-time
+             * @description Time after which any Batch Export runs won't be triggered.
+             */
+            end_at?: string | null;
+            /** @description The 10 most recent runs of this batch export, ordered newest first. */
+            readonly latest_runs: components["schemas"]["BatchExportRun"][];
+            /** @description Optional HogQL SELECT defining a custom model schema. Only recommended in advanced use cases. */
+            hogql_query?: string;
+            /** @description A schema of custom fields to select when exporting data. */
+            readonly schema: unknown;
+            /**
+             * @description IANA timezone name controlling daily and weekly interval boundaries. Defaults to UTC.
+             *
+             *     * `Africa/Abidjan` - Africa/Abidjan
+             *     * `Africa/Accra` - Africa/Accra
+             *     * `Africa/Addis_Ababa` - Africa/Addis_Ababa
+             *     * `Africa/Algiers` - Africa/Algiers
+             *     * `Africa/Asmara` - Africa/Asmara
+             *     * `Africa/Asmera` - Africa/Asmera
+             *     * `Africa/Bamako` - Africa/Bamako
+             *     * `Africa/Bangui` - Africa/Bangui
+             *     * `Africa/Banjul` - Africa/Banjul
+             *     * `Africa/Bissau` - Africa/Bissau
+             *     * `Africa/Blantyre` - Africa/Blantyre
+             *     * `Africa/Brazzaville` - Africa/Brazzaville
+             *     * `Africa/Bujumbura` - Africa/Bujumbura
+             *     * `Africa/Cairo` - Africa/Cairo
+             *     * `Africa/Casablanca` - Africa/Casablanca
+             *     * `Africa/Ceuta` - Africa/Ceuta
+             *     * `Africa/Conakry` - Africa/Conakry
+             *     * `Africa/Dakar` - Africa/Dakar
+             *     * `Africa/Dar_es_Salaam` - Africa/Dar_es_Salaam
+             *     * `Africa/Djibouti` - Africa/Djibouti
+             *     * `Africa/Douala` - Africa/Douala
+             *     * `Africa/El_Aaiun` - Africa/El_Aaiun
+             *     * `Africa/Freetown` - Africa/Freetown
+             *     * `Africa/Gaborone` - Africa/Gaborone
+             *     * `Africa/Harare` - Africa/Harare
+             *     * `Africa/Johannesburg` - Africa/Johannesburg
+             *     * `Africa/Juba` - Africa/Juba
+             *     * `Africa/Kampala` - Africa/Kampala
+             *     * `Africa/Khartoum` - Africa/Khartoum
+             *     * `Africa/Kigali` - Africa/Kigali
+             *     * `Africa/Kinshasa` - Africa/Kinshasa
+             *     * `Africa/Lagos` - Africa/Lagos
+             *     * `Africa/Libreville` - Africa/Libreville
+             *     * `Africa/Lome` - Africa/Lome
+             *     * `Africa/Luanda` - Africa/Luanda
+             *     * `Africa/Lubumbashi` - Africa/Lubumbashi
+             *     * `Africa/Lusaka` - Africa/Lusaka
+             *     * `Africa/Malabo` - Africa/Malabo
+             *     * `Africa/Maputo` - Africa/Maputo
+             *     * `Africa/Maseru` - Africa/Maseru
+             *     * `Africa/Mbabane` - Africa/Mbabane
+             *     * `Africa/Mogadishu` - Africa/Mogadishu
+             *     * `Africa/Monrovia` - Africa/Monrovia
+             *     * `Africa/Nairobi` - Africa/Nairobi
+             *     * `Africa/Ndjamena` - Africa/Ndjamena
+             *     * `Africa/Niamey` - Africa/Niamey
+             *     * `Africa/Nouakchott` - Africa/Nouakchott
+             *     * `Africa/Ouagadougou` - Africa/Ouagadougou
+             *     * `Africa/Porto-Novo` - Africa/Porto-Novo
+             *     * `Africa/Sao_Tome` - Africa/Sao_Tome
+             *     * `Africa/Timbuktu` - Africa/Timbuktu
+             *     * `Africa/Tripoli` - Africa/Tripoli
+             *     * `Africa/Tunis` - Africa/Tunis
+             *     * `Africa/Windhoek` - Africa/Windhoek
+             *     * `America/Adak` - America/Adak
+             *     * `America/Anchorage` - America/Anchorage
+             *     * `America/Anguilla` - America/Anguilla
+             *     * `America/Antigua` - America/Antigua
+             *     * `America/Araguaina` - America/Araguaina
+             *     * `America/Argentina/Buenos_Aires` - America/Argentina/Buenos_Aires
+             *     * `America/Argentina/Catamarca` - America/Argentina/Catamarca
+             *     * `America/Argentina/ComodRivadavia` - America/Argentina/ComodRivadavia
+             *     * `America/Argentina/Cordoba` - America/Argentina/Cordoba
+             *     * `America/Argentina/Jujuy` - America/Argentina/Jujuy
+             *     * `America/Argentina/La_Rioja` - America/Argentina/La_Rioja
+             *     * `America/Argentina/Mendoza` - America/Argentina/Mendoza
+             *     * `America/Argentina/Rio_Gallegos` - America/Argentina/Rio_Gallegos
+             *     * `America/Argentina/Salta` - America/Argentina/Salta
+             *     * `America/Argentina/San_Juan` - America/Argentina/San_Juan
+             *     * `America/Argentina/San_Luis` - America/Argentina/San_Luis
+             *     * `America/Argentina/Tucuman` - America/Argentina/Tucuman
+             *     * `America/Argentina/Ushuaia` - America/Argentina/Ushuaia
+             *     * `America/Aruba` - America/Aruba
+             *     * `America/Asuncion` - America/Asuncion
+             *     * `America/Atikokan` - America/Atikokan
+             *     * `America/Atka` - America/Atka
+             *     * `America/Bahia` - America/Bahia
+             *     * `America/Bahia_Banderas` - America/Bahia_Banderas
+             *     * `America/Barbados` - America/Barbados
+             *     * `America/Belem` - America/Belem
+             *     * `America/Belize` - America/Belize
+             *     * `America/Blanc-Sablon` - America/Blanc-Sablon
+             *     * `America/Boa_Vista` - America/Boa_Vista
+             *     * `America/Bogota` - America/Bogota
+             *     * `America/Boise` - America/Boise
+             *     * `America/Buenos_Aires` - America/Buenos_Aires
+             *     * `America/Cambridge_Bay` - America/Cambridge_Bay
+             *     * `America/Campo_Grande` - America/Campo_Grande
+             *     * `America/Cancun` - America/Cancun
+             *     * `America/Caracas` - America/Caracas
+             *     * `America/Catamarca` - America/Catamarca
+             *     * `America/Cayenne` - America/Cayenne
+             *     * `America/Cayman` - America/Cayman
+             *     * `America/Chicago` - America/Chicago
+             *     * `America/Chihuahua` - America/Chihuahua
+             *     * `America/Ciudad_Juarez` - America/Ciudad_Juarez
+             *     * `America/Coral_Harbour` - America/Coral_Harbour
+             *     * `America/Cordoba` - America/Cordoba
+             *     * `America/Costa_Rica` - America/Costa_Rica
+             *     * `America/Creston` - America/Creston
+             *     * `America/Cuiaba` - America/Cuiaba
+             *     * `America/Curacao` - America/Curacao
+             *     * `America/Danmarkshavn` - America/Danmarkshavn
+             *     * `America/Dawson` - America/Dawson
+             *     * `America/Dawson_Creek` - America/Dawson_Creek
+             *     * `America/Denver` - America/Denver
+             *     * `America/Detroit` - America/Detroit
+             *     * `America/Dominica` - America/Dominica
+             *     * `America/Edmonton` - America/Edmonton
+             *     * `America/Eirunepe` - America/Eirunepe
+             *     * `America/El_Salvador` - America/El_Salvador
+             *     * `America/Ensenada` - America/Ensenada
+             *     * `America/Fort_Nelson` - America/Fort_Nelson
+             *     * `America/Fort_Wayne` - America/Fort_Wayne
+             *     * `America/Fortaleza` - America/Fortaleza
+             *     * `America/Glace_Bay` - America/Glace_Bay
+             *     * `America/Godthab` - America/Godthab
+             *     * `America/Goose_Bay` - America/Goose_Bay
+             *     * `America/Grand_Turk` - America/Grand_Turk
+             *     * `America/Grenada` - America/Grenada
+             *     * `America/Guadeloupe` - America/Guadeloupe
+             *     * `America/Guatemala` - America/Guatemala
+             *     * `America/Guayaquil` - America/Guayaquil
+             *     * `America/Guyana` - America/Guyana
+             *     * `America/Halifax` - America/Halifax
+             *     * `America/Havana` - America/Havana
+             *     * `America/Hermosillo` - America/Hermosillo
+             *     * `America/Indiana/Indianapolis` - America/Indiana/Indianapolis
+             *     * `America/Indiana/Knox` - America/Indiana/Knox
+             *     * `America/Indiana/Marengo` - America/Indiana/Marengo
+             *     * `America/Indiana/Petersburg` - America/Indiana/Petersburg
+             *     * `America/Indiana/Tell_City` - America/Indiana/Tell_City
+             *     * `America/Indiana/Vevay` - America/Indiana/Vevay
+             *     * `America/Indiana/Vincennes` - America/Indiana/Vincennes
+             *     * `America/Indiana/Winamac` - America/Indiana/Winamac
+             *     * `America/Indianapolis` - America/Indianapolis
+             *     * `America/Inuvik` - America/Inuvik
+             *     * `America/Iqaluit` - America/Iqaluit
+             *     * `America/Jamaica` - America/Jamaica
+             *     * `America/Jujuy` - America/Jujuy
+             *     * `America/Juneau` - America/Juneau
+             *     * `America/Kentucky/Louisville` - America/Kentucky/Louisville
+             *     * `America/Kentucky/Monticello` - America/Kentucky/Monticello
+             *     * `America/Knox_IN` - America/Knox_IN
+             *     * `America/Kralendijk` - America/Kralendijk
+             *     * `America/La_Paz` - America/La_Paz
+             *     * `America/Lima` - America/Lima
+             *     * `America/Los_Angeles` - America/Los_Angeles
+             *     * `America/Louisville` - America/Louisville
+             *     * `America/Lower_Princes` - America/Lower_Princes
+             *     * `America/Maceio` - America/Maceio
+             *     * `America/Managua` - America/Managua
+             *     * `America/Manaus` - America/Manaus
+             *     * `America/Marigot` - America/Marigot
+             *     * `America/Martinique` - America/Martinique
+             *     * `America/Matamoros` - America/Matamoros
+             *     * `America/Mazatlan` - America/Mazatlan
+             *     * `America/Mendoza` - America/Mendoza
+             *     * `America/Menominee` - America/Menominee
+             *     * `America/Merida` - America/Merida
+             *     * `America/Metlakatla` - America/Metlakatla
+             *     * `America/Mexico_City` - America/Mexico_City
+             *     * `America/Miquelon` - America/Miquelon
+             *     * `America/Moncton` - America/Moncton
+             *     * `America/Monterrey` - America/Monterrey
+             *     * `America/Montevideo` - America/Montevideo
+             *     * `America/Montreal` - America/Montreal
+             *     * `America/Montserrat` - America/Montserrat
+             *     * `America/Nassau` - America/Nassau
+             *     * `America/New_York` - America/New_York
+             *     * `America/Nipigon` - America/Nipigon
+             *     * `America/Nome` - America/Nome
+             *     * `America/Noronha` - America/Noronha
+             *     * `America/North_Dakota/Beulah` - America/North_Dakota/Beulah
+             *     * `America/North_Dakota/Center` - America/North_Dakota/Center
+             *     * `America/North_Dakota/New_Salem` - America/North_Dakota/New_Salem
+             *     * `America/Nuuk` - America/Nuuk
+             *     * `America/Ojinaga` - America/Ojinaga
+             *     * `America/Panama` - America/Panama
+             *     * `America/Pangnirtung` - America/Pangnirtung
+             *     * `America/Paramaribo` - America/Paramaribo
+             *     * `America/Phoenix` - America/Phoenix
+             *     * `America/Port-au-Prince` - America/Port-au-Prince
+             *     * `America/Port_of_Spain` - America/Port_of_Spain
+             *     * `America/Porto_Acre` - America/Porto_Acre
+             *     * `America/Porto_Velho` - America/Porto_Velho
+             *     * `America/Puerto_Rico` - America/Puerto_Rico
+             *     * `America/Punta_Arenas` - America/Punta_Arenas
+             *     * `America/Rainy_River` - America/Rainy_River
+             *     * `America/Rankin_Inlet` - America/Rankin_Inlet
+             *     * `America/Recife` - America/Recife
+             *     * `America/Regina` - America/Regina
+             *     * `America/Resolute` - America/Resolute
+             *     * `America/Rio_Branco` - America/Rio_Branco
+             *     * `America/Rosario` - America/Rosario
+             *     * `America/Santa_Isabel` - America/Santa_Isabel
+             *     * `America/Santarem` - America/Santarem
+             *     * `America/Santiago` - America/Santiago
+             *     * `America/Santo_Domingo` - America/Santo_Domingo
+             *     * `America/Sao_Paulo` - America/Sao_Paulo
+             *     * `America/Scoresbysund` - America/Scoresbysund
+             *     * `America/Shiprock` - America/Shiprock
+             *     * `America/Sitka` - America/Sitka
+             *     * `America/St_Barthelemy` - America/St_Barthelemy
+             *     * `America/St_Johns` - America/St_Johns
+             *     * `America/St_Kitts` - America/St_Kitts
+             *     * `America/St_Lucia` - America/St_Lucia
+             *     * `America/St_Thomas` - America/St_Thomas
+             *     * `America/St_Vincent` - America/St_Vincent
+             *     * `America/Swift_Current` - America/Swift_Current
+             *     * `America/Tegucigalpa` - America/Tegucigalpa
+             *     * `America/Thule` - America/Thule
+             *     * `America/Thunder_Bay` - America/Thunder_Bay
+             *     * `America/Tijuana` - America/Tijuana
+             *     * `America/Toronto` - America/Toronto
+             *     * `America/Tortola` - America/Tortola
+             *     * `America/Vancouver` - America/Vancouver
+             *     * `America/Virgin` - America/Virgin
+             *     * `America/Whitehorse` - America/Whitehorse
+             *     * `America/Winnipeg` - America/Winnipeg
+             *     * `America/Yakutat` - America/Yakutat
+             *     * `America/Yellowknife` - America/Yellowknife
+             *     * `Antarctica/Casey` - Antarctica/Casey
+             *     * `Antarctica/Davis` - Antarctica/Davis
+             *     * `Antarctica/DumontDUrville` - Antarctica/DumontDUrville
+             *     * `Antarctica/Macquarie` - Antarctica/Macquarie
+             *     * `Antarctica/Mawson` - Antarctica/Mawson
+             *     * `Antarctica/McMurdo` - Antarctica/McMurdo
+             *     * `Antarctica/Palmer` - Antarctica/Palmer
+             *     * `Antarctica/Rothera` - Antarctica/Rothera
+             *     * `Antarctica/South_Pole` - Antarctica/South_Pole
+             *     * `Antarctica/Syowa` - Antarctica/Syowa
+             *     * `Antarctica/Troll` - Antarctica/Troll
+             *     * `Antarctica/Vostok` - Antarctica/Vostok
+             *     * `Arctic/Longyearbyen` - Arctic/Longyearbyen
+             *     * `Asia/Aden` - Asia/Aden
+             *     * `Asia/Almaty` - Asia/Almaty
+             *     * `Asia/Amman` - Asia/Amman
+             *     * `Asia/Anadyr` - Asia/Anadyr
+             *     * `Asia/Aqtau` - Asia/Aqtau
+             *     * `Asia/Aqtobe` - Asia/Aqtobe
+             *     * `Asia/Ashgabat` - Asia/Ashgabat
+             *     * `Asia/Ashkhabad` - Asia/Ashkhabad
+             *     * `Asia/Atyrau` - Asia/Atyrau
+             *     * `Asia/Baghdad` - Asia/Baghdad
+             *     * `Asia/Bahrain` - Asia/Bahrain
+             *     * `Asia/Baku` - Asia/Baku
+             *     * `Asia/Bangkok` - Asia/Bangkok
+             *     * `Asia/Barnaul` - Asia/Barnaul
+             *     * `Asia/Beirut` - Asia/Beirut
+             *     * `Asia/Bishkek` - Asia/Bishkek
+             *     * `Asia/Brunei` - Asia/Brunei
+             *     * `Asia/Calcutta` - Asia/Calcutta
+             *     * `Asia/Chita` - Asia/Chita
+             *     * `Asia/Choibalsan` - Asia/Choibalsan
+             *     * `Asia/Chongqing` - Asia/Chongqing
+             *     * `Asia/Chungking` - Asia/Chungking
+             *     * `Asia/Colombo` - Asia/Colombo
+             *     * `Asia/Dacca` - Asia/Dacca
+             *     * `Asia/Damascus` - Asia/Damascus
+             *     * `Asia/Dhaka` - Asia/Dhaka
+             *     * `Asia/Dili` - Asia/Dili
+             *     * `Asia/Dubai` - Asia/Dubai
+             *     * `Asia/Dushanbe` - Asia/Dushanbe
+             *     * `Asia/Famagusta` - Asia/Famagusta
+             *     * `Asia/Gaza` - Asia/Gaza
+             *     * `Asia/Harbin` - Asia/Harbin
+             *     * `Asia/Hebron` - Asia/Hebron
+             *     * `Asia/Ho_Chi_Minh` - Asia/Ho_Chi_Minh
+             *     * `Asia/Hong_Kong` - Asia/Hong_Kong
+             *     * `Asia/Hovd` - Asia/Hovd
+             *     * `Asia/Irkutsk` - Asia/Irkutsk
+             *     * `Asia/Istanbul` - Asia/Istanbul
+             *     * `Asia/Jakarta` - Asia/Jakarta
+             *     * `Asia/Jayapura` - Asia/Jayapura
+             *     * `Asia/Jerusalem` - Asia/Jerusalem
+             *     * `Asia/Kabul` - Asia/Kabul
+             *     * `Asia/Kamchatka` - Asia/Kamchatka
+             *     * `Asia/Karachi` - Asia/Karachi
+             *     * `Asia/Kashgar` - Asia/Kashgar
+             *     * `Asia/Kathmandu` - Asia/Kathmandu
+             *     * `Asia/Katmandu` - Asia/Katmandu
+             *     * `Asia/Khandyga` - Asia/Khandyga
+             *     * `Asia/Kolkata` - Asia/Kolkata
+             *     * `Asia/Krasnoyarsk` - Asia/Krasnoyarsk
+             *     * `Asia/Kuala_Lumpur` - Asia/Kuala_Lumpur
+             *     * `Asia/Kuching` - Asia/Kuching
+             *     * `Asia/Kuwait` - Asia/Kuwait
+             *     * `Asia/Macao` - Asia/Macao
+             *     * `Asia/Macau` - Asia/Macau
+             *     * `Asia/Magadan` - Asia/Magadan
+             *     * `Asia/Makassar` - Asia/Makassar
+             *     * `Asia/Manila` - Asia/Manila
+             *     * `Asia/Muscat` - Asia/Muscat
+             *     * `Asia/Nicosia` - Asia/Nicosia
+             *     * `Asia/Novokuznetsk` - Asia/Novokuznetsk
+             *     * `Asia/Novosibirsk` - Asia/Novosibirsk
+             *     * `Asia/Omsk` - Asia/Omsk
+             *     * `Asia/Oral` - Asia/Oral
+             *     * `Asia/Phnom_Penh` - Asia/Phnom_Penh
+             *     * `Asia/Pontianak` - Asia/Pontianak
+             *     * `Asia/Pyongyang` - Asia/Pyongyang
+             *     * `Asia/Qatar` - Asia/Qatar
+             *     * `Asia/Qostanay` - Asia/Qostanay
+             *     * `Asia/Qyzylorda` - Asia/Qyzylorda
+             *     * `Asia/Rangoon` - Asia/Rangoon
+             *     * `Asia/Riyadh` - Asia/Riyadh
+             *     * `Asia/Saigon` - Asia/Saigon
+             *     * `Asia/Sakhalin` - Asia/Sakhalin
+             *     * `Asia/Samarkand` - Asia/Samarkand
+             *     * `Asia/Seoul` - Asia/Seoul
+             *     * `Asia/Shanghai` - Asia/Shanghai
+             *     * `Asia/Singapore` - Asia/Singapore
+             *     * `Asia/Srednekolymsk` - Asia/Srednekolymsk
+             *     * `Asia/Taipei` - Asia/Taipei
+             *     * `Asia/Tashkent` - Asia/Tashkent
+             *     * `Asia/Tbilisi` - Asia/Tbilisi
+             *     * `Asia/Tehran` - Asia/Tehran
+             *     * `Asia/Tel_Aviv` - Asia/Tel_Aviv
+             *     * `Asia/Thimbu` - Asia/Thimbu
+             *     * `Asia/Thimphu` - Asia/Thimphu
+             *     * `Asia/Tokyo` - Asia/Tokyo
+             *     * `Asia/Tomsk` - Asia/Tomsk
+             *     * `Asia/Ujung_Pandang` - Asia/Ujung_Pandang
+             *     * `Asia/Ulaanbaatar` - Asia/Ulaanbaatar
+             *     * `Asia/Ulan_Bator` - Asia/Ulan_Bator
+             *     * `Asia/Urumqi` - Asia/Urumqi
+             *     * `Asia/Ust-Nera` - Asia/Ust-Nera
+             *     * `Asia/Vientiane` - Asia/Vientiane
+             *     * `Asia/Vladivostok` - Asia/Vladivostok
+             *     * `Asia/Yakutsk` - Asia/Yakutsk
+             *     * `Asia/Yangon` - Asia/Yangon
+             *     * `Asia/Yekaterinburg` - Asia/Yekaterinburg
+             *     * `Asia/Yerevan` - Asia/Yerevan
+             *     * `Atlantic/Azores` - Atlantic/Azores
+             *     * `Atlantic/Bermuda` - Atlantic/Bermuda
+             *     * `Atlantic/Canary` - Atlantic/Canary
+             *     * `Atlantic/Cape_Verde` - Atlantic/Cape_Verde
+             *     * `Atlantic/Faeroe` - Atlantic/Faeroe
+             *     * `Atlantic/Faroe` - Atlantic/Faroe
+             *     * `Atlantic/Jan_Mayen` - Atlantic/Jan_Mayen
+             *     * `Atlantic/Madeira` - Atlantic/Madeira
+             *     * `Atlantic/Reykjavik` - Atlantic/Reykjavik
+             *     * `Atlantic/South_Georgia` - Atlantic/South_Georgia
+             *     * `Atlantic/St_Helena` - Atlantic/St_Helena
+             *     * `Atlantic/Stanley` - Atlantic/Stanley
+             *     * `Australia/ACT` - Australia/ACT
+             *     * `Australia/Adelaide` - Australia/Adelaide
+             *     * `Australia/Brisbane` - Australia/Brisbane
+             *     * `Australia/Broken_Hill` - Australia/Broken_Hill
+             *     * `Australia/Canberra` - Australia/Canberra
+             *     * `Australia/Currie` - Australia/Currie
+             *     * `Australia/Darwin` - Australia/Darwin
+             *     * `Australia/Eucla` - Australia/Eucla
+             *     * `Australia/Hobart` - Australia/Hobart
+             *     * `Australia/LHI` - Australia/LHI
+             *     * `Australia/Lindeman` - Australia/Lindeman
+             *     * `Australia/Lord_Howe` - Australia/Lord_Howe
+             *     * `Australia/Melbourne` - Australia/Melbourne
+             *     * `Australia/NSW` - Australia/NSW
+             *     * `Australia/North` - Australia/North
+             *     * `Australia/Perth` - Australia/Perth
+             *     * `Australia/Queensland` - Australia/Queensland
+             *     * `Australia/South` - Australia/South
+             *     * `Australia/Sydney` - Australia/Sydney
+             *     * `Australia/Tasmania` - Australia/Tasmania
+             *     * `Australia/Victoria` - Australia/Victoria
+             *     * `Australia/West` - Australia/West
+             *     * `Australia/Yancowinna` - Australia/Yancowinna
+             *     * `Brazil/Acre` - Brazil/Acre
+             *     * `Brazil/DeNoronha` - Brazil/DeNoronha
+             *     * `Brazil/East` - Brazil/East
+             *     * `Brazil/West` - Brazil/West
+             *     * `CET` - CET
+             *     * `CST6CDT` - CST6CDT
+             *     * `Canada/Atlantic` - Canada/Atlantic
+             *     * `Canada/Central` - Canada/Central
+             *     * `Canada/Eastern` - Canada/Eastern
+             *     * `Canada/Mountain` - Canada/Mountain
+             *     * `Canada/Newfoundland` - Canada/Newfoundland
+             *     * `Canada/Pacific` - Canada/Pacific
+             *     * `Canada/Saskatchewan` - Canada/Saskatchewan
+             *     * `Canada/Yukon` - Canada/Yukon
+             *     * `Chile/Continental` - Chile/Continental
+             *     * `Chile/EasterIsland` - Chile/EasterIsland
+             *     * `Cuba` - Cuba
+             *     * `EET` - EET
+             *     * `EST` - EST
+             *     * `EST5EDT` - EST5EDT
+             *     * `Egypt` - Egypt
+             *     * `Eire` - Eire
+             *     * `Etc/GMT` - Etc/GMT
+             *     * `Etc/GMT+0` - Etc/GMT+0
+             *     * `Etc/GMT+1` - Etc/GMT+1
+             *     * `Etc/GMT+10` - Etc/GMT+10
+             *     * `Etc/GMT+11` - Etc/GMT+11
+             *     * `Etc/GMT+12` - Etc/GMT+12
+             *     * `Etc/GMT+2` - Etc/GMT+2
+             *     * `Etc/GMT+3` - Etc/GMT+3
+             *     * `Etc/GMT+4` - Etc/GMT+4
+             *     * `Etc/GMT+5` - Etc/GMT+5
+             *     * `Etc/GMT+6` - Etc/GMT+6
+             *     * `Etc/GMT+7` - Etc/GMT+7
+             *     * `Etc/GMT+8` - Etc/GMT+8
+             *     * `Etc/GMT+9` - Etc/GMT+9
+             *     * `Etc/GMT-0` - Etc/GMT-0
+             *     * `Etc/GMT-1` - Etc/GMT-1
+             *     * `Etc/GMT-10` - Etc/GMT-10
+             *     * `Etc/GMT-11` - Etc/GMT-11
+             *     * `Etc/GMT-12` - Etc/GMT-12
+             *     * `Etc/GMT-13` - Etc/GMT-13
+             *     * `Etc/GMT-14` - Etc/GMT-14
+             *     * `Etc/GMT-2` - Etc/GMT-2
+             *     * `Etc/GMT-3` - Etc/GMT-3
+             *     * `Etc/GMT-4` - Etc/GMT-4
+             *     * `Etc/GMT-5` - Etc/GMT-5
+             *     * `Etc/GMT-6` - Etc/GMT-6
+             *     * `Etc/GMT-7` - Etc/GMT-7
+             *     * `Etc/GMT-8` - Etc/GMT-8
+             *     * `Etc/GMT-9` - Etc/GMT-9
+             *     * `Etc/GMT0` - Etc/GMT0
+             *     * `Etc/Greenwich` - Etc/Greenwich
+             *     * `Etc/UCT` - Etc/UCT
+             *     * `Etc/UTC` - Etc/UTC
+             *     * `Etc/Universal` - Etc/Universal
+             *     * `Etc/Zulu` - Etc/Zulu
+             *     * `Europe/Amsterdam` - Europe/Amsterdam
+             *     * `Europe/Andorra` - Europe/Andorra
+             *     * `Europe/Astrakhan` - Europe/Astrakhan
+             *     * `Europe/Athens` - Europe/Athens
+             *     * `Europe/Belfast` - Europe/Belfast
+             *     * `Europe/Belgrade` - Europe/Belgrade
+             *     * `Europe/Berlin` - Europe/Berlin
+             *     * `Europe/Bratislava` - Europe/Bratislava
+             *     * `Europe/Brussels` - Europe/Brussels
+             *     * `Europe/Bucharest` - Europe/Bucharest
+             *     * `Europe/Budapest` - Europe/Budapest
+             *     * `Europe/Busingen` - Europe/Busingen
+             *     * `Europe/Chisinau` - Europe/Chisinau
+             *     * `Europe/Copenhagen` - Europe/Copenhagen
+             *     * `Europe/Dublin` - Europe/Dublin
+             *     * `Europe/Gibraltar` - Europe/Gibraltar
+             *     * `Europe/Guernsey` - Europe/Guernsey
+             *     * `Europe/Helsinki` - Europe/Helsinki
+             *     * `Europe/Isle_of_Man` - Europe/Isle_of_Man
+             *     * `Europe/Istanbul` - Europe/Istanbul
+             *     * `Europe/Jersey` - Europe/Jersey
+             *     * `Europe/Kaliningrad` - Europe/Kaliningrad
+             *     * `Europe/Kiev` - Europe/Kiev
+             *     * `Europe/Kirov` - Europe/Kirov
+             *     * `Europe/Kyiv` - Europe/Kyiv
+             *     * `Europe/Lisbon` - Europe/Lisbon
+             *     * `Europe/Ljubljana` - Europe/Ljubljana
+             *     * `Europe/London` - Europe/London
+             *     * `Europe/Luxembourg` - Europe/Luxembourg
+             *     * `Europe/Madrid` - Europe/Madrid
+             *     * `Europe/Malta` - Europe/Malta
+             *     * `Europe/Mariehamn` - Europe/Mariehamn
+             *     * `Europe/Minsk` - Europe/Minsk
+             *     * `Europe/Monaco` - Europe/Monaco
+             *     * `Europe/Moscow` - Europe/Moscow
+             *     * `Europe/Nicosia` - Europe/Nicosia
+             *     * `Europe/Oslo` - Europe/Oslo
+             *     * `Europe/Paris` - Europe/Paris
+             *     * `Europe/Podgorica` - Europe/Podgorica
+             *     * `Europe/Prague` - Europe/Prague
+             *     * `Europe/Riga` - Europe/Riga
+             *     * `Europe/Rome` - Europe/Rome
+             *     * `Europe/Samara` - Europe/Samara
+             *     * `Europe/San_Marino` - Europe/San_Marino
+             *     * `Europe/Sarajevo` - Europe/Sarajevo
+             *     * `Europe/Saratov` - Europe/Saratov
+             *     * `Europe/Simferopol` - Europe/Simferopol
+             *     * `Europe/Skopje` - Europe/Skopje
+             *     * `Europe/Sofia` - Europe/Sofia
+             *     * `Europe/Stockholm` - Europe/Stockholm
+             *     * `Europe/Tallinn` - Europe/Tallinn
+             *     * `Europe/Tirane` - Europe/Tirane
+             *     * `Europe/Tiraspol` - Europe/Tiraspol
+             *     * `Europe/Ulyanovsk` - Europe/Ulyanovsk
+             *     * `Europe/Uzhgorod` - Europe/Uzhgorod
+             *     * `Europe/Vaduz` - Europe/Vaduz
+             *     * `Europe/Vatican` - Europe/Vatican
+             *     * `Europe/Vienna` - Europe/Vienna
+             *     * `Europe/Vilnius` - Europe/Vilnius
+             *     * `Europe/Volgograd` - Europe/Volgograd
+             *     * `Europe/Warsaw` - Europe/Warsaw
+             *     * `Europe/Zagreb` - Europe/Zagreb
+             *     * `Europe/Zaporozhye` - Europe/Zaporozhye
+             *     * `Europe/Zurich` - Europe/Zurich
+             *     * `GB` - GB
+             *     * `GB-Eire` - GB-Eire
+             *     * `GMT` - GMT
+             *     * `GMT+0` - GMT+0
+             *     * `GMT-0` - GMT-0
+             *     * `GMT0` - GMT0
+             *     * `Greenwich` - Greenwich
+             *     * `HST` - HST
+             *     * `Hongkong` - Hongkong
+             *     * `Iceland` - Iceland
+             *     * `Indian/Antananarivo` - Indian/Antananarivo
+             *     * `Indian/Chagos` - Indian/Chagos
+             *     * `Indian/Christmas` - Indian/Christmas
+             *     * `Indian/Cocos` - Indian/Cocos
+             *     * `Indian/Comoro` - Indian/Comoro
+             *     * `Indian/Kerguelen` - Indian/Kerguelen
+             *     * `Indian/Mahe` - Indian/Mahe
+             *     * `Indian/Maldives` - Indian/Maldives
+             *     * `Indian/Mauritius` - Indian/Mauritius
+             *     * `Indian/Mayotte` - Indian/Mayotte
+             *     * `Indian/Reunion` - Indian/Reunion
+             *     * `Iran` - Iran
+             *     * `Israel` - Israel
+             *     * `Jamaica` - Jamaica
+             *     * `Japan` - Japan
+             *     * `Kwajalein` - Kwajalein
+             *     * `Libya` - Libya
+             *     * `MET` - MET
+             *     * `MST` - MST
+             *     * `MST7MDT` - MST7MDT
+             *     * `Mexico/BajaNorte` - Mexico/BajaNorte
+             *     * `Mexico/BajaSur` - Mexico/BajaSur
+             *     * `Mexico/General` - Mexico/General
+             *     * `NZ` - NZ
+             *     * `NZ-CHAT` - NZ-CHAT
+             *     * `Navajo` - Navajo
+             *     * `PRC` - PRC
+             *     * `PST8PDT` - PST8PDT
+             *     * `Pacific/Apia` - Pacific/Apia
+             *     * `Pacific/Auckland` - Pacific/Auckland
+             *     * `Pacific/Bougainville` - Pacific/Bougainville
+             *     * `Pacific/Chatham` - Pacific/Chatham
+             *     * `Pacific/Chuuk` - Pacific/Chuuk
+             *     * `Pacific/Easter` - Pacific/Easter
+             *     * `Pacific/Efate` - Pacific/Efate
+             *     * `Pacific/Enderbury` - Pacific/Enderbury
+             *     * `Pacific/Fakaofo` - Pacific/Fakaofo
+             *     * `Pacific/Fiji` - Pacific/Fiji
+             *     * `Pacific/Funafuti` - Pacific/Funafuti
+             *     * `Pacific/Galapagos` - Pacific/Galapagos
+             *     * `Pacific/Gambier` - Pacific/Gambier
+             *     * `Pacific/Guadalcanal` - Pacific/Guadalcanal
+             *     * `Pacific/Guam` - Pacific/Guam
+             *     * `Pacific/Honolulu` - Pacific/Honolulu
+             *     * `Pacific/Johnston` - Pacific/Johnston
+             *     * `Pacific/Kanton` - Pacific/Kanton
+             *     * `Pacific/Kiritimati` - Pacific/Kiritimati
+             *     * `Pacific/Kosrae` - Pacific/Kosrae
+             *     * `Pacific/Kwajalein` - Pacific/Kwajalein
+             *     * `Pacific/Majuro` - Pacific/Majuro
+             *     * `Pacific/Marquesas` - Pacific/Marquesas
+             *     * `Pacific/Midway` - Pacific/Midway
+             *     * `Pacific/Nauru` - Pacific/Nauru
+             *     * `Pacific/Niue` - Pacific/Niue
+             *     * `Pacific/Norfolk` - Pacific/Norfolk
+             *     * `Pacific/Noumea` - Pacific/Noumea
+             *     * `Pacific/Pago_Pago` - Pacific/Pago_Pago
+             *     * `Pacific/Palau` - Pacific/Palau
+             *     * `Pacific/Pitcairn` - Pacific/Pitcairn
+             *     * `Pacific/Pohnpei` - Pacific/Pohnpei
+             *     * `Pacific/Ponape` - Pacific/Ponape
+             *     * `Pacific/Port_Moresby` - Pacific/Port_Moresby
+             *     * `Pacific/Rarotonga` - Pacific/Rarotonga
+             *     * `Pacific/Saipan` - Pacific/Saipan
+             *     * `Pacific/Samoa` - Pacific/Samoa
+             *     * `Pacific/Tahiti` - Pacific/Tahiti
+             *     * `Pacific/Tarawa` - Pacific/Tarawa
+             *     * `Pacific/Tongatapu` - Pacific/Tongatapu
+             *     * `Pacific/Truk` - Pacific/Truk
+             *     * `Pacific/Wake` - Pacific/Wake
+             *     * `Pacific/Wallis` - Pacific/Wallis
+             *     * `Pacific/Yap` - Pacific/Yap
+             *     * `Poland` - Poland
+             *     * `Portugal` - Portugal
+             *     * `ROC` - ROC
+             *     * `ROK` - ROK
+             *     * `Singapore` - Singapore
+             *     * `Turkey` - Turkey
+             *     * `UCT` - UCT
+             *     * `US/Alaska` - US/Alaska
+             *     * `US/Aleutian` - US/Aleutian
+             *     * `US/Arizona` - US/Arizona
+             *     * `US/Central` - US/Central
+             *     * `US/East-Indiana` - US/East-Indiana
+             *     * `US/Eastern` - US/Eastern
+             *     * `US/Hawaii` - US/Hawaii
+             *     * `US/Indiana-Starke` - US/Indiana-Starke
+             *     * `US/Michigan` - US/Michigan
+             *     * `US/Mountain` - US/Mountain
+             *     * `US/Pacific` - US/Pacific
+             *     * `US/Samoa` - US/Samoa
+             *     * `UTC` - UTC
+             *     * `Universal` - Universal
+             *     * `W-SU` - W-SU
+             *     * `WET` - WET
+             *     * `Zulu` - Zulu
+             */
+            timezone?: components["schemas"]["TimezoneEnum"] | components["schemas"]["NullEnum"];
+            /** @description Day-of-week offset for weekly intervals (0=Sunday, 6=Saturday). Only valid when interval is 'week'. */
+            offset_day?: number | null;
+            /** @description Hour-of-day offset (0-23) for daily and weekly intervals. Only valid when interval is 'day' or 'week'. */
+            offset_hour?: number | null;
+        };
+        /**
+         * @description Serializer for an BatchExportDestination model.
+         *
+         *     The `config` field is polymorphic and typed only for destinations that keep
+         *     credentials in the linked Integration (currently Databricks, AzureBlob, BigQuery, Postgres,
+         *     AwsS3, S3Compatible, Snowflake). Other destination types accept the same JSON shape but without a
+         *     typed OpenAPI schema. Secret fields are stripped from `config` on read.
+         */
+        BatchExportDestination: {
+            /**
+             * @description A choice of supported BatchExportDestination types.
+             *
+             *     * `S3` - S3
+             *     * `AwsS3` - Aws S3
+             *     * `S3Compatible` - S3 Compatible
+             *     * `Snowflake` - Snowflake
+             *     * `Postgres` - Postgres
+             *     * `Redshift` - Redshift
+             *     * `BigQuery` - Bigquery
+             *     * `Databricks` - Databricks
+             *     * `AzureBlob` - Azure Blob
+             *     * `Workflows` - Workflows
+             *     * `HTTP` - Http
+             *     * `NoOp` - Noop
+             *     * `FileDownload` - File Download
+             */
+            type: components["schemas"]["BatchExportDestinationTypeEnum"];
+            /** @description Destination-specific configuration. Fields depend on `type`. Credentials for integration-backed destinations (Databricks, AzureBlob, BigQuery, Postgres, AwsS3, S3Compatible, Snowflake) are NOT stored here — they live in the linked Integration. Secret fields are stripped from responses. */
+            config: Omit<components["schemas"]["BatchExportDestinationConfig"], "type">;
+            /** @description The integration for this destination. */
+            integration?: number | null;
+            /** @description ID of a team-scoped Integration providing credentials. Required when creating Databricks, AzureBlob, and BigQuery destinations; optional for AwsS3, S3Compatible and Snowflake (inline credentials remain supported); unused for other types. */
+            integration_id?: number | null;
+        };
+        BatchExportDestinationConfig: components["schemas"]["DatabricksDestinationConfig"] | components["schemas"]["AzureBlobDestinationConfig"] | components["schemas"]["BigQueryDestinationConfig"] | components["schemas"]["PostgresDestinationConfig"] | components["schemas"]["AwsS3DestinationConfig"] | components["schemas"]["S3CompatibleDestinationConfig"] | components["schemas"]["SnowflakeDestinationConfig"];
+        BatchExportDestinationRequest: components["schemas"]["DatabricksDestinationRequest"] | components["schemas"]["AzureBlobDestinationRequest"] | components["schemas"]["BigQueryDestinationRequest"] | components["schemas"]["PostgresDestinationRequest"] | components["schemas"]["AwsS3DestinationRequest"] | components["schemas"]["S3CompatibleDestinationRequest"] | components["schemas"]["SnowflakeDestinationRequest"];
+        /**
+         * @description * `S3` - S3
+         *     * `AwsS3` - Aws S3
+         *     * `S3Compatible` - S3 Compatible
+         *     * `Snowflake` - Snowflake
+         *     * `Postgres` - Postgres
+         *     * `Redshift` - Redshift
+         *     * `BigQuery` - Bigquery
+         *     * `Databricks` - Databricks
+         *     * `AzureBlob` - Azure Blob
+         *     * `Workflows` - Workflows
+         *     * `HTTP` - Http
+         *     * `NoOp` - Noop
+         *     * `FileDownload` - File Download
+         * @enum {string}
+         */
+        BatchExportDestinationTypeEnum: "S3" | "AwsS3" | "S3Compatible" | "Snowflake" | "Postgres" | "Redshift" | "BigQuery" | "Databricks" | "AzureBlob" | "Workflows" | "HTTP" | "NoOp" | "FileDownload";
+        /**
+         * @description * `hour` - hour
+         *     * `day` - day
+         *     * `week` - week
+         *     * `every 5 minutes` - every 5 minutes
+         *     * `every 15 minutes` - every 15 minutes
+         * @enum {string}
+         */
+        BatchExportIntervalEnum: "hour" | "day" | "week" | "every 5 minutes" | "every 15 minutes";
+        /**
+         * @description Request body for create/partial_update on BatchExportViewSet.
+         *
+         *     Mirrors the writeable fields of `BatchExportSerializer` but uses a polymorphic
+         *     `destination` schema so integration_id is marked required on the types that need
+         *     it. Responses continue to use `BatchExportSerializer`.
+         */
+        BatchExportRequest: {
+            /** @description Human-readable name for the batch export. */
+            name: string;
+            /**
+             * @description Which data model to export (events, persons, sessions).
+             *
+             *     * `events` - Events
+             *     * `persons` - Persons
+             *     * `sessions` - Sessions
+             */
+            model?: components["schemas"]["ModelEnum"];
+            /** @description Destination configuration. Required integration_id is enforced per destination type. */
+            destination: Omit<components["schemas"]["BatchExportDestinationRequest"], "type">;
+            /**
+             * @description How often the batch export should run.
+             *
+             *     * `hour` - hour
+             *     * `day` - day
+             *     * `week` - week
+             *     * `every 5 minutes` - every 5 minutes
+             *     * `every 15 minutes` - every 15 minutes
+             */
+            interval: components["schemas"]["BatchExportIntervalEnum"];
+            /** @description Whether the batch export is paused. */
+            paused?: boolean;
+            /** @description Optional HogQL SELECT defining a custom model schema. Only recommended in advanced use cases. */
+            hogql_query?: string;
+            /** @description Optional list of property filters to restrict which events are exported. Each filter is a serialized HogQL property filter object with a 'type' of one of: 'event', 'hogql', 'person' (e.g. {"key": "$browser", "operator": "exact", "type": "event", "value": ["Firefox"]}). */
+            filters?: unknown;
+            /** @description IANA timezone name (e.g. 'America/New_York', 'Europe/London', 'UTC') controlling daily and weekly interval boundaries. */
+            timezone?: string | null;
+            /** @description Day-of-week offset for weekly intervals (0=Sunday, 6=Saturday). */
+            offset_day?: number | null;
+            /** @description Hour-of-day offset (0-23) for daily and weekly intervals. */
+            offset_hour?: number | null;
+        };
+        /** @description Serializer for a BatchExportRun model. */
+        BatchExportRun: {
+            /** Format: uuid */
+            readonly id: string;
+            /**
+             * @description The status of this run.
+             *
+             *     * `Cancelled` - Cancelled
+             *     * `Completed` - Completed
+             *     * `ContinuedAsNew` - Continued As New
+             *     * `Failed` - Failed
+             *     * `FailedRetryable` - Failed Retryable
+             *     * `FailedBilling` - Failed Billing
+             *     * `Terminated` - Terminated
+             *     * `TimedOut` - Timedout
+             *     * `Running` - Running
+             *     * `Starting` - Starting
+             */
+            status: components["schemas"]["BatchExportRunStatusEnum"];
+            /** @description The number of records that have been exported. */
+            records_completed?: number | null;
+            /** @description The number of records that failed downstream processing (e.g. hog function execution errors). */
+            records_failed?: number | null;
+            /** @description The latest error that occurred during this run. */
+            latest_error?: string | null;
+            /**
+             * Format: date-time
+             * @description The start of the data interval.
+             */
+            data_interval_start?: string | null;
+            /**
+             * Format: date-time
+             * @description The end of the data interval.
+             */
+            data_interval_end: string;
+            /** @description An opaque cursor that may be used to resume. */
+            cursor?: string | null;
+            /**
+             * Format: date-time
+             * @description The timestamp at which this BatchExportRun was created.
+             */
+            readonly created_at: string;
+            /**
+             * Format: date-time
+             * @description The timestamp at which this BatchExportRun finished, successfully or not.
+             */
+            finished_at?: string | null;
+            /**
+             * Format: date-time
+             * @description The timestamp at which this BatchExportRun was last updated.
+             */
+            readonly last_updated_at: string;
+            /** @description The total count of records that should be exported in this BatchExportRun. */
+            records_total_count?: number | null;
+            /**
+             * Format: int64
+             * @description The number of bytes that have been exported in this BatchExportRun.
+             */
+            bytes_exported?: number | null;
+            /**
+             * Format: uuid
+             * @description The `BatchExport` this run belongs to.
+             */
+            readonly batch_export: string | null;
+            /**
+             * Format: uuid
+             * @description The `BatchExportOnDemand` this run belongs to.
+             */
+            batch_export_on_demand?: string | null;
+            /**
+             * Format: uuid
+             * @description The backfill this run belongs to.
+             */
+            backfill?: string | null;
+        };
+        /**
+         * @description * `Cancelled` - Cancelled
+         *     * `Completed` - Completed
+         *     * `ContinuedAsNew` - Continued As New
+         *     * `Failed` - Failed
+         *     * `FailedRetryable` - Failed Retryable
+         *     * `FailedBilling` - Failed Billing
+         *     * `Terminated` - Terminated
+         *     * `TimedOut` - Timedout
+         *     * `Running` - Running
+         *     * `Starting` - Starting
+         * @enum {string}
+         */
+        BatchExportRunStatusEnum: "Cancelled" | "Completed" | "ContinuedAsNew" | "Failed" | "FailedRetryable" | "FailedBilling" | "Terminated" | "TimedOut" | "Running" | "Starting";
         /** BehavioralFilter */
         BehavioralFilter: {
             /**
@@ -1603,6 +2608,48 @@ export interface components {
              */
             explicit_datetime_to: string | null;
         };
+        /**
+         * @description Typed configuration for a BigQuery batch-export destination.
+         *
+         *     Credentials live in the linked Integration, not in this config. Mirrors the
+         *     non-credential fields of `BigQueryBatchExportInputs` in
+         *     `products/batch_exports/backend/service.py`.
+         */
+        BigQueryDestinationConfig: {
+            /** @description BigQuery dataset ID to write to. */
+            dataset_id: string;
+            /**
+             * @description BigQuery table ID inside the dataset.
+             * @default events
+             */
+            table_id: string;
+            /**
+             * @description Whether to export 'properties', 'set', and 'set_once' fields as the BigQuery JSON type rather than STRING. Cannot be changed after the export is created.
+             * @default false
+             */
+            use_json_type: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "BigQuery";
+        };
+        /** @description Request shape for creating or updating a BigQuery batch-export destination. */
+        BigQueryDestinationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "BigQuery";
+            /** @description ID of a google-cloud-service-account-kind Integration. Use the integrations-list MCP tool to find one. */
+            integration_id: number;
+            config: components["schemas"]["BigQueryDestinationConfig"];
+        };
+        /**
+         * @description * `BigQuery` - BigQuery
+         * @enum {string}
+         */
+        BigQueryDestinationRequestTypeEnum: "BigQuery";
         /** @enum {unknown} */
         BlankEnum: "";
         /**
@@ -2092,6 +3139,15 @@ export interface components {
              */
             compare_to: string | null;
         };
+        /**
+         * @description * `brotli` - brotli
+         *     * `gzip` - gzip
+         *     * `lz4` - lz4
+         *     * `snappy` - snappy
+         *     * `zstd` - zstd
+         * @enum {string}
+         */
+        CompressionEnum: "brotli" | "gzip" | "lz4" | "snappy" | "zstd";
         /**
          * @description * `won` - won
          *     * `lost` - lost
@@ -2770,7 +3826,7 @@ export interface components {
              */
             response: {
                 [key: string]: unknown;
-            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response7"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response18"] | components["schemas"]["Response19"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | components["schemas"]["Response22"] | components["schemas"]["Response23"] | components["schemas"]["Response24"] | components["schemas"]["Response25"] | components["schemas"]["Response27"] | components["schemas"]["Response28"] | null;
+            } | components["schemas"]["Response"] | components["schemas"]["Response1"] | components["schemas"]["Response2"] | components["schemas"]["Response3"] | components["schemas"]["Response4"] | components["schemas"]["Response5"] | components["schemas"]["Response6"] | components["schemas"]["Response7"] | components["schemas"]["Response8"] | components["schemas"]["Response9"] | components["schemas"]["Response10"] | components["schemas"]["Response11"] | components["schemas"]["Response12"] | components["schemas"]["Response13"] | components["schemas"]["Response14"] | components["schemas"]["Response15"] | components["schemas"]["Response16"] | components["schemas"]["Response17"] | components["schemas"]["Response18"] | components["schemas"]["Response20"] | components["schemas"]["Response21"] | null;
             /**
              * Showabsolutetime
              * @description Render date-time columns (timestamp, created_at, last_seen, last_seen_at, session_start, session_end) as absolute date+time instead of relative ("X ago"). The toggle is exposed in the column header menu only on EventsQuery / ActorsQuery sources.
@@ -2913,7 +3969,7 @@ export interface components {
              * Source
              * @description Source of the events
              */
-            source: components["schemas"]["EventsNode"] | components["schemas"]["EventsQuery"] | components["schemas"]["PersonsNode"] | components["schemas"]["ActorsQuery"] | components["schemas"]["GroupsQuery"] | components["schemas"]["HogQLQuery"] | components["schemas"]["WebOverviewQuery"] | components["schemas"]["WebStatsTableQuery"] | components["schemas"]["WebExternalClicksTableQuery"] | components["schemas"]["WebGoalsQuery"] | components["schemas"]["WebVitalsQuery"] | components["schemas"]["WebVitalsPathBreakdownQuery"] | components["schemas"]["SessionAttributionExplorerQuery"] | components["schemas"]["SessionsQuery"] | components["schemas"]["RevenueAnalyticsGrossRevenueQuery"] | components["schemas"]["RevenueAnalyticsMetricsQuery"] | components["schemas"]["RevenueAnalyticsMRRQuery"] | components["schemas"]["RevenueAnalyticsOverviewQuery"] | components["schemas"]["RevenueAnalyticsTopCustomersQuery"] | components["schemas"]["RevenueExampleEventsQuery"] | components["schemas"]["RevenueExampleDataWarehouseTablesQuery"] | components["schemas"]["MarketingAnalyticsTableQuery"] | components["schemas"]["MarketingAnalyticsAggregatedQuery"] | components["schemas"]["NonIntegratedConversionsTableQuery"] | components["schemas"]["ErrorTrackingQuery"] | components["schemas"]["ErrorTrackingIssueCorrelationQuery"] | components["schemas"]["ExperimentFunnelsQuery"] | components["schemas"]["ExperimentTrendsQuery"] | components["schemas"]["TracesQuery"] | components["schemas"]["TraceQuery"] | components["schemas"]["SessionQuery"] | components["schemas"]["EndpointsUsageTableQuery"] | components["schemas"]["AccountsQuery"];
+            source: components["schemas"]["EventsNode"] | components["schemas"]["EventsQuery"] | components["schemas"]["PersonsNode"] | components["schemas"]["ActorsQuery"] | components["schemas"]["GroupsQuery"] | components["schemas"]["HogQLQuery"] | components["schemas"]["WebOverviewQuery"] | components["schemas"]["WebStatsTableQuery"] | components["schemas"]["WebExternalClicksTableQuery"] | components["schemas"]["WebGoalsQuery"] | components["schemas"]["WebVitalsQuery"] | components["schemas"]["WebVitalsPathBreakdownQuery"] | components["schemas"]["SessionAttributionExplorerQuery"] | components["schemas"]["SessionsQuery"] | components["schemas"]["MarketingAnalyticsTableQuery"] | components["schemas"]["MarketingAnalyticsAggregatedQuery"] | components["schemas"]["NonIntegratedConversionsTableQuery"] | components["schemas"]["ErrorTrackingQuery"] | components["schemas"]["ErrorTrackingIssueCorrelationQuery"] | components["schemas"]["ExperimentFunnelsQuery"] | components["schemas"]["ExperimentTrendsQuery"] | components["schemas"]["TracesQuery"] | components["schemas"]["TraceQuery"] | components["schemas"]["SessionQuery"] | components["schemas"]["EndpointsUsageTableQuery"] | components["schemas"]["AccountsQuery"];
             /** @default null */
             tags: components["schemas"]["QueryLogTags"] | null;
             /**
@@ -3165,6 +4221,53 @@ export interface components {
              */
             type: "warehouse_sync";
         };
+        /**
+         * @description Typed configuration for a Databricks batch-export destination.
+         *
+         *     Credentials live in the linked Integration, not in this config. Mirrors
+         *     `DatabricksBatchExportInputs` in `products/batch_exports/backend/service.py`.
+         */
+        DatabricksDestinationConfig: {
+            /** @description Databricks SQL warehouse HTTP path. */
+            http_path: string;
+            /** @description Unity Catalog name. */
+            catalog: string;
+            /** @description Schema (database) name inside the catalog. */
+            schema: string;
+            /** @description Destination table name. */
+            table_name: string;
+            /**
+             * @description Whether to use the Databricks VARIANT type for JSON-like columns.
+             * @default true
+             */
+            use_variant_type: boolean;
+            /**
+             * @description Whether to let Databricks evolve the destination table schema automatically.
+             * @default true
+             */
+            use_automatic_schema_evolution: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Databricks";
+        };
+        /** @description Request shape for creating or updating a Databricks batch-export destination. */
+        DatabricksDestinationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Databricks";
+            /** @description ID of a databricks-kind Integration. Use the integrations-list MCP tool to find one. */
+            integration_id: number;
+            config: components["schemas"]["DatabricksDestinationConfig"];
+        };
+        /**
+         * @description * `Databricks` - Databricks
+         * @enum {string}
+         */
+        DatabricksDestinationRequestTypeEnum: "Databricks";
         /**
          * @description * `is_date_exact` - is_date_exact
          *     * `is_date_before` - is_date_before
@@ -6883,6 +7986,12 @@ export interface components {
             value: (string | number | boolean)[] | string | number | boolean | null;
         };
         /**
+         * @description * `Parquet` - Parquet
+         *     * `JSONLines` - JSONLines
+         * @enum {string}
+         */
+        FileFormatEnum: "Parquet" | "JSONLines";
+        /**
          * FilterLogicalOperator
          * @enum {string}
          */
@@ -9844,6 +10953,13 @@ export interface components {
             readonly evaluation_contexts: string[];
         };
         /**
+         * @description * `events` - Events
+         *     * `persons` - Persons
+         *     * `sessions` - Sessions
+         * @enum {string}
+         */
+        ModelEnum: "events" | "persons" | "sessions";
+        /**
          * MultipleBreakdownType
          * @enum {string}
          */
@@ -10137,6 +11253,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Action"][];
         };
+        PaginatedBatchExportList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["BatchExport"][];
+        };
         PaginatedCohortList: {
             /** @example 123 */
             count: number;
@@ -10342,6 +11473,49 @@ export interface components {
             _create_in_folder?: string;
             /** @description The effective access level the user has for this object */
             readonly user_access_level?: string | null;
+        };
+        /**
+         * @description Request body for create/partial_update on BatchExportViewSet.
+         *
+         *     Mirrors the writeable fields of `BatchExportSerializer` but uses a polymorphic
+         *     `destination` schema so integration_id is marked required on the types that need
+         *     it. Responses continue to use `BatchExportSerializer`.
+         */
+        PatchedBatchExportRequest: {
+            /** @description Human-readable name for the batch export. */
+            name?: string;
+            /**
+             * @description Which data model to export (events, persons, sessions).
+             *
+             *     * `events` - Events
+             *     * `persons` - Persons
+             *     * `sessions` - Sessions
+             */
+            model?: components["schemas"]["ModelEnum"];
+            /** @description Destination configuration. Required integration_id is enforced per destination type. */
+            destination?: Omit<components["schemas"]["BatchExportDestinationRequest"], "type">;
+            /**
+             * @description How often the batch export should run.
+             *
+             *     * `hour` - hour
+             *     * `day` - day
+             *     * `week` - week
+             *     * `every 5 minutes` - every 5 minutes
+             *     * `every 15 minutes` - every 15 minutes
+             */
+            interval?: components["schemas"]["BatchExportIntervalEnum"];
+            /** @description Whether the batch export is paused. */
+            paused?: boolean;
+            /** @description Optional HogQL SELECT defining a custom model schema. Only recommended in advanced use cases. */
+            hogql_query?: string;
+            /** @description Optional list of property filters to restrict which events are exported. Each filter is a serialized HogQL property filter object with a 'type' of one of: 'event', 'hogql', 'person' (e.g. {"key": "$browser", "operator": "exact", "type": "event", "value": ["Firefox"]}). */
+            filters?: unknown;
+            /** @description IANA timezone name (e.g. 'America/New_York', 'Europe/London', 'UTC') controlling daily and weekly interval boundaries. */
+            timezone?: string | null;
+            /** @description Day-of-week offset for weekly intervals (0=Sunday, 6=Saturday). */
+            offset_day?: number | null;
+            /** @description Hour-of-day offset (0-23) for daily and weekly intervals. */
+            offset_hour?: number | null;
         };
         PatchedCohort: {
             readonly id?: number;
@@ -11349,6 +12523,53 @@ export interface components {
          */
         Position: "start" | "end";
         /**
+         * @description Typed configuration for a PostgreSQL batch-export destination.
+         *
+         *     Connection credentials may live in a linked Integration (when one is provided) or
+         *     inline in this config (legacy). Mirrors the non-credential fields of
+         *     `PostgresBatchExportInputs` in `products/batch_exports/backend/service.py`.
+         */
+        PostgresDestinationConfig: {
+            /** @description PostgreSQL database name to connect to. */
+            database: string;
+            /**
+             * @description PostgreSQL schema name containing the destination table.
+             * @default public
+             */
+            schema: string;
+            /**
+             * @description PostgreSQL table name to write exported rows into.
+             * @default events
+             */
+            table_name: string;
+            /**
+             * @description Legacy SSL option for direct credential configuration. Ignored when using a PostgreSQL integration.
+             * @default false
+             */
+            has_self_signed_cert: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Postgres";
+        };
+        /** @description Request shape for creating or updating a PostgreSQL batch-export destination. */
+        PostgresDestinationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Postgres";
+            /** @description ID of a postgresql-kind Integration providing connection credentials. Required when creating a batch export. Use the integrations-list MCP tool to find one. */
+            integration_id: number;
+            config: components["schemas"]["PostgresDestinationConfig"];
+        };
+        /**
+         * @description * `Postgres` - Postgres
+         * @enum {string}
+         */
+        PostgresDestinationRequestTypeEnum: "Postgres";
+        /**
          * PrecomputationMode
          * @enum {string}
          */
@@ -11835,301 +13056,6 @@ export interface components {
              * Columns
              * @default null
              */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown[];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response12 */
-        Response12: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown;
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response13 */
-        Response13: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: components["schemas"]["RevenueAnalyticsMRRQueryResultItem"][];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response14 */
-        Response14: {
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: components["schemas"]["RevenueAnalyticsOverviewItem"][];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response15 */
-        Response15: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown;
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response16 */
-        Response16: {
-            /**
-             * Columns
-             * @default null
-             */
             columns: unknown[] | null;
             /**
              * Error
@@ -12179,7 +13105,9 @@ export interface components {
              */
             resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /** Results */
-            results: unknown;
+            results: components["schemas"]["MarketingAnalyticsItem"][][];
+            /** @default null */
+            samplingRate: components["schemas"]["SamplingRate"] | null;
             /**
              * Timings
              * @description Measured timings for different parts of the query generation process
@@ -12204,8 +13132,67 @@ export interface components {
              */
             warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
-        /** Response18 */
-        Response18: {
+        /** Response12 */
+        Response12: {
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             * @default null
+             */
+            hogql: string | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: {
+                [key: string]: components["schemas"]["MarketingAnalyticsItem"];
+            };
+            /** @default null */
+            samplingRate: components["schemas"]["SamplingRate"] | null;
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
+        /** Response13 */
+        Response13: {
             /**
              * Columns
              * @default null
@@ -12286,8 +13273,13 @@ export interface components {
              */
             warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
-        /** Response19 */
-        Response19: {
+        /** Response14 */
+        Response14: {
+            /**
+             * Columns
+             * @default null
+             */
+            columns: string[] | null;
             /**
              * Error
              * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
@@ -12295,16 +13287,31 @@ export interface components {
              */
             error: string | null;
             /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
              * Hogql
              * @description Generated HogQL query.
              * @default null
              */
             hogql: string | null;
             /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
              * @description Modifiers used when performing the query
              * @default null
              */
             modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
             /**
              * @description Query status indicates whether next to the provided data, a query is still running.
              * @default null
@@ -12321,11 +13328,241 @@ export interface components {
              */
             resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /** Results */
-            results: {
-                [key: string]: components["schemas"]["MarketingAnalyticsItem"];
+            results: components["schemas"]["ErrorTrackingIssue"][];
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
+        /** Response15 */
+        Response15: {
+            /**
+             * Columns
+             * @default null
+             */
+            columns: string[] | null;
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             * @default null
+             */
+            hogql: string | null;
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: components["schemas"]["ErrorTrackingCorrelatedIssue"][];
+            /**
+             * Timings
+             * @description Measured timings for different parts of the query generation process
+             * @default null
+             */
+            timings: components["schemas"]["QueryTiming"][] | null;
+            /**
+             * Used Data Warehouse Sources
+             * @description Connector-synced data warehouse sources referenced by this query, if any.
+             * @default null
+             */
+            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
+            /**
+             * Warnings
+             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
+             * @default null
+             */
+            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
+        };
+        /** Response16 */
+        Response16: {
+            /** Credible Intervals */
+            credible_intervals: {
+                [key: string]: number[];
+            };
+            /** Expected Loss */
+            expected_loss: number;
+            /** @default null */
+            funnels_query: components["schemas"]["FunnelsQuery"] | null;
+            /** Insight */
+            insight: {
+                [key: string]: unknown;
+            }[][];
+            /**
+             * Kind
+             * @default ExperimentFunnelsQuery
+             * @constant
+             */
+            kind: "ExperimentFunnelsQuery";
+            /** Probability */
+            probability: {
+                [key: string]: number;
+            };
+            significance_code: components["schemas"]["ExperimentSignificanceCode"];
+            /** Significant */
+            significant: boolean;
+            /**
+             * Stats Version
+             * @default null
+             */
+            stats_version: number | null;
+            /** Variants */
+            variants: components["schemas"]["ExperimentVariantFunnelsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
+        };
+        /** Response17 */
+        Response17: {
+            /** @default null */
+            count_query: components["schemas"]["TrendsQuery"] | null;
+            /** Credible Intervals */
+            credible_intervals: {
+                [key: string]: number[];
             };
             /** @default null */
-            samplingRate: components["schemas"]["SamplingRate"] | null;
+            exposure_query: components["schemas"]["TrendsQuery"] | null;
+            /** Insight */
+            insight: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Kind
+             * @default ExperimentTrendsQuery
+             * @constant
+             */
+            kind: "ExperimentTrendsQuery";
+            /** P Value */
+            p_value: number;
+            /** Probability */
+            probability: {
+                [key: string]: number;
+            };
+            significance_code: components["schemas"]["ExperimentSignificanceCode"];
+            /** Significant */
+            significant: boolean;
+            /**
+             * Stats Version
+             * @default null
+             */
+            stats_version: number | null;
+            /** Variants */
+            variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][];
+            /**
+             * Warnings
+             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
+             * @default null
+             */
+            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
+        };
+        /** Response18 */
+        Response18: {
+            /**
+             * Columns
+             * @default null
+             */
+            columns: string[] | null;
+            /**
+             * Error
+             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
+             * @default null
+             */
+            error: string | null;
+            /**
+             * Hasmore
+             * @default null
+             */
+            hasMore: boolean | null;
+            /**
+             * Hogql
+             * @description Generated HogQL query.
+             * @default null
+             */
+            hogql: string | null;
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+            /**
+             * @description Modifiers used when performing the query
+             * @default null
+             */
+            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
+            /**
+             * Offset
+             * @default null
+             */
+            offset: number | null;
+            /**
+             * @description Query status indicates whether next to the provided data, a query is still running.
+             * @default null
+             */
+            query_status: components["schemas"]["QueryStatus"] | null;
+            /**
+             * @description The resolved previous/comparison period date range, when comparing against another period
+             * @default null
+             */
+            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /**
+             * @description The date range used for the query
+             * @default null
+             */
+            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
+            /** Results */
+            results: components["schemas"]["LLMTrace"][];
             /**
              * Timings
              * @description Measured timings for different parts of the query generation process
@@ -12473,9 +13710,7 @@ export interface components {
              */
             resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
             /** Results */
-            results: components["schemas"]["MarketingAnalyticsItem"][][];
-            /** @default null */
-            samplingRate: components["schemas"]["SamplingRate"] | null;
+            results: unknown[];
             /**
              * Timings
              * @description Measured timings for different parts of the query generation process
@@ -12502,395 +13737,6 @@ export interface components {
         };
         /** Response21 */
         Response21: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hasmore
-             * @default null
-             */
-            hasMore: boolean | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: components["schemas"]["ErrorTrackingIssue"][];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response22 */
-        Response22: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hasmore
-             * @default null
-             */
-            hasMore: boolean | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: components["schemas"]["ErrorTrackingCorrelatedIssue"][];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response23 */
-        Response23: {
-            /** Credible Intervals */
-            credible_intervals: {
-                [key: string]: number[];
-            };
-            /** Expected Loss */
-            expected_loss: number;
-            /** @default null */
-            funnels_query: components["schemas"]["FunnelsQuery"] | null;
-            /** Insight */
-            insight: {
-                [key: string]: unknown;
-            }[][];
-            /**
-             * Kind
-             * @default ExperimentFunnelsQuery
-             * @constant
-             */
-            kind: "ExperimentFunnelsQuery";
-            /** Probability */
-            probability: {
-                [key: string]: number;
-            };
-            significance_code: components["schemas"]["ExperimentSignificanceCode"];
-            /** Significant */
-            significant: boolean;
-            /**
-             * Stats Version
-             * @default null
-             */
-            stats_version: number | null;
-            /** Variants */
-            variants: components["schemas"]["ExperimentVariantFunnelsBaseStats"][];
-            /**
-             * Warnings
-             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
-             * @default null
-             */
-            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
-        };
-        /** Response24 */
-        Response24: {
-            /** @default null */
-            count_query: components["schemas"]["TrendsQuery"] | null;
-            /** Credible Intervals */
-            credible_intervals: {
-                [key: string]: number[];
-            };
-            /** @default null */
-            exposure_query: components["schemas"]["TrendsQuery"] | null;
-            /** Insight */
-            insight: {
-                [key: string]: unknown;
-            }[];
-            /**
-             * Kind
-             * @default ExperimentTrendsQuery
-             * @constant
-             */
-            kind: "ExperimentTrendsQuery";
-            /** P Value */
-            p_value: number;
-            /** Probability */
-            probability: {
-                [key: string]: number;
-            };
-            significance_code: components["schemas"]["ExperimentSignificanceCode"];
-            /** Significant */
-            significant: boolean;
-            /**
-             * Stats Version
-             * @default null
-             */
-            stats_version: number | null;
-            /** Variants */
-            variants: components["schemas"]["ExperimentVariantTrendsBaseStats"][];
-            /**
-             * Warnings
-             * @description Data warehouse sync warnings — see AnalyticsQueryResponseBase.warnings for semantics.
-             * @default null
-             */
-            warnings: components["schemas"]["DataWarehouseSyncWarning"][] | null;
-        };
-        /** Response25 */
-        Response25: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hasmore
-             * @default null
-             */
-            hasMore: boolean | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: components["schemas"]["LLMTrace"][];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response27 */
-        Response27: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: unknown[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hasmore
-             * @default null
-             */
-            hasMore: boolean | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown[];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Types
-             * @default null
-             */
-            types: unknown[] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** Response28 */
-        Response28: {
             /** Columns */
             columns: unknown[];
             /**
@@ -13915,393 +14761,6 @@ export interface components {
              */
             label: string | null;
         };
-        /** RevenueAnalyticsBreakdown */
-        RevenueAnalyticsBreakdown: {
-            /** Property */
-            property: string;
-            /**
-             * Type
-             * @default revenue_analytics
-             * @constant
-             */
-            type: "revenue_analytics";
-        };
-        /** RevenueAnalyticsGrossRevenueQuery */
-        RevenueAnalyticsGrossRevenueQuery: {
-            /** Breakdown */
-            breakdown: components["schemas"]["RevenueAnalyticsBreakdown"][];
-            /** @default null */
-            dateRange: components["schemas"]["DateRange"] | null;
-            interval: components["schemas"]["SimpleIntervalType"];
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "RevenueAnalyticsGrossRevenueQuery";
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /** Properties */
-            properties: components["schemas"]["RevenueAnalyticsPropertyFilter"][];
-            /** @default null */
-            response: components["schemas"]["RevenueAnalyticsGrossRevenueQueryResponse"] | null;
-            /** @default null */
-            tags: components["schemas"]["QueryLogTags"] | null;
-            /**
-             * Version
-             * @description version of the node, used for schema migrations
-             * @default null
-             */
-            version: number | null;
-        };
-        /** RevenueAnalyticsGrossRevenueQueryResponse */
-        RevenueAnalyticsGrossRevenueQueryResponse: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown[];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** RevenueAnalyticsMRRQuery */
-        RevenueAnalyticsMRRQuery: {
-            /** Breakdown */
-            breakdown: components["schemas"]["RevenueAnalyticsBreakdown"][];
-            /** @default null */
-            dateRange: components["schemas"]["DateRange"] | null;
-            interval: components["schemas"]["SimpleIntervalType"];
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "RevenueAnalyticsMRRQuery";
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /** Properties */
-            properties: components["schemas"]["RevenueAnalyticsPropertyFilter"][];
-            /** @default null */
-            response: components["schemas"]["RevenueAnalyticsMRRQueryResponse"] | null;
-            /** @default null */
-            tags: components["schemas"]["QueryLogTags"] | null;
-            /**
-             * Version
-             * @description version of the node, used for schema migrations
-             * @default null
-             */
-            version: number | null;
-        };
-        /** RevenueAnalyticsMRRQueryResponse */
-        RevenueAnalyticsMRRQueryResponse: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: components["schemas"]["RevenueAnalyticsMRRQueryResultItem"][];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** RevenueAnalyticsMRRQueryResultItem */
-        RevenueAnalyticsMRRQueryResultItem: {
-            /** Churn */
-            churn: unknown;
-            /** Contraction */
-            contraction: unknown;
-            /** Expansion */
-            expansion: unknown;
-            /** New */
-            new: unknown;
-            /** Total */
-            total: unknown;
-        };
-        /** RevenueAnalyticsMetricsQuery */
-        RevenueAnalyticsMetricsQuery: {
-            /** Breakdown */
-            breakdown: components["schemas"]["RevenueAnalyticsBreakdown"][];
-            /** @default null */
-            dateRange: components["schemas"]["DateRange"] | null;
-            interval: components["schemas"]["SimpleIntervalType"];
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "RevenueAnalyticsMetricsQuery";
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /** Properties */
-            properties: components["schemas"]["RevenueAnalyticsPropertyFilter"][];
-            /** @default null */
-            response: components["schemas"]["RevenueAnalyticsMetricsQueryResponse"] | null;
-            /** @default null */
-            tags: components["schemas"]["QueryLogTags"] | null;
-            /**
-             * Version
-             * @description version of the node, used for schema migrations
-             * @default null
-             */
-            version: number | null;
-        };
-        /** RevenueAnalyticsMetricsQueryResponse */
-        RevenueAnalyticsMetricsQueryResponse: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown;
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** RevenueAnalyticsOverviewItem */
-        RevenueAnalyticsOverviewItem: {
-            key: components["schemas"]["RevenueAnalyticsOverviewItemKey"];
-            /** Value */
-            value: number;
-        };
-        /**
-         * RevenueAnalyticsOverviewItemKey
-         * @enum {string}
-         */
-        RevenueAnalyticsOverviewItemKey: "revenue" | "paying_customer_count" | "avg_revenue_per_customer";
-        /** RevenueAnalyticsOverviewQuery */
-        RevenueAnalyticsOverviewQuery: {
-            /** @default null */
-            dateRange: components["schemas"]["DateRange"] | null;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "RevenueAnalyticsOverviewQuery";
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /** Properties */
-            properties: components["schemas"]["RevenueAnalyticsPropertyFilter"][];
-            /** @default null */
-            response: components["schemas"]["RevenueAnalyticsOverviewQueryResponse"] | null;
-            /** @default null */
-            tags: components["schemas"]["QueryLogTags"] | null;
-            /**
-             * Version
-             * @description version of the node, used for schema migrations
-             * @default null
-             */
-            version: number | null;
-        };
-        /** RevenueAnalyticsOverviewQueryResponse */
-        RevenueAnalyticsOverviewQueryResponse: {
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: components["schemas"]["RevenueAnalyticsOverviewItem"][];
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
         /** RevenueAnalyticsPropertyFilter */
         RevenueAnalyticsPropertyFilter: {
             /** Key */
@@ -14324,99 +14783,6 @@ export interface components {
              */
             value: (string | number | boolean)[] | string | number | boolean | null;
         };
-        /**
-         * RevenueAnalyticsTopCustomersGroupBy
-         * @enum {string}
-         */
-        RevenueAnalyticsTopCustomersGroupBy: "month" | "all";
-        /** RevenueAnalyticsTopCustomersQuery */
-        RevenueAnalyticsTopCustomersQuery: {
-            /** @default null */
-            dateRange: components["schemas"]["DateRange"] | null;
-            groupBy: components["schemas"]["RevenueAnalyticsTopCustomersGroupBy"];
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "RevenueAnalyticsTopCustomersQuery";
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /** Properties */
-            properties: components["schemas"]["RevenueAnalyticsPropertyFilter"][];
-            /** @default null */
-            response: components["schemas"]["RevenueAnalyticsTopCustomersQueryResponse"] | null;
-            /** @default null */
-            tags: components["schemas"]["QueryLogTags"] | null;
-            /**
-             * Version
-             * @description version of the node, used for schema migrations
-             * @default null
-             */
-            version: number | null;
-        };
-        /** RevenueAnalyticsTopCustomersQueryResponse */
-        RevenueAnalyticsTopCustomersQueryResponse: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: string[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown;
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
         /** RevenueCurrencyPropertyConfig */
         RevenueCurrencyPropertyConfig: {
             /**
@@ -14426,232 +14792,6 @@ export interface components {
             property: string | null;
             /** @default null */
             static: components["schemas"]["CurrencyCode"] | null;
-        };
-        /** RevenueExampleDataWarehouseTablesQuery */
-        RevenueExampleDataWarehouseTablesQuery: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "RevenueExampleDataWarehouseTablesQuery";
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /** @default null */
-            response: components["schemas"]["RevenueExampleDataWarehouseTablesQueryResponse"] | null;
-            /** @default null */
-            tags: components["schemas"]["QueryLogTags"] | null;
-            /**
-             * Version
-             * @description version of the node, used for schema migrations
-             * @default null
-             */
-            version: number | null;
-        };
-        /** RevenueExampleDataWarehouseTablesQueryResponse */
-        RevenueExampleDataWarehouseTablesQueryResponse: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: unknown[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hasmore
-             * @default null
-             */
-            hasMore: boolean | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown;
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Types
-             * @default null
-             */
-            types: unknown[] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
-        };
-        /** RevenueExampleEventsQuery */
-        RevenueExampleEventsQuery: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "RevenueExampleEventsQuery";
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /** @default null */
-            response: components["schemas"]["RevenueExampleEventsQueryResponse"] | null;
-            /** @default null */
-            tags: components["schemas"]["QueryLogTags"] | null;
-            /**
-             * Version
-             * @description version of the node, used for schema migrations
-             * @default null
-             */
-            version: number | null;
-        };
-        /** RevenueExampleEventsQueryResponse */
-        RevenueExampleEventsQueryResponse: {
-            /**
-             * Columns
-             * @default null
-             */
-            columns: unknown[] | null;
-            /**
-             * Error
-             * @description Query error. Returned only if 'explain' or `modifiers.debug` is true. Throws an error otherwise.
-             * @default null
-             */
-            error: string | null;
-            /**
-             * Hasmore
-             * @default null
-             */
-            hasMore: boolean | null;
-            /**
-             * Hogql
-             * @description Generated HogQL query.
-             * @default null
-             */
-            hogql: string | null;
-            /**
-             * Limit
-             * @default null
-             */
-            limit: number | null;
-            /**
-             * @description Modifiers used when performing the query
-             * @default null
-             */
-            modifiers: components["schemas"]["HogQLQueryModifiers"] | null;
-            /**
-             * Offset
-             * @default null
-             */
-            offset: number | null;
-            /**
-             * @description Query status indicates whether next to the provided data, a query is still running.
-             * @default null
-             */
-            query_status: components["schemas"]["QueryStatus"] | null;
-            /**
-             * @description The resolved previous/comparison period date range, when comparing against another period
-             * @default null
-             */
-            resolved_compare_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /**
-             * @description The date range used for the query
-             * @default null
-             */
-            resolved_date_range: components["schemas"]["ResolvedDateRangeResponse"] | null;
-            /** Results */
-            results: unknown;
-            /**
-             * Timings
-             * @description Measured timings for different parts of the query generation process
-             * @default null
-             */
-            timings: components["schemas"]["QueryTiming"][] | null;
-            /**
-             * Types
-             * @default null
-             */
-            types: unknown[] | null;
-            /**
-             * Used Data Warehouse Sources
-             * @description Connector-synced data warehouse sources referenced by this query, if any.
-             * @default null
-             */
-            used_data_warehouse_sources: components["schemas"]["DataWarehouseSourceUsage"][] | null;
-            /**
-             * Warnings
-             * @description Warnings about data warehouse sources referenced by the query whose latest sync failed, is paused, hit a billing limit, or is otherwise stale. Results may not reflect current source data. Accumulated across every HogQL execution that contributes to this response — so insights backed by warehouse tables (Trends, Funnels, etc.) receive the same warnings as raw HogQL queries. Also carries access control warnings when a system-table query filters out objects the user can't access.
-             * @default null
-             */
-            warnings: (components["schemas"]["DataWarehouseSyncWarning"] | components["schemas"]["AccessControlFilterWarning"])[] | null;
         };
         /**
          * @description * `engineering` - Engineering
@@ -14665,6 +14805,68 @@ export interface components {
          * @enum {string}
          */
         RoleAtOrganizationEnum: "engineering" | "data" | "product" | "founder" | "leadership" | "marketing" | "sales" | "other";
+        /**
+         * @description Typed configuration for an S3-compatible batch-export destination (Cloudflare R2,
+         *     DigitalOcean Spaces, etc.).
+         *
+         *     Credentials and the provider `endpoint_url` live in the linked s3-compatible Integration.
+         *     Mirrors the non-credential fields of `S3CompatibleBatchExportInputs` in
+         *     `products/batch_exports/backend/service.py`.
+         */
+        S3CompatibleDestinationConfig: {
+            /** @description Name of the destination bucket. */
+            bucket_name: string;
+            /** @description Region the bucket is in (e.g. 'us-east-1'). */
+            region: string;
+            /** @description Object key prefix applied to every exported file. */
+            prefix: string;
+            /**
+             * @description Optional compression codec applied to exported files. Valid codecs depend on file_format.
+             *
+             *     * `brotli` - brotli
+             *     * `gzip` - gzip
+             *     * `lz4` - lz4
+             *     * `snappy` - snappy
+             *     * `zstd` - zstd
+             */
+            compression?: components["schemas"]["CompressionEnum"] | components["schemas"]["NullEnum"];
+            /**
+             * @description File format used for exported objects.
+             *
+             *     * `Parquet` - Parquet
+             *     * `JSONLines` - JSONLines
+             * @default JSONLines
+             */
+            file_format: components["schemas"]["FileFormatEnum"];
+            /** @description If set, rolls to a new file once the current file exceeds this size in MB. */
+            max_file_size_mb?: number | null;
+            /**
+             * @description Use virtual-hosted-style addressing rather than path-style.
+             * @default false
+             */
+            use_virtual_style_addressing: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "S3Compatible";
+        };
+        /** @description Request shape for creating or updating an S3-compatible batch-export destination. */
+        S3CompatibleDestinationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "S3Compatible";
+            /** @description ID of an s3-compatible-kind Integration providing credentials and the provider endpoint URL. Preferred over inline credentials. Use the integrations-list MCP tool to find one. */
+            integration_id?: number;
+            config: components["schemas"]["S3CompatibleDestinationConfig"];
+        };
+        /**
+         * @description * `S3Compatible` - S3Compatible
+         * @enum {string}
+         */
+        S3CompatibleDestinationRequestTypeEnum: "S3Compatible";
         /** SamplingRate */
         SamplingRate: {
             /**
@@ -15195,15 +15397,53 @@ export interface components {
             formatting: components["schemas"]["ChartSettingsFormatting"] | null;
         };
         /**
-         * SimpleIntervalType
-         * @enum {string}
-         */
-        SimpleIntervalType: "day" | "month";
-        /**
          * SliceContent
          * @enum {string}
          */
         SliceContent: "labels" | "values" | "none";
+        /**
+         * @description Typed configuration for a Snowflake batch-export destination.
+         *
+         *     Account, user, authentication type and credentials may live in a linked Integration (when one is
+         *     provided) or inline in this config (legacy). Mirrors the non-credential fields of
+         *     `SnowflakeBatchExportInputs` in `products/batch_exports/backend/service.py`.
+         */
+        SnowflakeDestinationConfig: {
+            /** @description Snowflake database to write to. */
+            database: string;
+            /** @description Snowflake compute warehouse to use. */
+            warehouse: string;
+            /** @description Schema inside the database containing the destination table. */
+            schema: string;
+            /**
+             * @description Destination table name.
+             * @default events
+             */
+            table_name: string;
+            /** @description Optional Snowflake role to assume for the session. */
+            role?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Snowflake";
+        };
+        /** @description Request shape for creating or updating a Snowflake batch-export destination. */
+        SnowflakeDestinationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Snowflake";
+            /** @description ID of a snowflake-kind Integration providing the account, user and credentials. Preferred over inline credentials. Use the integrations-list MCP tool to find one. */
+            integration_id?: number;
+            config: components["schemas"]["SnowflakeDestinationConfig"];
+        };
+        /**
+         * @description * `Snowflake` - Snowflake
+         * @enum {string}
+         */
+        SnowflakeDestinationRequestTypeEnum: "Snowflake";
         /** SpanPropertyFilter */
         SpanPropertyFilter: {
             /** Key */
@@ -18738,6 +18978,138 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Action"];
                     "text/csv": components["schemas"]["Action"];
+                };
+            };
+        };
+    };
+    batch_exports_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBatchExportList"];
+                };
+            };
+        };
+    };
+    batch_exports_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchExportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["BatchExportRequest"];
+                "multipart/form-data": components["schemas"]["BatchExportRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchExport"];
+                };
+            };
+        };
+    };
+    batch_exports_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this batch export. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchExport"];
+                };
+            };
+        };
+    };
+    batch_exports_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this batch export. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    batch_exports_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this batch export. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBatchExportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBatchExportRequest"];
+                "multipart/form-data": components["schemas"]["PatchedBatchExportRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchExport"];
                 };
             };
         };
