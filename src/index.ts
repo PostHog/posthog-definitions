@@ -75,5 +75,17 @@ export type {
 export { projectSettings } from "./resources/project-settings/index.js";
 export type { ProjectSettings } from "./resources/project-settings/index.js";
 
+export { secret } from "./resources/secret.js";
+export type { SecretRef } from "./resources/secret.js";
+
+export { batchExport } from "./resources/batch-export/index.js";
+export type {
+  BatchExport,
+  BatchExportDestination,
+  BatchExportDestinationType,
+  BatchExportInterval,
+  BatchExportModel,
+} from "./resources/batch-export/index.js";
+
 export { createTypedPostHog } from "./client/typed-posthog.js";
 export type { TypedPostHog, CaptureCapableClient } from "./client/typed-posthog.js";
