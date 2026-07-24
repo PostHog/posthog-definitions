@@ -63,6 +63,9 @@ SAVED_METRIC_KEY="smoke-metric-${STAMP}"
 EXPERIMENT_KEY="smoke-experiment-${STAMP}"
 COHORT_KEY="smoke-cohort-${STAMP}"
 ENDPOINT_KEY="smoke-endpoint-${STAMP}"
+# Warehouse saved-query name is the HogQL table name — identifier chars only
+# (no dashes), so derive an underscore-safe key from the stamp.
+WAREHOUSE_SAVED_QUERY_KEY="smoke_wsq_${STAMP//-/_}"
 
 # Names that round-trip cleanly through pull's slug-from-name. We use the
 # event-definition `name` as both the spec key AND the on-the-wire event
@@ -71,7 +74,7 @@ EVENT_NAME="${EVENT_DEFINITION_KEY}"
 
 # Resource kinds we'll seed and pull. Used both in --kind for pull and in
 # the no-op assertion's filter (we don't want unrelated kinds dirtying it).
-SMOKE_KINDS="insights,dashboards,property-groups,event-definitions,actions,feature-flags,experiment-holdouts,experiment-saved-metrics,experiments,cohorts,endpoints"
+SMOKE_KINDS="insights,dashboards,property-groups,event-definitions,actions,feature-flags,experiment-holdouts,experiment-saved-metrics,experiments,cohorts,endpoints,warehouse-saved-queries"
 
 cleanup() {
   echo
@@ -88,6 +91,7 @@ cleanup() {
     "--property-group=${PROPERTY_GROUP_KEY}" \
     "--cohort=${COHORT_KEY}" \
     "--endpoint=${ENDPOINT_KEY}" \
+    "--warehouse-saved-query=${WAREHOUSE_SAVED_QUERY_KEY}" \
     || echo "smoke: cleanup hit an error (continuing)"
   echo "smoke: removing workdir $WORK_DIR"
   rm -rf "$WORK_DIR"
@@ -153,7 +157,8 @@ mkdir -p \
   "$SEED_DIR/experiment-saved-metrics" \
   "$SEED_DIR/experiments" \
   "$SEED_DIR/cohorts" \
-  "$SEED_DIR/endpoints"
+  "$SEED_DIR/endpoints" \
+  "$SEED_DIR/warehouse-saved-queries"
 
 # Insight — referenced by the dashboard tile below.
 cat > "$SEED_DIR/insights/smoke-insight.ts" <<EOF
@@ -306,6 +311,18 @@ export default endpoint({
   key: "${ENDPOINT_KEY}",
   name: "${ENDPOINT_KEY}",
   query: { kind: "HogQLQuery", query: "select 1 as smoke" },
+});
+EOF
+
+# Warehouse saved query — standalone; identity marker rides in \`description\`,
+# natural key is \`name\` (the HogQL table name).
+cat > "$SEED_DIR/warehouse-saved-queries/smoke-wsq.ts" <<EOF
+import { warehouseSavedQuery } from "@posthog/definitions";
+export default warehouseSavedQuery({
+  key: "${WAREHOUSE_SAVED_QUERY_KEY}",
+  name: "${WAREHOUSE_SAVED_QUERY_KEY}",
+  description: "Smoke fixture saved query",
+  query: "SELECT 1 AS smoke",
 });
 EOF
 
