@@ -216,14 +216,20 @@ identity design recorded here before its codegen commit.
       rejects personal API key access entirely (no write path for CLI
       auth); GET schema also declares an array but returns an object.
       Upstream issue candidate.
-- [ ] **Logs views** — `environments/{id}/logs/views`. Has `name`.
-- [ ] **Logs alerts** — `environments/{id}/logs/alerts`
-      (`LogsAlertConfiguration`). Destinations reference integrations —
-      possibly partial support (webhook/email only) at first.
-- [ ] **Logs metric rules** — `environments/{id}/logs/metric_rules`.
-- [ ] **Logs sampling rules** — `environments/{id}/logs/sampling_rules`.
-      Server-side `order` matters — diff must be order-aware (first
-      order-sensitive collection; may need a small pipeline extension).
+- [x] **Logs views** — shipped (#96).
+- [ ] **Logs alerts** — ⛔ **Deferred.** Carrier is `name` only
+      (notification-facing, insight-alerts precedent), and destinations are
+      an imperative write-only subresource (GET → 405 — drift undetectable;
+      a destination POST spawns hog functions; Slack needs env-specific
+      workspace ids). Alert row itself is update-healthy.
+- [ ] **Logs metric rules** — ⛔ **Deferred (org feature flag).** Endpoint
+      403s without the `logs-metric-rules` org flag, so live verification is
+      impossible. Otherwise cleanly buildable later: `metric_name` natural
+      key + `name` marker; note the ≤10-enabled cap and immutable
+      `metric_name`/`value_attribute`.
+- [x] **Logs sampling rules** — shipped (#97). First order-sensitive
+      collection; `priority` is a plain hashed, PATCH-updatable field — no
+      reorder machinery needed.
 
 ## Wave 3 — warehouse & pipelines (secrets involved)
 
@@ -232,24 +238,34 @@ never echoes back. Convention to establish in the first of these: secret
 fields come from env-var references in the spec, are excluded from hash, and
 are only sent on create (or when explicitly rotated).
 
-- [ ] **Warehouse saved queries** — `environments/{id}/warehouse_saved_queries`.
-      Natural key: `name` (it is the view name in HogQL). Has `description`
-      for the hash marker. Materialization (`sync_frequency`) declarative;
-      `run`/`cancel` stay imperative.
-- [ ] **Warehouse tables** — `environments/{id}/warehouse_tables`. Natural
-      key: `name`. External-source credentials → secret convention above.
-- [ ] **Warehouse view links (joins)** — `environments/{id}/warehouse_view_links`.
-      Composite natural key `(source_table, joining_table, field_name)`.
-- [ ] **Batch exports** — `environments/{id}/batch_exports`. Destination
-      configs hold secrets (masked on read) → secret convention. `pause`/
-      `unpause` → declarative `paused` field.
-- [ ] **Group types** — `projects/{id}/groups_types`. PATCH-only metadata
-      (display names, default columns) keyed by `group_type_index` — a
-      fixed-slot singleton family; needs a minor variant of the singleton
-      pattern.
-- [ ] **Notebooks** — `projects/{id}/notebooks`. Content is a rich-text JSON
-      doc; IaC value unclear (runbooks-as-code?). Last in the wave; drop if
-      it stays unclear.
+- [x] **Warehouse saved queries** — shipped (#99). Name natural key +
+      description marker; `sync_frequency`/materialize/run/cancel are
+      DAG-managed and out of scope (declared → validation error);
+      query-bearing updates do a read-then-write echoing
+      `latest_history_id` as `edited_history_id` (optimistic concurrency —
+      campaign first); minimal list serializer → `hydrateForPull`.
+- [ ] **Warehouse tables** — ⛔ **Deferred.** No marker home (`name` +
+      `url_pattern` only), and unverifiable besides: create validates real
+      cloud credentials against the live bucket, so no test row can exist
+      without reachable storage.
+- [ ] **Warehouse view links (joins)** — ⛔ **Deferred.** Join-spec fields
+      only, no marker home; update path itself is healthy — identity is the
+      sole blocker.
+- [x] **Batch exports** — shipped (#100). Name marker; declarative `paused`;
+      secrets via the shared `src/resources/secret.ts` (env-name + rotate
+      token hashed, values never on disk; masked read-back never dirties a
+      no-op; missing env fails loud). Inline-cred destinations only
+      (AwsS3/S3Compatible/Snowflake); integration-backed types are a clear
+      validation error. Excluded from smoke seed (masked creds can't
+      round-trip pull — subscriptions precedent). Convergence note: hog
+      functions ship their own `secret()` on #89 — unify when both merge.
+- [ ] **Group types** — 🚫 **Excluded.** `update_metadata` rejects personal
+      API keys (same class as spike detection config); also PATCH-only
+      metadata on ingestion-created fixed slots. Upstream issue candidate.
+- [ ] **Notebooks** — **Parked (buildable, low value).** `title` marker +
+      exact ProseMirror `content` round-trip + `version`-token
+      read-then-write all verified live; build only if a concrete
+      runbooks-as-code use case appears.
 
 ## Watchlist — new products, API may still be moving
 
@@ -260,6 +276,17 @@ Custom property definitions & sources · data catalog metrics · LLM analytics
 score definitions / evaluations · vision scanners · signals scout configs ·
 taggers · pulse brief configs · tracing views · quick filters · links ·
 loops · mcp_server_installations · customer profile configs.
+
+## Campaign status (2026-07-24)
+
+**All buildable plan items are shipped.** 17 resources/features live as PRs
+#76–#97, #99, #100 (all independent or stacked only on the #81 spec
+migration). Everything unbuilt is deferred/excluded on a live-verified API
+gap listed below, parked (notebooks), or on the new-product watchlist.
+Remaining work is review/merge (then: retarget stacked PRs, dedupe the
+shared lint/infra commits, unify the two `secret()` helpers, re-run codegen
+on whichever of two conflicting PRs merges second) and upstream fixes that
+would unblock the deferred set.
 
 ## Upstream issues worth filing against PostHog/posthog
 
