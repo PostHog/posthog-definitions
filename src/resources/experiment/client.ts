@@ -19,7 +19,10 @@ export const ServerExperimentSchema = z
     metrics: z.array(z.unknown()).nullable().default([]),
     metrics_secondary: z.array(z.unknown()).nullable().default([]),
     exposure_criteria: z.unknown().optional(),
-    conclusion: z.enum(["won", "lost", "inconclusive", "stopped_early", "invalid"]).nullable().optional(),
+    conclusion: z
+      .enum(["won", "lost", "inconclusive", "stopped_early", "invalid"])
+      .nullable()
+      .optional(),
     conclusion_comment: z.string().nullable().optional(),
     holdout_id: z.number().nullable().optional(),
     saved_metrics: z.array(z.unknown()).default([]),
@@ -54,9 +57,11 @@ export type ExperimentCreate = {
 
 export type ExperimentUpdate = Partial<Omit<ExperimentCreate, "feature_flag_key">>;
 
-type ExperimentBody = components["schemas"]["Experiment"];
-type PatchedBody = components["schemas"]["PatchedExperiment"];
-type GeneratedPaginatedList = components["schemas"]["PaginatedExperimentList"];
+// Upstream renamed the experiment write body to ExperimentWrite /
+// PatchedExperimentWrite and the list payload to PaginatedExperimentBasicList.
+type ExperimentBody = components["schemas"]["ExperimentWrite"];
+type PatchedBody = components["schemas"]["PatchedExperimentWrite"];
+type GeneratedPaginatedList = components["schemas"]["PaginatedExperimentBasicList"];
 
 function paginatedFrom(raw: GeneratedPaginatedList): Paginated<unknown> {
   return {

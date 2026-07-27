@@ -36,7 +36,8 @@ export type DashboardUpdate = Partial<DashboardCreate>;
 type GeneratedDashboard = components["schemas"]["Dashboard"];
 type GeneratedDashboardBasic = components["schemas"]["DashboardBasic"];
 type DashboardBody = components["schemas"]["Dashboard"];
-type PatchedDashboardBody = components["schemas"]["PatchedDashboard"];
+// Upstream renamed the dashboard PATCH body to PatchedPatchedDashboardOpenApi.
+type PatchedDashboardBody = components["schemas"]["PatchedPatchedDashboardOpenApi"];
 
 /**
  * Narrow PostHog's wide `Dashboard`/`DashboardBasic` response shape down to
@@ -44,9 +45,7 @@ type PatchedDashboardBody = components["schemas"]["PatchedDashboard"];
  */
 function toServerDashboard(raw: GeneratedDashboard | GeneratedDashboardBasic): ServerDashboard {
   const tiles =
-    "tiles" in raw && Array.isArray(raw.tiles)
-      ? (raw.tiles as ServerTile[])
-      : undefined;
+    "tiles" in raw && Array.isArray(raw.tiles) ? (raw.tiles as ServerTile[]) : undefined;
   return {
     id: raw.id,
     name: raw.name ?? "",
