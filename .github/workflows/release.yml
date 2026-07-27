@@ -17,6 +17,8 @@ permissions:
 
 jobs:
   publish:
+    # Never publish from a fork
+    if: github.repository == 'PostHog/posthog-definitions'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -34,9 +36,11 @@ jobs:
 
       - name: Resolve dist-tag
         id: tag
+        env:
+          DIST_TAG: ${{ inputs.dist-tag }}
         run: |
-          if [ -n "${{ inputs.dist-tag }}" ]; then
-            echo "tag=${{ inputs.dist-tag }}" >> "$GITHUB_OUTPUT"
+          if [ -n "$DIST_TAG" ]; then
+            echo "tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
           elif [[ "${GITHUB_REF_NAME}" == *-alpha* ]]; then
             echo "tag=alpha" >> "$GITHUB_OUTPUT"
           elif [[ "${GITHUB_REF_NAME}" == *-beta* ]]; then
@@ -47,4 +51,6 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npx -y npm@11 publish --provenance --access public --tag ${{ steps.tag.outputs.tag }}
+      - env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: npx -y npm@11 publish --provenance --access public --tag "$TAG"
