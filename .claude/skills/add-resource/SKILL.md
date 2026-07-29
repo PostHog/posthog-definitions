@@ -58,6 +58,81 @@ If the resource's API has no `tags` field, the identity carrier changes but the 
 
 The safety invariant survives because rows without the marker (or with the marker no longer at end-of-string) are invisible to the CLI.
 
+### Choosing the identity carrier (decision tree)
+
+**The description marker is the default; a `tags` field is the lucky case.**
+Wave 1 shipped 8 resources: only 2 had `tags` (dashboards, dashboard-templates),
+6 carried identity in a description marker, and 1 (data color themes) had no
+viable carrier and was deferred. Assume you're writing a marker resource until
+the API proves otherwise. Pick the carrier in this order — the first that
+applies wins:
+
+1. **`tags` field** → `iac:<resources>:<key>` tag. The dashboards / insights /
+   feature-flags / actions / event-definitions pattern. Preferred whenever the
+   API round-trips a `tags` array — but confirm it round-trips live; don't
+   trust the schema (see the codegen section).
+2. **A natural unique key the API enforces** (e.g. endpoints' `code_name`,
+   warehouse saved queries' `name`) → use it directly as the resource key. The
+   hash marker still needs a home: put it in a free-text field if one exists,
+   otherwise fall back to a state-comparison diff (no hash short-circuit — the
+   diff compares the projected spec against the server row every apply).
+3. **A free-text field the API round-trips** (`description`, `content`) →
+   trailing HTML-comment marker, the endpoints pattern documented above.
+4. **None of the above** → design the identity per-resource _before_ writing any
+   code, and record the decision in `docs/implementation/parity-plan.md`.
+   Candidates that land here: annotations, alerts, subscriptions, warehouse view
+   links, some error-tracking rules. Options include treating a composite of
+   natural fields as the key (e.g. `(date_marker, scope)` for annotations, or
+   `(source_table, joining_table, field_name)` for view links) or a visible
+   marker in a user-facing text field.
+
+Singletons (one row per project) skip this entirely — see
+`add-singleton-resource`. Order-sensitive collections (a server-side `order` /
+`reorder` endpoint, e.g. logs sampling rules or error-tracking rules) need an
+order-aware diff on top of whichever carrier you pick.
+
+## Expose the API operations (codegen)
+
+Every resource client imports its request/response types from
+`src/generated/api.d.ts` (`import type { components } from "../../generated/api.js"`).
+That file is **generated** — it is a trimmed projection of PostHog's OpenAPI
+schema, and it only contains the operations allowlisted in
+`openapi-filter.yaml`. A new resource whose operations are not in the allowlist
+has no generated types, so its `client.ts` will not typecheck.
+
+This is the first commit in the resource's series (`chore(codegen): expose
+<resource> operations`), kept separate because the generated diff is large and
+reviewers skip it.
+
+1. Find the resource's `operationId`s in the spec. They follow the pattern
+   `<collection>_list`, `_create`, `_retrieve`, `_partial_update`, `_destroy`
+   (env-scoped collections are prefixed, e.g. `environments_endpoints_list`).
+   Grep the raw schema or the prod OpenAPI JSON for the collection name.
+2. Add them to `openapi-filter.yaml` under `inverseOperationIds`, in a new
+   block matching the existing grouping (one blank-line-separated block per
+   resource). Include only the verbs the resource actually uses — most need
+   `list` / `create` / `retrieve` / `partial_update`; add `destroy` only if the
+   resource supports pruning.
+3. Run `pnpm codegen`. It fetches the schema
+   (`https://us.posthog.com/api/schema/?format=json` by default, override with
+   `POSTHOG_OPENAPI_URL`), filters to the allowlist, prunes orphaned component
+   schemas, and rewrites `src/generated/api.d.ts`.
+4. `pnpm typecheck` to confirm the new `components["schemas"][...]` names
+   resolve, then commit **only** `openapi-filter.yaml` and
+   `src/generated/api.d.ts`.
+
+**The generated types are a floor, not a contract.** PostHog's OpenAPI schema
+routinely omits writable fields that round-trip at runtime — Wave 1 hit this on
+3 of 8 resources (dashboard-template `tiles` / `variables` / `dashboard_filters`,
+hog-function `InputsItem.value`, and the common split where the write body is a
+separate `...SerializerCreateUpdateOnly` schema). Before you design the hash or
+the payload, **live-probe the real round-trip**: `curl` a create, then a GET,
+and diff them field by field against what you intend to send. Trust the wire,
+not the type. Carry any unmodeled-but-round-tripping fields via a `.loose()`
+(passthrough) Zod schema plus a hand-written payload type — the reference is
+`src/resources/hog-function/client.ts`. This is a per-resource step, not an edge
+case.
+
 ## Directory layout for a new resource
 
 Each new resource lives in its own self-contained directory under `src/resources/<resource>/`. The directory is the unit of contribution: everything a reviewer needs to understand the resource is co-located, and the generic pipeline (under `src/apply/`) is the only thing that depends on it.
@@ -180,11 +255,53 @@ Reuse `specHash` from `src/apply/hash.ts` on a canonical projection of the desir
 
 If hashing misses a field, that field will silently fail to sync on update. If it includes a server-generated field, every apply will be marked dirty. The canonical examples to copy from are `dashboardSpecForHash` in `src/resources/dashboard/pipeline.ts` and `insightSpecForHash` in `src/resources/insight/pipeline.ts`.
 
+**Strip server-computed noise out of nested blobs before hashing.** Any resource
+whose spec carries a passthrough sub-object tends to get server bookkeeping
+mixed into it on read: hog-function inputs gain `bytecode` / `order`, hog-flow
+action nodes gain `created_at` / `updated_at`, hog-flow `config.filters` gets a
+compiled `bytecode`. Author a small `cleanX()` that drops those keys, and run it
+in *both* the hash projection and the write payload so a pulled-then-re-applied
+spec round-trips clean. Reference: `cleanAction` in
+`src/resources/hog-flow/pipeline.ts`.
+
+**Marker-based resources hash differently from tag-based ones, and it matters.**
+For a tag/marker resource the diff is a *hash short-circuit*: it compares the
+`iac:hash:<hex>` recorded in the marker against `fooHash(spec)` — it **never
+compares the projected spec against the live server fields**. Consequences: (a)
+server-added noise in the live row can't cause a spurious diff (so the strip
+above is about determinism across a pull round-trip, not about no-op
+correctness), and (b) a field you forgot to hash won't show as dirty — the
+"silent loss" only bites on the *write* side (the field never gets sent), never
+as a visible diff. That is exactly why the live create→GET round-trip check
+above is non-negotiable: the pipeline will not catch a missing field for you.
+
 ### Cross-resource references
 
 If `Foo` references another resource by key (e.g. a survey references a feature flag), do **not** include the referenced server id in the hash — it is environment-specific. Include the _key_ and resolve to the id at execute time, the way dashboards resolve insight ids via `insightIdByKey` in the legacy `src/apply/execute.ts`.
 
 Plan the execute ordering: dependencies must be created before dependents. The simplest model is two passes: create all `Foo`s first if other resources reference them, then move on.
+
+### Secret inputs (masked fields)
+
+When a field is a secret the API **masks on read** (returns `{ secret: true }`,
+`"***"`, or similar instead of the value), follow the campaign's secrets
+convention — established in `src/resources/hog-function/` and standard for any
+masked field (Wave 3 warehouse sources / batch exports will reuse it):
+
+- **The value comes from an environment variable, never the file.** The SDK
+  takes an env-var reference (`secret("MY_ENV_VAR")`), resolved from
+  `process.env` at execute time. The definition file stores only the env var
+  name.
+- **Exclude the value from the hash.** Hash the env var *name* (and an optional
+  rotate token), never the value — you can't read the value back anyway, so a
+  masked read-back must never look like a diff.
+- **Send on create; omit on update.** Omitting a masked field on `PATCH`
+  preserves the stored value (verify this per-API — it's the usual behavior).
+  Re-send only when the user explicitly rotates: give the secret a `rotate`
+  token that participates in the hash, so bumping it forces one update that
+  re-reads the env var and sends the fresh value.
+- **Fail loud on a missing env var** at create/rotate time (not at plan time —
+  the plan only needs the name).
 
 ## Validation
 
@@ -309,6 +426,46 @@ Match the existing style — see `examples/posthog/cohorts/`, `examples/posthog/
 
 Then run `pnpm dev apply --dry-run --dir examples/posthog` and confirm the new files load cleanly with no validation errors. The full examples directory is part of the verification flow below — this is just the quick local check.
 
+## Smoke fixture (required)
+
+`scripts/smoke.sh` seeds **one of each collection resource** against a real
+project, then round-trips it through `apply → pull → verify → edit → apply`. It
+is the end-to-end regression net; a new resource must join it (its own commit,
+`test(smoke): seed <resource>`).
+
+Wire in the new resource by supplying:
+
+- **A fixture** — the `.ts` definition the seed writes and applies, keyed off
+  the per-run `${STAMP}` so reruns never collide (e.g.
+  `smoke-<resource>-${STAMP}`). Match the cross-resource dependency graph if the
+  resource references another (create dependencies before dependents).
+- **The seed wiring** — the key variable, the `SMOKE_KINDS` entry (the `--kind`
+  list that both the pull and the no-op assertion are scoped to), and the
+  cleanup argument passed to `scripts/smoke-cleanup.ts` (`--<resource>=<key>`)
+  so the trap deletes the row on exit. `smoke-cleanup.ts` needs the resource's
+  `list*` + delete wrappers imported so it can find and remove the tagged row.
+
+  The goal state is a table-driven seed registry where these three touch-points
+  collapse into a single entry alongside the fixture file — if that refactor has
+  landed, add one registry row instead of editing the seed in three places.
+
+Singletons are intentionally excluded from the smoke seed — applying them would
+mutate a project-wide row the script can't restore (see the header comment in
+`scripts/smoke.sh`).
+
+Run it with `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID` set:
+`pnpm smoke`. The run must end with the no-op assertion passing and the trap
+cleanup deleting every row it created.
+
+**`pull --all-rows` mutates pre-existing rows on a shared project.** Pull's job
+is to bring rows under management, so `--all-rows` will tag **every** existing
+row of the kind — including hand-built ones already in the dev project — writing
+the `iac:` marker into their tags/description. When verifying a new resource in
+isolation against a shared project (e.g. dev project 806), expect this
+collateral and restore it: strip the marker back off any row you didn't create.
+Wave 1 hit this twice (session-recording-playlists, and hog-functions tagging the
+stock GeoIP). Isolate the kind or plan to revert.
+
 ## Verification (manual, end-to-end)
 
 Unit tests catch the easy failures; the manual flow catches everything else. Run against the dev project:
@@ -340,7 +497,10 @@ Pruning must follow the same safety invariant as updates:
 
 1. **Refetch + assert tag.** Before issuing `DELETE`, refetch the row and confirm `iac:foos:<key>` is still on it. If the tag has been removed in the UI between fetch and write, abort with `SafetyViolationError`. The reference is `pruneInsight` and `pruneDashboard` in their respective `src/resources/<name>/pipeline.ts` — both call `assertManagedXxx` first.
 2. **Tolerate `404`.** If the row was deleted out-of-band between list and delete, treat it as a successful no-op and continue. The legacy helpers use `isNotFound(err)` to handle this.
-3. **Use the API's "delete" verb faithfully.** PostHog's dashboard/insight delete is a `PATCH {deleted: true}` (soft delete), not a `DELETE`. Many other resources use real `DELETE`. Check what the API does and mirror it.
+3. **Probe the delete verb live — it's a trichotomy, and the schema lies about it.** Wave 1 split almost evenly and there is no way to guess from the OpenAPI spec (messaging-templates *advertised* a `destroy` op that returns 405). `curl -X DELETE` the row and see:
+   - **204** → real `DELETE`; call it (actions, hog-flows, product-tours, cohorts).
+   - **405 or 403** → `DELETE` is disabled; soft-delete via `PATCH {deleted: true}` (dashboards, insights, surveys, hog-functions, messaging-templates, playlists — note some 405, some 403, inconsistently).
+   Mirror whichever the live API does. If it's PATCH-soft-delete, also drop `destroy` from the `openapi-filter.yaml` block — you won't call it.
 
 In `pipeline.ts`, export `runFooPrune(config, orphan, options): Promise<boolean>` returning `true` if a row was deleted, `false` if it was already gone. The generic driver iterates orphans when `--prune` is set.
 
