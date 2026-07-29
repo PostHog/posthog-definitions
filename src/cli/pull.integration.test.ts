@@ -30,6 +30,7 @@ function applyArgs(dir: string): ApplyArgs {
     verbose: false,
     prune: false,
     json: true,
+    kinds: [],
   };
 }
 

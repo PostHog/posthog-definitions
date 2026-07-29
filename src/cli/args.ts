@@ -5,6 +5,13 @@ export type ApplyArgs = {
   prune: boolean;
   dir: string;
   json: boolean;
+  /**
+   * Restrict the run to these resource kinds. Empty = every kind. Mirrors
+   * `pull --kind`. Scopes load / validate / diff / plan / execute / prune —
+   * critically, `--prune` only considers orphans of the named kinds, so a
+   * scoped prune can't touch managed rows of kinds you didn't name.
+   */
+  kinds: string[];
   host?: string;
   project?: string;
 };
@@ -67,6 +74,7 @@ function parseApply(argv: string[]): ApplyArgs {
     prune: false,
     dir: "posthog",
     json: false,
+    kinds: [],
   };
 
   for (let i = 1; i < argv.length; i++) {
@@ -78,6 +86,16 @@ function parseApply(argv: string[]): ApplyArgs {
       case "--prune":
         args.prune = true;
         break;
+      case "--kind": {
+        const value = expectValue(argv, ++i, flag);
+        // Validity of each kind is checked at runtime against the registry —
+        // the CLI doesn't carry a hard-coded list.
+        args.kinds = value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        break;
+      }
       case "--verbose":
       case "-v":
         args.verbose = true;
@@ -240,6 +258,13 @@ Apply flags:
                        touches resources tagged iac:dashboards:* /
                        iac:insights:* — hand-built resources are never
                        considered.
+  --kind <list>        Comma-separated list of resource kinds to apply
+                       (e.g. dashboards, feature-flags). Omit to apply every
+                       kind. Scopes the whole run — load, plan, execute, and
+                       prune. With --prune, ONLY orphans of the named kinds
+                       are deleted; managed rows of other kinds are not even
+                       scanned. Kinds you scope to should include any kinds
+                       they reference (deps run in dependency order).
 
 Pull flags:
   --kind <list>        Comma-separated list of resource kinds to pull

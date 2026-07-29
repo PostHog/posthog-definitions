@@ -2,6 +2,7 @@ import type { ClientConfig } from "../client/config.js";
 import { ConfigError, loadConfig } from "../client/config.js";
 import { ApiError } from "../client/typed.js";
 import { RESOURCES } from "../resources/index.js";
+import type { ResourceModule } from "../resources/types.js";
 import { diff, type DiffResult } from "../apply/diff.js";
 import { execute, fetchCurrentState, SafetyViolationError } from "../apply/execute.js";
 import { formatPlan } from "../apply/format-plan.js";
@@ -69,6 +70,13 @@ export async function buildApplyResult(
 ): Promise<ApplyResult> {
   const debug = options.debug ?? (() => {});
 
+  // Resolve the kind scope up front so an invalid --kind fails before any
+  // filesystem or network work.
+  const activeResult = resolveActiveResources(args.kinds);
+  if (!activeResult.ok) return activeResult;
+  const activeResources = activeResult.value;
+  const scope = args.kinds.length > 0 ? activeResources.map((r) => r.name) : null;
+
   debug("loading definitions", { dir: args.dir });
   const loaded = await loadDefinitions(args.dir);
   if (!loaded.ok) {
@@ -80,8 +88,12 @@ export async function buildApplyResult(
     Object.fromEntries(Array.from(desired.entries()).map(([k, v]) => [k, v.length])),
   );
 
-  debug("validating definitions");
-  const validation = validate(desired);
+  debug("validating definitions", { scope });
+  // Validate only the in-scope kinds. Cross-resource references still resolve
+  // against the full loaded `desired` state (passed as the second arg), so a
+  // scoped apply of a dependent kind can still see its dependencies for
+  // reference checks even when those kinds aren't themselves applied.
+  const validation = validate(desired, activeResources);
   if (!validation.ok) {
     return {
       ok: false,
@@ -94,12 +106,19 @@ export async function buildApplyResult(
   }
   debug("validation passed");
 
-  const totalDesired = RESOURCES.reduce((sum, r) => sum + (desired.get(r.name)?.length ?? 0), 0);
-  if (args.dryRun && totalDesired === 0) {
+  const totalDesired = activeResources.reduce(
+    (sum, r) => sum + (desired.get(r.name)?.length ?? 0),
+    0,
+  );
+  // Short-circuit a dry run with nothing declared — but NOT under --prune,
+  // which wants to scan for orphans even when no specs are declared (that is
+  // the whole point of a prune preview).
+  if (args.dryRun && totalDesired === 0 && !args.prune) {
     return {
       ok: true,
       dryRun: true,
       applied: false,
+      scope,
       plan: { totalOps: 0, byResource: [] },
     };
   }
@@ -110,7 +129,7 @@ export async function buildApplyResult(
     current = await fetchCurrentState(
       config,
       { verbose: args.verbose, prune: args.prune },
-      undefined,
+      activeResources,
       desired,
     );
   } catch (err) {
@@ -129,23 +148,26 @@ export async function buildApplyResult(
   );
 
   debug("diffing");
-  const diffResult = diff(desired, current);
+  const diffResult = diff(desired, current, activeResources);
 
   if (args.dryRun) {
     return {
       ok: true,
       dryRun: true,
       applied: false,
+      scope,
       plan: planToJson(diffResult, args.prune),
     };
   }
 
-  debug("executing apply", { prune: args.prune });
+  debug("executing apply", { prune: args.prune, scope });
   try {
-    const summary = await execute(config, diffResult, {
-      verbose: args.verbose,
-      prune: args.prune,
-    });
+    const summary = await execute(
+      config,
+      diffResult,
+      { verbose: args.verbose, prune: args.prune },
+      activeResources,
+    );
     let totalCreated = 0;
     let totalUpdated = 0;
     let totalUnchanged = 0;
@@ -165,6 +187,7 @@ export async function buildApplyResult(
       ok: true,
       dryRun: false,
       applied: true,
+      scope,
       totals: {
         created: totalCreated,
         updated: totalUpdated,
@@ -208,6 +231,11 @@ function emitApplyProse(
 ): void {
   // Load summary header is built fresh from RESOURCES — it's a UX nicety
   // for the prose path, not part of the structured contract.
+  if (result.scope) {
+    console.log(
+      `Scoped to --kind ${result.scope.join(", ")}. Other kinds were not scanned (their state on the server is untouched and unreported).`,
+    );
+  }
   if (result.dryRun) {
     if (result.plan.totalOps === 0) {
       console.log("Nothing to do.");
@@ -261,6 +289,31 @@ function planToJson(
     byResource.push({ resource: resourceName, create, update, unchanged, orphans });
   }
   return { totalOps, byResource };
+}
+
+/**
+ * Resolve `--kind` names to registry modules, preserving RESOURCES' topological
+ * order (so dependencies still execute before dependents). Empty selection =
+ * every kind. An unknown kind is a `stage: "args"` error, mirroring
+ * `pull --kind`.
+ */
+export function resolveActiveResources(
+  kinds: string[],
+): { ok: true; value: ReadonlyArray<ResourceModule<unknown, unknown>> } | ApplyErr {
+  if (kinds.length === 0) return { ok: true, value: RESOURCES };
+  const byName = new Map(RESOURCES.map((r) => [r.name, r]));
+  const wanted = new Set(kinds);
+  const unknown = kinds.filter((k) => !byName.has(k));
+  if (unknown.length > 0) {
+    return {
+      ok: false,
+      stage: "args",
+      error: `--kind "${unknown.join(", ")}" is not a known resource. Known: ${[...byName.keys()].join(", ")}.`,
+    };
+  }
+  // Iterate RESOURCES (topo order), keep those requested — dedupes and orders.
+  const value = RESOURCES.filter((r) => wanted.has(r.name));
+  return { ok: true, value };
 }
 
 function describeLoadFailure(failure: LoadFailure): string {
