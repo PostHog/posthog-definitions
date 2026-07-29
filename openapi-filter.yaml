@@ -23,6 +23,18 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # Endpoints moved from /api/environments/{environment_id}/endpoints/ to the
+  # project-scoped /api/projects/{project_id}/endpoints/ upstream; the old
+  # `environments_endpoints_*` operationIds are gone from the live spec (2026-07-25).
+  # New canonical family:
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
+  # Disappeared from live spec — kept here (harmless, unmatched) and flagged for a
+  # human to delete once the migration is confirmed. Do not rely on these.
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
