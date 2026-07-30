@@ -66,6 +66,11 @@ export const experimentResource: CollectionResourceModule<Experiment, ServerExpe
 
   listAll: listExperiments,
   getById: (config, id, options) => getExperiment(config, Number(id), options),
+  // The experiments list response is the trimmed `ExperimentBasic` shape,
+  // which omits `metrics`, `metrics_secondary`, and `saved_metrics`. Re-fetch
+  // the full experiment on pull so those fields aren't lost (mirrors the
+  // dashboard resource, whose list omits `tiles`).
+  hydrateForPull: (config, server, options) => getExperiment(config, server.id, options),
   pullFilter,
   pullLabel,
   serverIdOf,

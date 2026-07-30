@@ -23,12 +23,25 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # The endpoints resource was renamed in the live spec: the operationIds
+  # moved from `environments_endpoints_*` (path
+  # /api/environments/{environment_id}/endpoints/) to `endpoints_*` (path
+  # /api/projects/{project_id}/endpoints/). The `environments_endpoints_*`
+  # entries below no longer match anything in the live spec and can be
+  # deleted by a human reviewer.
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
   - environments_endpoints_update
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
+
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
