@@ -30,6 +30,18 @@ inverseOperationIds:
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
 
+  # The endpoints API moved from /api/environments/{environment_id}/endpoints/
+  # to /api/projects/{project_id}/endpoints/ and the operationIds were renamed
+  # (environments_endpoints_* -> endpoints_*). New ids added below; the stale
+  # environments_endpoints_* ids above no longer match anything in the live
+  # spec and should be deleted by a human.
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
+
   - event_definitions_list
   - event_definitions_create
   - event_definitions_retrieve
