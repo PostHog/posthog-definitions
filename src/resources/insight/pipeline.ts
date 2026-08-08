@@ -58,7 +58,7 @@ function mergeTags(userTags: string[] | undefined, managedTags: string[]): strin
 }
 
 function wrapQuery(query: Query): unknown {
-  if (query.kind === "TrendsQuery") {
+  if (query.kind === "TrendsQuery" || query.kind === "FunnelsQuery") {
     return { kind: "InsightVizNode", source: query };
   }
   return { kind: "DataTableNode", source: query };

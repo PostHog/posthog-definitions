@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import type { DesiredState } from "../types.js";
-import { type Insight, type TrendsQuery } from "./sdk.js";
+import { type FunnelsQuery, type HogQLQuery, type Insight, type TrendsQuery } from "./sdk.js";
 import { type ServerInsight } from "./client.js";
-import { insightHash } from "./pipeline.js";
+import { insightHash, insightPayload } from "./pipeline.js";
 
 function trends(event: string): TrendsQuery {
   return { kind: "TrendsQuery", series: [{ event }] };
+}
+
+function funnels(...events: string[]): FunnelsQuery {
+  return { kind: "FunnelsQuery", series: events.map((event) => ({ event })) };
 }
 
 function spec(key: string, name = key): Insight {
@@ -89,5 +93,25 @@ describe("insight pipeline", () => {
     const slice = result.get("insights")!;
     expect(slice.ops.length).toBe(0);
     expect(slice.orphans.length).toBe(0);
+  });
+});
+
+describe("insightPayload query wrapping", () => {
+  it("wraps a TrendsQuery in an InsightVizNode", () => {
+    const query = trends("user signed up");
+    const payload = insightPayload({ key: "signups", name: "Signups", query }, "hash");
+    expect(payload.query).toEqual({ kind: "InsightVizNode", source: query });
+  });
+
+  it("wraps a FunnelsQuery in an InsightVizNode", () => {
+    const query = funnels("signed up", "activated");
+    const payload = insightPayload({ key: "activation", name: "Activation", query }, "hash");
+    expect(payload.query).toEqual({ kind: "InsightVizNode", source: query });
+  });
+
+  it("wraps a HogQLQuery in a DataTableNode", () => {
+    const query: HogQLQuery = { kind: "HogQLQuery", query: "select 1" };
+    const payload = insightPayload({ key: "raw", name: "Raw", query }, "hash");
+    expect(payload.query).toEqual({ kind: "DataTableNode", source: query });
   });
 });
