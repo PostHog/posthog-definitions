@@ -23,12 +23,24 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # NOTE: PostHog moved the endpoints API from /api/environments/{id}/endpoints/
+  # (environments_endpoints_*) to /api/projects/{id}/endpoints/ (endpoints_*).
+  # The environments_endpoints_* operationIds below no longer exist in the live
+  # spec and are kept only pending a human decision to delete them; they match
+  # nothing during filtering. See endpoints_* for the current, generated ops.
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
   - environments_endpoints_update
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
+
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
