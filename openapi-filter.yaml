@@ -23,6 +23,19 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # The endpoints family was moved server-side from
+  # /api/environments/{environment_id}/endpoints/ (environments_endpoints_*) to
+  # /api/projects/{project_id}/endpoints/ (endpoints_*). New operationIds added
+  # below to restore coverage; the old ones are retained but no longer exist in
+  # the live spec (openapi-format ignores unknown ids) and are flagged for a
+  # human to delete once the rename is confirmed intentional.
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
+  # Removed from live spec — pending human deletion (see comment above):
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
