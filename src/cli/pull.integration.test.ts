@@ -1,5 +1,4 @@
 import { promises as fs } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { ClientConfig } from "../client/config.js";

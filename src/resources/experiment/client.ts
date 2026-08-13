@@ -55,8 +55,11 @@ export type ExperimentCreate = {
 export type ExperimentUpdate = Partial<Omit<ExperimentCreate, "feature_flag_key">>;
 
 type ExperimentBody = components["schemas"]["Experiment"];
-type PatchedBody = components["schemas"]["PatchedExperiment"];
-type GeneratedPaginatedList = components["schemas"]["PaginatedExperimentList"];
+// 2026-07-23 spec: the experiment PATCH body is now `PatchedExperimentWrite`,
+// and `experiments_list` returns the trimmed `ExperimentBasic` serializer
+// (`PaginatedExperimentBasicList`) — see `listManagedExperiments` below.
+type PatchedBody = components["schemas"]["PatchedExperimentWrite"];
+type GeneratedPaginatedList = components["schemas"]["PaginatedExperimentBasicList"];
 
 function paginatedFrom(raw: GeneratedPaginatedList): Paginated<unknown> {
   return {
@@ -71,8 +74,14 @@ export async function listManagedExperiments(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerExperiment[]> {
+  // `experiments_list` returns the `ExperimentBasic` serializer, which omits
+  // fields the apply diff renders and reads (metrics, metrics_secondary,
+  // exposure_criteria, holdout_id, saved_metrics). `description` IS present, so
+  // filter by the iac marker off the list, then retrieve each managed row in
+  // full rather than silently treating those fields as absent.
   const all = await listExperiments(config, options);
-  return all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  const managed = all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  return Promise.all(managed.map((row) => getExperiment(config, row.id, options)));
 }
 
 /** Unfiltered list of every experiment in the project; used by pull. */
