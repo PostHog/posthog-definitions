@@ -23,12 +23,24 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # NOTE: the endpoints resource moved from /api/environments/{environment_id}/endpoints/
+  # to /api/projects/{project_id}/endpoints/ and its operationIds were renamed from
+  # environments_endpoints_* to endpoints_* (drift detected 2026-08-21). The stale ids
+  # below no longer match anything in the live spec — kept here so a human can confirm the
+  # migration before deleting them.
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
   - environments_endpoints_update
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
+
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
