@@ -23,12 +23,16 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
-  - environments_endpoints_list
-  - environments_endpoints_create
-  - environments_endpoints_retrieve
-  - environments_endpoints_update
-  - environments_endpoints_partial_update
-  - environments_endpoints_destroy
+  # The endpoints resource moved from the environment-scoped path
+  # (/api/environments/{environment_id}/endpoints/, operationId
+  # environments_endpoints_*) to the project-scoped path
+  # (/api/projects/{project_id}/endpoints/, operationId endpoints_*).
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
