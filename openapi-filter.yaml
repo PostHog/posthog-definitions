@@ -23,6 +23,17 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # Renamed upstream from environments_endpoints_* → endpoints_* (path moved
+  # from /api/environments/{environment_id}/endpoints/ to
+  # /api/projects/{project_id}/endpoints/). Old IDs kept below as dead entries
+  # for a human to delete; they match nothing in the current live spec.
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
+
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
