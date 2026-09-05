@@ -30,9 +30,10 @@ export type EndpointCreate = {
 export type EndpointUpdate = Partial<EndpointCreate>;
 
 type GeneratedEndpoint = components["schemas"]["EndpointResponse"];
+type GeneratedEndpointVersion = components["schemas"]["EndpointVersionResponse"];
 type GeneratedPaginatedEndpointList = components["schemas"]["PaginatedEndpointResponseList"];
 
-function toServerEndpoint(raw: GeneratedEndpoint): ServerEndpoint {
+function toServerEndpoint(raw: GeneratedEndpoint | GeneratedEndpointVersion): ServerEndpoint {
   return {
     id: raw.id,
     name: raw.name,
@@ -69,9 +70,9 @@ export async function listEndpoints(
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint[]> {
   const api = createApiClient(config, { verbose: options.verbose });
-  const { data } = await api.GET("/api/environments/{environment_id}/endpoints/", {
+  const { data } = await api.GET("/api/projects/{project_id}/endpoints/", {
     params: {
-      path: { environment_id: config.projectId },
+      path: { project_id: config.projectId },
       query: { limit: 100 },
     },
   });
@@ -88,8 +89,8 @@ export async function getEndpoint(
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
   const api = createApiClient(config, { verbose: options.verbose });
-  const { data } = await api.GET("/api/environments/{environment_id}/endpoints/{name}/", {
-    params: { path: { environment_id: config.projectId, name } },
+  const { data } = await api.GET("/api/projects/{project_id}/endpoints/{name}/", {
+    params: { path: { project_id: config.projectId, name } },
   });
   return toServerEndpoint(data!);
 }
@@ -100,8 +101,8 @@ export async function createEndpoint(
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
   const api = createApiClient(config, { verbose: options.verbose });
-  const { data } = await api.POST("/api/environments/{environment_id}/endpoints/", {
-    params: { path: { environment_id: config.projectId } },
+  const { data } = await api.POST("/api/projects/{project_id}/endpoints/", {
+    params: { path: { project_id: config.projectId } },
     body: payload,
   });
   return toServerEndpoint(data!);
@@ -114,8 +115,8 @@ export async function updateEndpoint(
   options: { verbose?: boolean } = {},
 ): Promise<ServerEndpoint> {
   const api = createApiClient(config, { verbose: options.verbose });
-  const { data } = await api.PATCH("/api/environments/{environment_id}/endpoints/{name}/", {
-    params: { path: { environment_id: config.projectId, name } },
+  const { data } = await api.PATCH("/api/projects/{project_id}/endpoints/{name}/", {
+    params: { path: { project_id: config.projectId, name } },
     body: payload,
   });
   return toServerEndpoint(data!);
@@ -127,7 +128,7 @@ export async function deleteEndpoint(
   options: { verbose?: boolean } = {},
 ): Promise<void> {
   const api = createApiClient(config, { verbose: options.verbose });
-  await api.DELETE("/api/environments/{environment_id}/endpoints/{name}/", {
-    params: { path: { environment_id: config.projectId, name } },
+  await api.DELETE("/api/projects/{project_id}/endpoints/{name}/", {
+    params: { path: { project_id: config.projectId, name } },
   });
 }
