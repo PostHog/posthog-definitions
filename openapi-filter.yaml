@@ -23,12 +23,23 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # Endpoints moved from /api/environments/{environment_id}/endpoints/ to
+  # /api/projects/{project_id}/endpoints/ (operationId environments_endpoints_*
+  # → endpoints_*). The old ids no longer exist in the live spec; kept here
+  # pending human removal (see daily-refresh PR notes).
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
   - environments_endpoints_update
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
+
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
@@ -70,8 +81,15 @@ inverseOperationIds:
   - experiments_archive_create
   - experiments_unarchive_create
 
+  # The /api/environments/{id}/ surface was removed (environments collapsed
+  # back into projects). environments_retrieve/partial_update no longer exist;
+  # kept pending human removal. The successor project ops below surface the
+  # PatchedProjectBackwardCompat/ProjectBackwardCompat schemas the
+  # project-settings resource now types against.
   - environments_retrieve
   - environments_partial_update
+  - organizations_projects_retrieve
+  - organizations_projects_partial_update
 
   - cohorts_list
   - cohorts_create
