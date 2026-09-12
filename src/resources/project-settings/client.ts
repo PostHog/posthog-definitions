@@ -17,7 +17,7 @@ export const ServerProjectSettingsSchema = z
 
 export type ServerProjectSettings = z.infer<typeof ServerProjectSettingsSchema>;
 
-export type ProjectSettingsPayload = Partial<components["schemas"]["PatchedTeam"]>;
+export type ProjectSettingsPayload = Partial<components["schemas"]["PatchedProjectBackwardCompat"]>;
 
 /**
  * Resolve which environment row to GET/PATCH. In a single-environment project
