@@ -23,6 +23,10 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # The endpoint resource moved from /api/environments/{id}/endpoints/ to
+  # /api/projects/{project_id}/endpoints/ and was renamed environments_endpoints_*
+  # → endpoints_*. The old ids no longer exist upstream; kept here (inert) pending
+  # human removal per the refresh policy on disappeared operations.
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
@@ -30,37 +34,51 @@ inverseOperationIds:
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
 
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
+
   - event_definitions_list
   - event_definitions_create
   - event_definitions_retrieve
+  - event_definitions_update
   - event_definitions_partial_update
   - event_definitions_destroy
 
   - schema_property_groups_list
   - schema_property_groups_create
   - schema_property_groups_retrieve
+  - schema_property_groups_update
   - schema_property_groups_partial_update
   - schema_property_groups_destroy
 
   - event_schemas_list
   - event_schemas_create
+  - event_schemas_update
+  - event_schemas_partial_update
   - event_schemas_destroy
 
   - experiment_holdouts_list
   - experiment_holdouts_create
   - experiment_holdouts_retrieve
+  - experiment_holdouts_update
   - experiment_holdouts_partial_update
   - experiment_holdouts_destroy
 
   - experiment_saved_metrics_list
   - experiment_saved_metrics_create
   - experiment_saved_metrics_retrieve
+  - experiment_saved_metrics_update
   - experiment_saved_metrics_partial_update
   - experiment_saved_metrics_destroy
 
   - experiments_list
   - experiments_create
   - experiments_retrieve
+  - experiments_update
   - experiments_partial_update
   - experiments_destroy
   - experiments_launch_create
@@ -70,12 +88,21 @@ inverseOperationIds:
   - experiments_archive_create
   - experiments_unarchive_create
 
+  # The project-settings singleton moved off /api/environments/{id}/ (Team /
+  # PatchedTeam) to /api/organizations/{organization_id}/projects/{id}/
+  # (ProjectBackwardCompat / PatchedProjectBackwardCompat). Old ids kept inert
+  # pending human removal.
   - environments_retrieve
   - environments_partial_update
+
+  - organizations_projects_retrieve
+  - organizations_projects_update
+  - organizations_projects_partial_update
 
   - cohorts_list
   - cohorts_create
   - cohorts_retrieve
+  - cohorts_update
   - cohorts_partial_update
   - cohorts_destroy
 

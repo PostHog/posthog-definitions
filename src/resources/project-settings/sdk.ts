@@ -19,7 +19,7 @@ import { markResourceKind } from "../types.js";
  */
 export type ProjectSettings = Partial<
   Omit<
-    components["schemas"]["PatchedTeam"],
+    components["schemas"]["PatchedProjectBackwardCompat"],
     | "id"
     | "uuid"
     | "organization"
