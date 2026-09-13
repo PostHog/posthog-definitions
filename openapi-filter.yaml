@@ -23,12 +23,14 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
-  - environments_endpoints_list
-  - environments_endpoints_create
-  - environments_endpoints_retrieve
-  - environments_endpoints_update
-  - environments_endpoints_partial_update
-  - environments_endpoints_destroy
+  # Renamed upstream from environments_endpoints_* → endpoints_*
+  # (path moved to /api/projects/{project_id}/endpoints/).
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
@@ -70,8 +72,11 @@ inverseOperationIds:
   - experiments_archive_create
   - experiments_unarchive_create
 
-  - environments_retrieve
-  - environments_partial_update
+  # Environment/project settings moved upstream: environments_retrieve /
+  # environments_partial_update were removed and the Team schema renamed to
+  # ProjectBackwardCompat under organizations_projects_*.
+  - organizations_projects_retrieve
+  - organizations_projects_partial_update
 
   - cohorts_list
   - cohorts_create
