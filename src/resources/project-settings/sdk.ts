@@ -4,10 +4,12 @@ import { markResourceKind } from "../types.js";
 /**
  * Spec for the per-project (environment) settings singleton.
  *
- * Field types come straight from the OpenAPI schema (`PatchedTeam`) with the
- * server-managed identifiers, tokens, and computed fields omitted. Every key
- * is optional: the field-scoping invariant is that we only PATCH the keys the
- * user explicitly declares, and never touch the rest.
+ * Field types come straight from the OpenAPI schema (`PatchedProjectBackwardCompat`,
+ * a superset of the old `PatchedTeam` manageable fields — the Team singleton was
+ * folded into the projects endpoint upstream) with the server-managed
+ * identifiers, tokens, and computed fields omitted. Every key is optional: the
+ * field-scoping invariant is that we only PATCH the keys the user explicitly
+ * declares, and never touch the rest.
  *
  * If you previously set a field and want to stop managing it, simply remove
  * the key from the spec — the server value will persist (we don't have
@@ -19,7 +21,7 @@ import { markResourceKind } from "../types.js";
  */
 export type ProjectSettings = Partial<
   Omit<
-    components["schemas"]["PatchedTeam"],
+    components["schemas"]["PatchedProjectBackwardCompat"],
     | "id"
     | "uuid"
     | "organization"
