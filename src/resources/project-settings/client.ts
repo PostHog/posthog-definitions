@@ -1,12 +1,12 @@
 import { z } from "zod";
 import type { ClientConfig } from "../../client/config.js";
-import type { components } from "../../generated/api.js";
 import { ApiError } from "../../client/typed.js";
+import type { ProjectSettings } from "./sdk.js";
 
 /**
- * Server-shape for the environment-settings singleton. `.loose()` because
- * PatchedTeam exposes ~60 fields and we only care about the ones the user
- * can declare via the factory; everything else carries through untouched.
+ * Server-shape for the environment-settings singleton. `.loose()` because the
+ * Team row exposes ~60 fields and we only care about the ones the user can
+ * declare via the factory; everything else carries through untouched.
  */
 export const ServerProjectSettingsSchema = z
   .object({
@@ -17,7 +17,7 @@ export const ServerProjectSettingsSchema = z
 
 export type ServerProjectSettings = z.infer<typeof ServerProjectSettingsSchema>;
 
-export type ProjectSettingsPayload = Partial<components["schemas"]["PatchedTeam"]>;
+export type ProjectSettingsPayload = ProjectSettings;
 
 /**
  * Resolve which environment row to GET/PATCH. In a single-environment project
