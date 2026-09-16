@@ -36,7 +36,7 @@ export type DashboardUpdate = Partial<DashboardCreate>;
 type GeneratedDashboard = components["schemas"]["Dashboard"];
 type GeneratedDashboardBasic = components["schemas"]["DashboardBasic"];
 type DashboardBody = components["schemas"]["Dashboard"];
-type PatchedDashboardBody = components["schemas"]["PatchedDashboard"];
+type PatchedDashboardBody = components["schemas"]["PatchedPatchedDashboardOpenApi"];
 
 /**
  * Narrow PostHog's wide `Dashboard`/`DashboardBasic` response shape down to
@@ -159,6 +159,8 @@ export async function deleteDashboard(
   const api = createApiClient(config, { verbose: options.verbose });
   await api.PATCH("/api/projects/{project_id}/dashboards/{id}/", {
     params: { path: { project_id: config.projectId, id } },
-    body: { deleted: true, delete_insights: false },
+    // `deleted` is accepted by the API but absent from the generated patch
+    // schema (PatchedPatchedDashboardOpenApi), so cast past it.
+    body: { deleted: true, delete_insights: false } as unknown as PatchedDashboardBody,
   });
 }
