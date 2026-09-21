@@ -1,6 +1,6 @@
 # posthog-definitions
 
-Infrastructure-as-code for PostHog resources — define dashboards, insights, and (eventually) feature flags in TypeScript, push them to a PostHog project with one command.
+Infrastructure-as-code for PostHog resources — define dashboards, insights, feature flags, cohorts, endpoints, event definitions, property groups, experiments, and project settings in TypeScript, push them to a PostHog project with one command.
 
 ```ts
 // posthog/dashboards/growth.ts
@@ -28,7 +28,7 @@ $ npx posthog-definitions apply
 
 ## Audience
 
-Vercel / full-stack TypeScript developers. Not Terraform users. Familiarity with `convex dev`, `vercel deploy`, or `prisma db push` is the right reference frame.
+Vercel / full-stack TypeScript developers. Familiarity with `convex dev`, `vercel deploy`, or `prisma db push` is the right reference frame. Teams that already run Terraform are better served by the [Terraform provider](https://registry.terraform.io/providers/posthog/posthog/latest/docs) — see [the comparison](../README.md#compared-to-the-terraform-provider).
 
 ## Docs layout
 
@@ -39,7 +39,8 @@ docs/
 ├── interface/         what users write and what the CLI does
 │   ├── getting-started.md
 │   ├── sdk.md         dashboard, insight, trends, ...
-│   └── cli.md         apply
+│   └── cli.md         apply, pull
+├── resources.md       per-resource support matrix
 └── implementation/    how it works
     ├── architecture.md
     ├── identity.md    key → server resource mapping
@@ -50,7 +51,7 @@ docs/
 
 ## Current status
 
-Pre-MVP. The MVP scope is **dashboard synchronization via `npx posthog-definitions apply`** — see [`implementation/mvp-roadmap.md`](implementation/mvp-roadmap.md).
+Alpha. `apply` syncs 12 resource types and `pull` imports 11 of them back into definition files — see [`resources.md`](resources.md) for the per-resource detail and [`implementation/mvp-roadmap.md`](implementation/mvp-roadmap.md) for the original sequencing.
 
 ## Local development
 

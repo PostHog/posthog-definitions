@@ -12,11 +12,11 @@ The package ships a `posthog-definitions` CLI that runs via `npx`.
 
 The CLI reads three environment variables (typically `.env.local` for dev, project secrets in CI):
 
-| Variable                   | Required | Description                                                                                                        |
-| -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
-| `POSTHOG_PERSONAL_API_KEY` | yes      | Personal API key with `dashboard:write` and `insight:write` scopes. Create one at `<host>/settings/user-api-keys`. |
-| `POSTHOG_PROJECT_ID`       | yes      | Numeric project ID to sync into.                                                                                   |
-| `POSTHOG_HOST`             | no       | Defaults to `https://us.posthog.com`. Set to your EU or self-hosted URL.                                           |
+| Variable                   | Required | Description                                                                                                                                                                 |
+| -------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTHOG_PERSONAL_API_KEY` | yes      | Personal API key. Create one at `<host>/settings/user-api-keys`, with read + write scopes for each resource kind you sync — see [the scope list](../../README.md#workflow). |
+| `POSTHOG_PROJECT_ID`       | yes      | Numeric project ID to sync into.                                                                                                                                            |
+| `POSTHOG_HOST`             | no       | Defaults to `https://us.posthog.com`. Set to your EU or self-hosted URL.                                                                                                    |
 
 Example `.env.local`:
 
@@ -66,7 +66,7 @@ $ npx posthog-definitions apply
 
 The CLI:
 
-1. Loads every `.ts` file under `posthog/dashboards/`.
+1. Loads every `.ts` file under `posthog/`.
 2. Compares against the project's current IaC-managed state.
 3. Creates, updates, or leaves each managed resource untouched.
 4. Prints a summary of what changed.
@@ -75,9 +75,23 @@ The CLI:
 
 ### Safe to run alongside hand-built dashboards
 
-The CLI only touches resources it created (tagged `iac:dashboards:<key>` or `iac:insights:<key>`). Dashboards and insights you built in the UI — or via any other tool — are invisible to `apply`: not modified, not deleted, not warned about. You can adopt this gradually, one dashboard at a time, without risk to the rest of the project. See [the safety invariant](../implementation/apply.md#safety-invariant--this-is-the-rule-everything-else-serves) for how this is enforced.
+The CLI only touches resources it created, which it recognizes by an `iac:<kind>:<key>` marker. Resources you built in the UI — or via any other tool — are invisible to `apply`: not modified, not deleted, not warned about. You can adopt this gradually, one dashboard at a time, without risk to the rest of the project. See [the safety invariant](../implementation/apply.md#safety-invariant--this-is-the-rule-everything-else-serves) for how this is enforced.
+
+## Adopt an existing project
+
+If the project already has dashboards or flags built in the UI, do not hand-write the definitions —
+`pull` generates them:
+
+```
+$ npx posthog-definitions pull --kind feature-flags
+```
+
+It covers every resource kind except actions, prompts you for which rows to import, and tags what
+it imports so a later `apply` updates those resources instead of duplicating them. See
+[CLI reference § pull](cli.md#posthog-definitions-pull).
 
 ## Next
 
 - [SDK reference](sdk.md)
 - [CLI reference](cli.md)
+- [Two-region workflow](../../README.md#two-regions-one-source-of-truth)
