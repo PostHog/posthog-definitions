@@ -66,7 +66,7 @@ $ npx posthog-definitions apply
 
 The CLI:
 
-1. Loads every `.ts` file under `posthog/dashboards/`.
+1. Loads every `.ts` file under `posthog/`.
 2. Compares against the project's current IaC-managed state.
 3. Creates, updates, or leaves each managed resource untouched.
 4. Prints a summary of what changed.
@@ -75,7 +75,7 @@ The CLI:
 
 ### Safe to run alongside hand-built dashboards
 
-The CLI only touches resources it created (tagged `iac:dashboards:<key>` or `iac:insights:<key>`). Dashboards and insights you built in the UI — or via any other tool — are invisible to `apply`: not modified, not deleted, not warned about. You can adopt this gradually, one dashboard at a time, without risk to the rest of the project. See [the safety invariant](../implementation/apply.md#safety-invariant--this-is-the-rule-everything-else-serves) for how this is enforced.
+The CLI only touches resources it created, which it recognizes by an `iac:<kind>:<key>` marker. Resources you built in the UI — or via any other tool — are invisible to `apply`: not modified, not deleted, not warned about. You can adopt this gradually, one dashboard at a time, without risk to the rest of the project. See [the safety invariant](../implementation/apply.md#safety-invariant--this-is-the-rule-everything-else-serves) for how this is enforced.
 
 ## Adopt an existing project
 

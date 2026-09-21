@@ -10,13 +10,13 @@ $ npx posthog-definitions apply [--dry-run] [--project <id>] [--dir <path>]
 
 ### Flags
 
-| Flag             | Default               | Description                                                                                                                                                                                      |
-| ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--dry-run`      | off                   | Print the diff without making API calls.                                                                                                                                                         |
-| `--prune`        | off                   | Delete IaC-tagged resources that no longer have a matching source file. Opt-in. Only touches resources tagged `iac:dashboards:*` / `iac:insights:*` — hand-built resources are never considered. |
-| `--project <id>` | `$POSTHOG_PROJECT_ID` | Target project.                                                                                                                                                                                  |
-| `--dir <path>`   | `posthog/`            | Directory to scan for definition files.                                                                                                                                                          |
-| `--verbose`      | off                   | Print each API call.                                                                                                                                                                             |
+| Flag             | Default               | Description                                                                                                                                                                     |
+| ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--dry-run`      | off                   | Print the diff without making API calls.                                                                                                                                        |
+| `--prune`        | off                   | Delete IaC-managed resources that no longer have a matching source file. Opt-in. Only touches resources carrying an `iac:*` marker — hand-built resources are never considered. |
+| `--project <id>` | `$POSTHOG_PROJECT_ID` | Target project.                                                                                                                                                                 |
+| `--dir <path>`   | `posthog/`            | Directory to scan for definition files.                                                                                                                                         |
+| `--verbose`      | off                   | Print each API call.                                                                                                                                                            |
 
 ### Behavior
 
@@ -46,7 +46,7 @@ Re-running `apply` with no source changes is a no-op — every resource is "unch
 
 By default `apply` never deletes anything — removing a definition file leaves the previously-managed resource on the server, where it surfaces as an "orphan" in the plan output.
 
-Pass `--prune` to delete the orphans (only ones tagged `iac:dashboards:*` / `iac:insights:*`; hand-built resources stay untouched). Order: orphan dashboards are deleted first (to drop tile references), then orphan insights. The same `iac:*` tag re-check that gates `PATCH` also gates each `DELETE`.
+Pass `--prune` to delete the orphans (only ones carrying an `iac:*` marker; hand-built resources stay untouched). Order: orphan dashboards are deleted first (to drop tile references), then orphan insights. The same `iac:*` tag re-check that gates `PATCH` also gates each `DELETE`.
 
 ### What `apply` does **not** do (MVP scope)
 
@@ -84,14 +84,15 @@ $ npx posthog-definitions pull [--kind <list>] [--all] [--all-rows] [--no-cascad
 
 ### Pullable kinds
 
-Every resource kind `apply` supports is pullable, except **actions**, which has no codegen yet.
+Every resource kind `apply` supports is pullable, except **actions**, which has no codegen yet. See
+[`resources.md`](../resources.md) for the full per-resource support matrix.
 
 | Kind                     | `--kind` value             | Notes                                                                                |
 | ------------------------ | -------------------------- | ------------------------------------------------------------------------------------ |
-| Dashboards               | `dashboards`               | Tiles are inlined as `insight(...)` and `text(...)` declarations.                    |
+| Dashboards               | `dashboards`               | Tile insights are written to `insights/` and imported; `text(...)` tiles are inline. |
 | Insights                 | `insights`                 | See the query-kind limitation below.                                                 |
 | Feature flags            | `feature-flags`            | Release conditions, experience continuity, evaluation runtime, bucketing identifier. |
-| Cohorts                  | `cohorts`                  | Behavioral, HogQL, and static cohorts. Static membership is not pulled.              |
+| Cohorts                  | `cohorts`                  | Property-filter and static cohorts. Query-based (HogQL) cohorts are skipped.         |
 | Endpoints                | `endpoints`                |                                                                                      |
 | Event definitions        | `event-definitions`        | Cascades to the property groups it references.                                       |
 | Property groups          | `property-groups`          |                                                                                      |
@@ -104,23 +105,28 @@ Every resource kind `apply` supports is pullable, except **actions**, which has 
 
 1. **List** every entity of each requested kind in the project — not just `iac:*`-tagged ones.
 2. **Select** rows. `pull` prompts with a searchable multi-select per kind, with everything
-   preselected. `--all-rows` skips the prompt. Deleted rows are filtered out before the prompt.
-3. **Cascade** to referenced resources, unless `--no-cascade` — pulling a dashboard also pulls its
+   preselected. `--all-rows` skips the prompt. Project settings is a singleton, so it has no prompt.
+   Dashboards, insights, cohorts, and feature flags drop soft-deleted rows before the prompt; the
+   other kinds do not, so a soft-deleted experiment or endpoint can still appear.
+3. **Fetch detail** for each selection, so the next step sees the full row.
+4. **Cascade** to referenced resources, unless `--no-cascade` — pulling a dashboard also pulls its
    tile-insights, and pulling an experiment also pulls its feature flag, its holdout, and its saved
-   metrics.
-4. **Fetch detail** for each selection so the generated file is self-contained.
+   metrics. References are deduplicated, so an insight on two dashboards is pulled once.
 5. **Codegen** one TypeScript file per row, named after the slugified key or name.
 6. **Write** to `<dir>/<kind>/`. Existing files with the same name are overwritten — review with
    `git diff` before committing.
-7. **Tag** each pulled resource on the server with its `iac:*` identity tag, so a later `apply`
-   recognizes it as managed rather than creating a duplicate. `--dry-run` skips this.
+7. **Mark** each pulled resource on the server with its `iac:*` identity marker, so a later
+   `apply` recognizes it as managed rather than creating a duplicate. Most kinds use a tag; cohorts
+   and experiments use a marker in the description, because they have no tags field. `--dry-run`
+   skips this step, along with the writes.
 
 ### Feature flag coverage
 
 A pulled flag carries `key`, `name`, `active`, and the full release conditions (`filters`), plus
 `ensure_experience_continuity`, `is_remote_configuration`, `evaluation_runtime`,
-`bucketing_identifier`, and any non-`iac:` tags. Fields left at their server default are omitted
-rather than written out.
+`bucketing_identifier`, and any non-`iac:` tags. `evaluation_runtime` and `bucketing_identifier`
+are omitted when they hold their default value, and the other optional fields are omitted when
+unset.
 
 Flags with `has_encrypted_payloads` are still written, with a warning: `posthog-definitions` does
 not manage encrypted payloads, so review those files by hand.
@@ -130,9 +136,13 @@ not manage encrypted payloads, so review those files by hand.
 - Only `TrendsQuery`, `FunnelsQuery`, and `HogQLQuery` insights round-trip cleanly through the SDK
   helpers. Other query kinds are emitted as raw object literals with a cast and a warning — you
   will need to edit them by hand.
-- Insights are inlined per dashboard. Insights shared across multiple dashboards are duplicated;
-  deduplication into shared `posthog/insights/*.ts` files is post-MVP.
 - Buttons authored via the SDK `button(...)` helper round-trip as plain `text(...)` tiles (the
   server stores them as markdown).
 - Static cohort membership is not pulled — `apply` recreates the cohort container, not its members.
+- Query-based (HogQL) cohorts are skipped: the pulled row carries no query, so there is nothing to
+  render.
+- A feature flag's release conditions are written verbatim, including any referenced cohort's
+  numeric ID. Those IDs are project-specific, so review them before applying the file to a
+  different project.
+- Actions are not pullable — they have no codegen yet.
 - `pull` overwrites; it does not merge with hand edits.

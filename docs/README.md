@@ -39,7 +39,8 @@ docs/
 ├── interface/         what users write and what the CLI does
 │   ├── getting-started.md
 │   ├── sdk.md         dashboard, insight, trends, ...
-│   └── cli.md         apply, pull, dump
+│   └── cli.md         apply, pull
+├── resources.md       per-resource support matrix
 └── implementation/    how it works
     ├── architecture.md
     ├── identity.md    key → server resource mapping

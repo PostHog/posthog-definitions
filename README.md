@@ -2,9 +2,9 @@
 
 > [!WARNING]
 > **Alpha — do not use in production.**
-> This is pre-MVP software (`0.1.0-alpha.0`). The CLI, the on-disk file format, the SDK surface, and the tag-based identity model are all subject to breaking changes without notice. Use it on throwaway projects or in a sandbox while we stabilize.
+> This is alpha software. The CLI, the on-disk file format, the SDK surface, and the identity model are all subject to breaking changes without notice. Use it on throwaway projects or in a sandbox while we stabilize.
 
-Infrastructure-as-code for PostHog. Define dashboards, insights, feature flags, actions, endpoints, event definitions, property groups, experiments, experiment holdouts, and experiment saved metrics in TypeScript, then sync them to a PostHog project with one command.
+Infrastructure-as-code for PostHog. Define dashboards, insights, feature flags, cohorts, actions, endpoints, event definitions, property groups, experiments, experiment holdouts, experiment saved metrics, and project settings in TypeScript, then sync them to a PostHog project with one command.
 
 ## Why
 
@@ -51,6 +51,10 @@ export default dashboard({
    - `event_definition:read`, `event_definition:write` (also covers property groups)
    - `experiment:read`, `experiment:write` (also covers experiment holdouts)
    - `experiment_saved_metric:read`, `experiment_saved_metric:write`
+   - `cohort:read`, `cohort:write`
+   - `project:read`, `project:write` (only if you sync project settings)
+
+   You only need the scopes for the resource kinds you actually sync.
 
    Then add it (and your numeric project ID) to a `.env` (or `.envrc`) file:
 
@@ -76,22 +80,10 @@ export default dashboard({
 ## Bootstrap from an existing project
 
 `npx posthog-definitions pull` writes definition files for resources that already exist on the
-server, so you do not hand-write them. It covers every resource kind `apply` can sync, except
-actions:
-
-| Kind                     | `--kind` value             |
-| ------------------------ | -------------------------- |
-| Dashboards               | `dashboards`               |
-| Insights                 | `insights`                 |
-| Feature flags            | `feature-flags`            |
-| Cohorts                  | `cohorts`                  |
-| Endpoints                | `endpoints`                |
-| Event definitions        | `event-definitions`        |
-| Property groups          | `property-groups`          |
-| Experiments              | `experiments`              |
-| Experiment holdouts      | `experiment-holdouts`      |
-| Experiment saved metrics | `experiment-saved-metrics` |
-| Project settings         | `project-settings`         |
+server, so you do not hand-write them. It covers every resource kind `apply` can sync except
+actions — including feature flags, cohorts, experiments, and project settings. The `--kind` value
+for each is the kebab-case plural of the kind name (`feature-flags`, `event-definitions`, ...); see
+[CLI reference § Pullable kinds](docs/interface/cli.md#pullable-kinds) for the full list.
 
 `pull` is interactive by default: it lists the rows of each kind and you pick the ones to import.
 Pass `--all-rows` to take every row, which is also required when stdin is not a terminal (CI).
@@ -104,13 +96,9 @@ npx posthog-definitions pull --kind feature-flags
 npx posthog-definitions pull --all --all-rows
 ```
 
-For feature flags the generated file carries the release conditions (`filters`), plus
-`ensure_experience_continuity`, `is_remote_configuration`, `evaluation_runtime`,
-`bucketing_identifier`, and your own tags. Flags with encrypted payloads are written out with a
-warning — `posthog-definitions` does not manage the payload, so edit those by hand.
-
-See the [CLI reference](docs/interface/cli.md#posthog-definitions-pull) for every flag and the
-current limitations.
+For feature flags the generated file carries the full release conditions plus the flag's rollout
+settings — see [CLI reference § Feature flag coverage](docs/interface/cli.md#feature-flag-coverage)
+for the field list, the encrypted-payload caveat, and the current limitations.
 
 ## Two regions, one source of truth
 
@@ -130,22 +118,28 @@ POSTHOG_PERSONAL_API_KEY=phx_eu_key \
 POSTHOG_PROJECT_ID=22222 \
   npx posthog-definitions apply --dry-run
 
-# 3. Apply to each region
-... npx posthog-definitions apply   # US project
-... npx posthog-definitions apply   # EU project
+# 3. Apply, once per region. --host and --project avoid re-exporting env vars
+npx posthog-definitions apply --host https://us.posthog.com --project 11111
+npx posthog-definitions apply --host https://eu.posthog.com --project 22222
 ```
 
-Each region needs its own personal API key, because a key is valid only on the host that issued
-it. `--host` and `--project` override `POSTHOG_HOST` and `POSTHOG_PROJECT_ID` per command, which
-is useful in CI where one job applies the same files to both regions.
+Each region needs its own personal API key, because a key is valid only on the host that issued it
+— so step 3 still needs `POSTHOG_PERSONAL_API_KEY` set to the key for the region it targets. The
+key has no CLI flag, by design, to keep it out of shell history.
 
-Two things to know:
+> [!WARNING]
+> **Cohort-backed release conditions do not transfer.** A pulled flag carries its `filters`
+> verbatim, including the numeric cohort ID from the source project. Nothing remaps that ID, so
+> applying the file to a second project either fails or silently targets whatever cohort holds the
+> same ID there. Edit those conditions by hand after pulling, and check the plan with `--dry-run`
+> before you apply.
 
-- **Cohorts and flags are separate resources.** A flag whose release condition points at a cohort
-  needs that cohort in the target region too. Pull both kinds, and let `apply` order them — cohorts
-  run before flags.
-- **Static cohort membership does not transfer.** `apply` creates the cohort, but the member list
-  is managed out-of-band, so a static cohort arrives empty in the second region.
+Also worth knowing:
+
+- **Pull the cohorts too.** A flag that references a cohort needs that cohort to exist in the target
+  project, so include `--kind cohorts` when you bootstrap.
+- **Static cohort membership does not transfer.** `apply` creates the cohort, but the member list is
+  managed out-of-band, so a static cohort arrives empty in the second project.
 
 ## Compared to the Terraform provider
 
@@ -159,12 +153,12 @@ same language as the code that emits the events:
 
 - **TypeScript, not HCL.** Queries are built with typed helpers (`trends(...)`, `funnels(...)`), so
   a bad property name is a compile error rather than a failed apply.
-- **No state file.** Identity comes from `iac:*` tags on the resources themselves, so there is no
-  state to store, lock, or lose. Two clones of the repo converge on the same project.
+- **No state file.** Identity comes from `iac:*` markers on the resources themselves, so there is
+  no state to store, lock, or lose. Two clones of the repo converge on the same project.
 - **Typed event capture.** Event definitions and property groups feed `createTypedPostHog`, which
   type-checks `.capture(name, properties)` against the same specs you sync.
-- **Insights inline in dashboards.** A dashboard and its tiles are one file, not a graph of
-  resource references.
+- **Dashboards and their tiles are authored together.** One `dashboard(...)` call declares the
+  layout and the insights it shows, rather than a graph of resource references.
 
 The two do not share state and both only touch resources they own, so adopting one does not
 migrate the other. Do not manage the same resource with both.
