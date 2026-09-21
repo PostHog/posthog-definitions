@@ -1,7 +1,7 @@
 {
   "name": "@posthog/definitions",
   "version": "0.1.0-alpha.3",
-  "description": "Infrastructure-as-code for PostHog dashboards and insights.",
+  "description": "Infrastructure-as-code for PostHog — dashboards, insights, feature flags, cohorts, experiments, and more in TypeScript.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
