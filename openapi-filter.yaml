@@ -23,12 +23,23 @@ inverseOperationIds:
   - feature_flags_partial_update
   - feature_flags_destroy
 
+  # NOTE: environments_endpoints_* disappeared from the live spec (2026-09-22);
+  # the endpoints resource moved to /api/projects/{project_id}/endpoints/ under
+  # the endpoints_* operationIds below. These stale entries match nothing and are
+  # left in place for a human to delete deliberately.
   - environments_endpoints_list
   - environments_endpoints_create
   - environments_endpoints_retrieve
   - environments_endpoints_update
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
+
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
@@ -70,6 +81,10 @@ inverseOperationIds:
   - experiments_archive_create
   - experiments_unarchive_create
 
+  # NOTE: environments_retrieve / environments_partial_update disappeared from
+  # the live spec (2026-09-22). The project-settings resource calls the flat
+  # /api/environments/{id}/ route directly (raw fetch, not the typed client), so
+  # it is unaffected. Left in place for a human to delete deliberately.
   - environments_retrieve
   - environments_partial_update
 
