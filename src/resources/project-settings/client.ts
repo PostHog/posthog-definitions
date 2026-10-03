@@ -5,7 +5,7 @@ import { ApiError } from "../../client/typed.js";
 
 /**
  * Server-shape for the environment-settings singleton. `.loose()` because
- * PatchedTeam exposes ~60 fields and we only care about the ones the user
+ * PatchedProjectBackwardCompat exposes ~90 fields and we only care about the ones the user
  * can declare via the factory; everything else carries through untouched.
  */
 export const ServerProjectSettingsSchema = z
@@ -17,7 +17,7 @@ export const ServerProjectSettingsSchema = z
 
 export type ServerProjectSettings = z.infer<typeof ServerProjectSettingsSchema>;
 
-export type ProjectSettingsPayload = Partial<components["schemas"]["PatchedTeam"]>;
+export type ProjectSettingsPayload = Partial<components["schemas"]["PatchedProjectBackwardCompat"]>;
 
 /**
  * Resolve which environment row to GET/PATCH. In a single-environment project
@@ -33,7 +33,7 @@ function envId(config: ClientConfig): number {
  * The nested `/api/projects/{project_id}/environments/{id}/` path was
  * restricted server-side ("Multiple environments per project are no longer
  * available"). The flat `/api/environments/{id}/` endpoint returns the same
- * Team row and is what we use here. It's not in the generated OpenAPI types
+ * Team row and is what we use here. It's no longer in the published OpenAPI spec
  * yet, so we call it via plain fetch and mirror the typed client's error
  * shape (`ApiError`) so callers up the stack are unaffected.
  */
