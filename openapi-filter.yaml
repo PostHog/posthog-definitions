@@ -29,6 +29,12 @@ inverseOperationIds:
   - environments_endpoints_update
   - environments_endpoints_partial_update
   - environments_endpoints_destroy
+  - endpoints_list
+  - endpoints_create
+  - endpoints_retrieve
+  - endpoints_update
+  - endpoints_partial_update
+  - endpoints_destroy
 
   - event_definitions_list
   - event_definitions_create
@@ -72,6 +78,8 @@ inverseOperationIds:
 
   - environments_retrieve
   - environments_partial_update
+  - organizations_projects_retrieve
+  - organizations_projects_partial_update
 
   - cohorts_list
   - cohorts_create
