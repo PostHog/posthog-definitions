@@ -55,7 +55,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 | Warehouse view links         | ✅ `environments/{id}/warehouse_view_links`    | ❌                  |                                                                                                                             |
 | Batch exports                | ✅ `environments/{id}/batch_exports`           | ❌                  |                                                                                                                             |
 | Managed migrations (imports) | ✅ `projects/{id}/managed_migrations`          | ❌                  |                                                                                                                             |
-| Endpoints                    | ✅ `environments/{id}/endpoints`               | ✅                  | Saved HogQL queries served as a URL. No `tags` field — identity tracked via a trailing HTML comment marker in `description` |
+| Endpoints                    | ✅ `projects/{id}/endpoints`                   | ✅                  | Saved HogQL queries served as a URL. No `tags` field — identity tracked via a trailing HTML comment marker in `description` |
 
 ## CDP & messaging
 
