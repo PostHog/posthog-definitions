@@ -72,6 +72,15 @@ export async function listManagedActions(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerAction[]> {
+  const all = await listActions(config, options);
+  return all.filter((row) => row.tags?.some((tag) => tag.startsWith("iac:actions:")));
+}
+
+/** Unfiltered list of every action in the project; used by pull. */
+export async function listActions(
+  config: ClientConfig,
+  options: { verbose?: boolean } = {},
+): Promise<ServerAction[]> {
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.GET("/api/projects/{project_id}/actions/", {
     params: {
@@ -83,9 +92,7 @@ export async function listManagedActions(
   const allRaw = await followPagination<unknown>(config, firstPage, {
     verbose: options.verbose,
   });
-  return allRaw
-    .map((row) => ServerActionSchema.parse(row))
-    .filter((row) => row.tags?.some((tag) => tag.startsWith("iac:actions:")));
+  return allRaw.map((row) => ServerActionSchema.parse(row));
 }
 
 export async function getAction(
