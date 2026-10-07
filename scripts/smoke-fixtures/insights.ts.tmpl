@@ -1,0 +1,6 @@
+import { hogql, insight } from "@posthog/definitions";
+export default insight({
+  key: "@@INSIGHT_KEY@@",
+  name: "@@INSIGHT_KEY@@",
+  query: hogql("SELECT 1 AS smoke"),
+});

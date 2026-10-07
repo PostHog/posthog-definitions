@@ -1,0 +1,9 @@
+import { propertyGroup } from "@posthog/definitions";
+export default propertyGroup({
+  key: "@@PROPERTY_GROUP_KEY@@",
+  description: "Smoke fixture property group",
+  properties: {
+    plan: { type: "String", required: true, description: "Subscription plan" },
+    seats: { type: "Numeric" },
+  },
+});

@@ -1,0 +1,6 @@
+import { experimentHoldout } from "@posthog/definitions";
+export default experimentHoldout({
+  key: "@@HOLDOUT_KEY@@",
+  name: "@@HOLDOUT_KEY@@",
+  filters: [{ properties: [], rollout_percentage: 10 }],
+});

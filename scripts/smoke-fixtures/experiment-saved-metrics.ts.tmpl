@@ -1,0 +1,10 @@
+import { experimentSavedMetric } from "@posthog/definitions";
+export default experimentSavedMetric({
+  key: "@@SAVED_METRIC_KEY@@",
+  name: "@@SAVED_METRIC_KEY@@",
+  query: {
+    kind: "ExperimentMetric",
+    metric_type: "mean",
+    source: { kind: "EventsNode", event: "@@EVENT_DEFINITION_KEY@@" },
+  },
+});

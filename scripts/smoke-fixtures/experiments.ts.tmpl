@@ -1,0 +1,11 @@
+import { experiment } from "@posthog/definitions";
+import smokeFlag from "../feature-flags/smoke-flag.js";
+import smokeHoldout from "../experiment-holdouts/smoke-holdout.js";
+import smokeMetric from "../experiment-saved-metrics/smoke-metric.js";
+export default experiment({
+  key: "@@EXPERIMENT_KEY@@",
+  name: "@@EXPERIMENT_KEY@@",
+  featureFlag: smokeFlag,
+  holdout: smokeHoldout,
+  primarySavedMetrics: [smokeMetric],
+});

@@ -1,0 +1,16 @@
+import { featureFlag } from "@posthog/definitions";
+export default featureFlag({
+  key: "@@FLAG_KEY@@",
+  name: "@@FLAG_KEY@@",
+  active: true,
+  filters: {
+    groups: [{ properties: [], rollout_percentage: 100 }],
+    // Multivariate — experiment validation requires control + ≥1 test.
+    multivariate: {
+      variants: [
+        { key: "control", rollout_percentage: 50 },
+        { key: "test", rollout_percentage: 50 },
+      ],
+    },
+  },
+});

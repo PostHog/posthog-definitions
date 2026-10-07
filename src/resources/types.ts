@@ -1,6 +1,6 @@
 import type { ClientConfig } from "../client/config.js";
 import type { DisplayValue } from "../apply/display.js";
-import type { PullRenderContext, RenderedFile } from "../pull/types.js";
+import type { PullRenderContext } from "../pull/types.js";
 
 /**
  * Non-enumerable marker installed by each resource's user-facing factory
