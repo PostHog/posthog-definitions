@@ -36,7 +36,7 @@ export type DashboardUpdate = Partial<DashboardCreate>;
 type GeneratedDashboard = components["schemas"]["Dashboard"];
 type GeneratedDashboardBasic = components["schemas"]["DashboardBasic"];
 type DashboardBody = components["schemas"]["Dashboard"];
-type PatchedDashboardBody = components["schemas"]["PatchedDashboard"];
+type PatchedDashboardBody = components["schemas"]["PatchedPatchedDashboardOpenApi"];
 
 /**
  * Narrow PostHog's wide `Dashboard`/`DashboardBasic` response shape down to
@@ -136,7 +136,7 @@ export async function updateDashboard(
   const api = createApiClient(config, { verbose: options.verbose });
   const { data } = await api.PATCH("/api/projects/{project_id}/dashboards/{id}/", {
     params: { path: { project_id: config.projectId, id } },
-    // PatchedDashboard marks `tiles` (which the API accepts) as readonly and
+    // PatchedPatchedDashboardOpenApi marks `tiles` (which the API accepts) as readonly and
     // `delete_insights` as required — both upstream schema bugs. Cast just
     // `tiles` and pass the schema-required `delete_insights: false` (the
     // default the server applies for non-delete PATCHes anyway).

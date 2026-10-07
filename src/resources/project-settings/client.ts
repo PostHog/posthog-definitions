@@ -5,7 +5,7 @@ import { ApiError } from "../../client/typed.js";
 
 /**
  * Server-shape for the environment-settings singleton. `.loose()` because
- * PatchedTeam exposes ~60 fields and we only care about the ones the user
+ * PatchedProjectBackwardCompat exposes ~90 fields and we only care about the ones the user
  * can declare via the factory; everything else carries through untouched.
  */
 export const ServerProjectSettingsSchema = z
@@ -17,7 +17,7 @@ export const ServerProjectSettingsSchema = z
 
 export type ServerProjectSettings = z.infer<typeof ServerProjectSettingsSchema>;
 
-export type ProjectSettingsPayload = Partial<components["schemas"]["PatchedTeam"]>;
+export type ProjectSettingsPayload = Partial<components["schemas"]["PatchedProjectBackwardCompat"]>;
 
 /**
  * Resolve which environment row to GET/PATCH. In a single-environment project

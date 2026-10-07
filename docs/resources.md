@@ -84,7 +84,7 @@ Source of truth for the API column: registered viewsets in [`posthog/posthog/api
 
 | Resource                | PostHog API                                    | posthog-definitions | Notes                              |
 | ----------------------- | ---------------------------------------------- | ------------------- | ---------------------------------- |
-| Project settings        | ✅ `projects/{id}/environments/{id}/`          | ✅                  | Singleton — one row per project. Declare any subset of writable `PatchedTeam` fields; undeclared fields are left alone. Removing a previously-declared field abandons it (server value persists). |
+| Project settings        | ✅ `projects/{id}/environments/{id}/`          | ✅                  | Singleton — one row per project. Declare any subset of writable `PatchedProjectBackwardCompat` fields; undeclared fields are left alone. Removing a previously-declared field abandons it (server value persists). |
 | Project secret API keys | ✅ `environments/{id}/project_secret_api_keys` | ❌                  | Secret material — likely never IaC |
 | Quick filters           | ✅ `environments/{id}/quick_filters`           | ❌                  |                                    |
 | File system / shortcuts | ✅ `environments/{id}/file_system`             | —                   | UI-state, not a sync target        |
