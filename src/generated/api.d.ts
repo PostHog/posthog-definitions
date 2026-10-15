@@ -74,7 +74,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["cohorts_retrieve"];
-        put?: never;
+        put: operations["cohorts_update"];
         post?: never;
         /** @description Hard delete of this model is not allowed. Use a patch API call to set "deleted" to true */
         delete: operations["cohorts_destroy"];
@@ -179,7 +179,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["event_definitions_retrieve"];
-        put?: never;
+        put: operations["event_definitions_update"];
         post?: never;
         delete: operations["event_definitions_destroy"];
         options?: never;
@@ -211,12 +211,12 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        put: operations["event_schemas_update"];
         post?: never;
         delete: operations["event_schemas_destroy"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["event_schemas_partial_update"];
         trace?: never;
     };
     "/api/projects/{project_id}/experiment_holdouts/": {
@@ -246,7 +246,8 @@ export interface paths {
         };
         /** @description Create, read, update and delete experiment holdouts. */
         get: operations["experiment_holdouts_retrieve"];
-        put?: never;
+        /** @description Create, read, update and delete experiment holdouts. */
+        put: operations["experiment_holdouts_update"];
         post?: never;
         /** @description Create, read, update and delete experiment holdouts. */
         delete: operations["experiment_holdouts_destroy"];
@@ -280,7 +281,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["experiment_saved_metrics_retrieve"];
-        put?: never;
+        put: operations["experiment_saved_metrics_update"];
         post?: never;
         delete: operations["experiment_saved_metrics_destroy"];
         options?: never;
@@ -315,7 +316,14 @@ export interface paths {
         };
         /** @description Retrieve a single experiment by ID, including its current status, metrics, feature flag, and results metadata. */
         get: operations["experiments_retrieve"];
-        put?: never;
+        /**
+         * @description Mixin for ViewSets to handle approval-gate exceptions raised from decorated serializers.
+         *
+         *     Intercepts ApprovalRequired (409) and PolicyConflict (400) raised by the @approval_gate
+         *     decorator on serializer methods and converts them into the same responses the viewset path
+         *     produces (see decorators._result_to_response), so both paths share one contract.
+         */
+        put: operations["experiments_update"];
         post?: never;
         /** @description Hard delete of this model is not allowed. Use a patch API call to set "deleted" to true */
         delete: operations["experiments_destroy"];
@@ -600,7 +608,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["schema_property_groups_retrieve"];
-        put?: never;
+        put: operations["schema_property_groups_update"];
         post?: never;
         delete: operations["schema_property_groups_destroy"];
         options?: never;
@@ -12575,6 +12583,19 @@ export interface components {
             default_columns?: string[];
             readonly media_preview_urls?: string[];
         };
+        PatchedEventSchema: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** Format: uuid */
+            event_definition?: string;
+            readonly property_group?: components["schemas"]["SchemaPropertyGroup"];
+            /** Format: uuid */
+            property_group_id?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+        };
         /** @description A holdout group — a stable slice of users excluded from experiment exposure. */
         PatchedExperimentHoldout: {
             readonly id?: number;
@@ -22535,6 +22556,36 @@ export interface operations {
             };
         };
     };
+    cohorts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this cohort. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Cohort"];
+                "application/x-www-form-urlencoded": components["schemas"]["Cohort"];
+                "multipart/form-data": components["schemas"]["Cohort"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cohort"];
+                };
+            };
+        };
+    };
     cohorts_destroy: {
         parameters: {
             query?: never;
@@ -23050,6 +23101,36 @@ export interface operations {
             };
         };
     };
+    event_definitions_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this event definition. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnterpriseEventDefinition"];
+                "application/x-www-form-urlencoded": components["schemas"]["EnterpriseEventDefinition"];
+                "multipart/form-data": components["schemas"]["EnterpriseEventDefinition"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnterpriseEventDefinition"];
+                };
+            };
+        };
+    };
     event_definitions_destroy: {
         parameters: {
             query?: never;
@@ -23158,6 +23239,36 @@ export interface operations {
             };
         };
     };
+    event_schemas_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this event schema. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventSchema"];
+                "application/x-www-form-urlencoded": components["schemas"]["EventSchema"];
+                "multipart/form-data": components["schemas"]["EventSchema"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSchema"];
+                };
+            };
+        };
+    };
     event_schemas_destroy: {
         parameters: {
             query?: never;
@@ -23178,6 +23289,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    event_schemas_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this event schema. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEventSchema"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEventSchema"];
+                "multipart/form-data": components["schemas"]["PatchedEventSchema"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSchema"];
+                };
             };
         };
     };
@@ -23249,6 +23390,36 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentHoldout"];
+                };
+            };
+        };
+    };
+    experiment_holdouts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment holdout. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentHoldout"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExperimentHoldout"];
+                "multipart/form-data": components["schemas"]["ExperimentHoldout"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -23385,6 +23556,36 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentSavedMetric"];
+                };
+            };
+        };
+    };
+    experiment_saved_metrics_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment saved metric. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentSavedMetric"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExperimentSavedMetric"];
+                "multipart/form-data": components["schemas"]["ExperimentSavedMetric"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -23537,6 +23738,36 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experiment"];
+                };
+            };
+        };
+    };
+    experiments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this experiment. */
+                id: number;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExperimentWrite"];
+                "multipart/form-data": components["schemas"]["ExperimentWrite"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -24258,6 +24489,36 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaPropertyGroup"];
+                };
+            };
+        };
+    };
+    schema_property_groups_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this schema property group. */
+                id: string;
+                /** @description Project ID of the project you're trying to access. To find the ID of the project, make a call to /api/projects/. */
+                project_id: components["parameters"]["ProjectIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchemaPropertyGroup"];
+                "application/x-www-form-urlencoded": components["schemas"]["SchemaPropertyGroup"];
+                "multipart/form-data": components["schemas"]["SchemaPropertyGroup"];
+            };
+        };
         responses: {
             200: {
                 headers: {
