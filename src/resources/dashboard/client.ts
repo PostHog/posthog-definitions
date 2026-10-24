@@ -36,7 +36,7 @@ export type DashboardUpdate = Partial<DashboardCreate>;
 type GeneratedDashboard = components["schemas"]["Dashboard"];
 type GeneratedDashboardBasic = components["schemas"]["DashboardBasic"];
 type DashboardBody = components["schemas"]["Dashboard"];
-type PatchedDashboardBody = components["schemas"]["PatchedDashboard"];
+type PatchedDashboardBody = components["schemas"]["PatchedPatchedDashboardOpenApi"];
 
 /**
  * Narrow PostHog's wide `Dashboard`/`DashboardBasic` response shape down to
@@ -53,7 +53,8 @@ function toServerDashboard(raw: GeneratedDashboard | GeneratedDashboardBasic): S
     description: raw.description ?? null,
     pinned: raw.pinned,
     tags: (raw.tags ?? []).filter((t): t is string => typeof t === "string"),
-    restriction_level: raw.restriction_level,
+    // Dropped from the OpenAPI Dashboard schema upstream; still read if the server returns it.
+    restriction_level: (raw as { restriction_level?: number }).restriction_level,
     creation_mode: raw.creation_mode,
     deleted: raw.deleted,
     tiles,
@@ -143,7 +144,6 @@ export async function updateDashboard(
     body: {
       ...payload,
       description: payload.description ?? undefined,
-      restriction_level: payload.restriction_level as PatchedDashboardBody["restriction_level"],
       tiles: payload.tiles as PatchedDashboardBody["tiles"],
       delete_insights: false,
     },
