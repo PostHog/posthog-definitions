@@ -31,7 +31,7 @@ export type EventDefinitionCreate = {
 
 export type EventDefinitionUpdate = Partial<EventDefinitionCreate>;
 
-type EnterpriseEventDefinitionBody = components["schemas"]["EnterpriseEventDefinition"];
+type EnterpriseEventDefinitionBody = components["schemas"]["EnterpriseEventDefinitionRequest"];
 type PatchedEnterpriseEventDefinitionBody =
   components["schemas"]["PatchedEnterpriseEventDefinition"];
 type GeneratedPaginatedEventDefinitionList =
@@ -92,7 +92,7 @@ export async function createEventDefinition(
   options: { verbose?: boolean } = {},
 ): Promise<ServerEventDefinition> {
   const api = createApiClient(config, { verbose: options.verbose });
-  // EnterpriseEventDefinition lists many fields as required (created_at, etc.)
+  // EnterpriseEventDefinitionRequest lists many fields as required (created_at, etc.)
   // that the server fills in. Cast to bypass the schema gap on writes.
   const { data } = await api.POST("/api/projects/{project_id}/event_definitions/", {
     params: { path: { project_id: config.projectId } },
