@@ -57,9 +57,13 @@ export type ActionUpdate = Partial<ActionCreate> & { deleted?: boolean };
 
 type ActionBody = components["schemas"]["Action"];
 type PatchedActionBody = components["schemas"]["PatchedAction"];
-type GeneratedPaginatedActionList = components["schemas"]["PaginatedActionList"];
+type GeneratedPaginatedActionList = components["schemas"]["ActionListResponse"];
 
-function paginatedFrom(raw: GeneratedPaginatedActionList): Paginated<unknown> {
+// ActionListResponse doesn't declare `next`/`previous`, but the server still
+// paginates via `limit`, so keep following the links when present.
+function paginatedFrom(
+  raw: GeneratedPaginatedActionList & { next?: string | null; previous?: string | null },
+): Paginated<unknown> {
   return {
     count: raw.count,
     next: raw.next ?? null,
