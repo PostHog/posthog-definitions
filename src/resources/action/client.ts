@@ -57,13 +57,13 @@ export type ActionUpdate = Partial<ActionCreate> & { deleted?: boolean };
 
 type ActionBody = components["schemas"]["Action"];
 type PatchedActionBody = components["schemas"]["PatchedAction"];
-type GeneratedPaginatedActionList = components["schemas"]["PaginatedActionList"];
+type GeneratedPaginatedActionList = components["schemas"]["ActionListResponse"];
 
 function paginatedFrom(raw: GeneratedPaginatedActionList): Paginated<unknown> {
   return {
     count: raw.count,
-    next: raw.next ?? null,
-    previous: raw.previous ?? null,
+    next: (raw as { next?: string | null }).next ?? null,
+    previous: (raw as { previous?: string | null }).previous ?? null,
     results: raw.results ?? [],
   };
 }
