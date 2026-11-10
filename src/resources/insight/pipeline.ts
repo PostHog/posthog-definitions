@@ -57,8 +57,17 @@ function mergeTags(userTags: string[] | undefined, managedTags: string[]): strin
   return result;
 }
 
+const INSIGHT_VIZ_KINDS = new Set<string>([
+  "TrendsQuery",
+  "FunnelsQuery",
+  "RetentionQuery",
+  "PathsQuery",
+  "StickinessQuery",
+  "LifecycleQuery",
+]);
+
 function wrapQuery(query: Query): unknown {
-  if (query.kind === "TrendsQuery") {
+  if (INSIGHT_VIZ_KINDS.has(query.kind)) {
     return { kind: "InsightVizNode", source: query };
   }
   return { kind: "DataTableNode", source: query };
