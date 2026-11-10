@@ -66,6 +66,7 @@ export const experimentResource: CollectionResourceModule<Experiment, ServerExpe
 
   listAll: listExperiments,
   getById: (config, id, options) => getExperiment(config, Number(id), options),
+  hydrateForPull: (config, server, options) => getExperiment(config, server.id, options),
   pullFilter,
   pullLabel,
   serverIdOf,

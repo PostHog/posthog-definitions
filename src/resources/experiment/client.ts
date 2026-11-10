@@ -67,12 +67,17 @@ function paginatedFrom(raw: GeneratedPaginatedList): Paginated<unknown> {
   };
 }
 
+/**
+ * Managed experiments in full. The list endpoint returns the basic serializer, which leaves out
+ * metrics and exposure criteria, so each managed row is read again from the detail endpoint.
+ */
 export async function listManagedExperiments(
   config: ClientConfig,
   options: { verbose?: boolean } = {},
 ): Promise<ServerExperiment[]> {
   const all = await listExperiments(config, options);
-  return all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  const managed = all.filter((row) => (row.description ?? "").includes(MANAGED_DESCRIPTION_PREFIX));
+  return Promise.all(managed.map((row) => getExperiment(config, row.id, options)));
 }
 
 /** Unfiltered list of every experiment in the project; used by pull. */
