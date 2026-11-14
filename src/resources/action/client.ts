@@ -57,9 +57,14 @@ export type ActionUpdate = Partial<ActionCreate> & { deleted?: boolean };
 
 type ActionBody = components["schemas"]["Action"];
 type PatchedActionBody = components["schemas"]["PatchedAction"];
-type GeneratedPaginatedActionList = components["schemas"]["PaginatedActionList"];
+// `ActionListResponse` has no next/previous: without `limit` the server
+// returns every matching action in one response. Older servers still paginate.
+type GeneratedActionList = components["schemas"]["ActionListResponse"] & {
+  next?: string | null;
+  previous?: string | null;
+};
 
-function paginatedFrom(raw: GeneratedPaginatedActionList): Paginated<unknown> {
+function paginatedFrom(raw: GeneratedActionList): Paginated<unknown> {
   return {
     count: raw.count,
     next: raw.next ?? null,
@@ -76,7 +81,6 @@ export async function listManagedActions(
   const { data } = await api.GET("/api/projects/{project_id}/actions/", {
     params: {
       path: { project_id: config.projectId },
-      query: { limit: 100 },
     },
   });
   const firstPage = paginatedFrom(data!);
