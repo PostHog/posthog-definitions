@@ -57,7 +57,12 @@ export type ActionUpdate = Partial<ActionCreate> & { deleted?: boolean };
 
 type ActionBody = components["schemas"]["Action"];
 type PatchedActionBody = components["schemas"]["PatchedAction"];
-type GeneratedPaginatedActionList = components["schemas"]["PaginatedActionList"];
+// ActionListResponse no longer declares `next`/`previous`; keep reading them
+// so pagination still follows the server's links when present.
+type GeneratedPaginatedActionList = components["schemas"]["ActionListResponse"] & {
+  next?: string | null;
+  previous?: string | null;
+};
 
 function paginatedFrom(raw: GeneratedPaginatedActionList): Paginated<unknown> {
   return {
