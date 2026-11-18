@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import type { DesiredState } from "../types.js";
-import { type FunnelsQuery, type HogQLQuery, type Insight, type TrendsQuery } from "./sdk.js";
+import {
+  type FunnelsQuery,
+  type HogQLQuery,
+  type Insight,
+  type Query,
+  type TrendsQuery,
+} from "./sdk.js";
 import { type ServerInsight } from "./client.js";
 import { insightHash, insightPayload } from "./pipeline.js";
 
@@ -11,6 +17,11 @@ function trends(event: string): TrendsQuery {
 
 function funnels(...events: string[]): FunnelsQuery {
   return { kind: "FunnelsQuery", series: events.map((event) => ({ event })) };
+}
+
+/** A query kind the SDK has no type for; pull writes these as a raw literal cast to Query. */
+function rawQuery(kind: string): Query {
+  return { kind, series: [{ kind: "EventsNode", event: "user signed up" }] } as unknown as Query;
 }
 
 function spec(key: string, name = key): Insight {
@@ -97,15 +108,15 @@ describe("insight pipeline", () => {
 });
 
 describe("insightPayload query wrapping", () => {
-  it("wraps a TrendsQuery in an InsightVizNode", () => {
-    const query = trends("user signed up");
-    const payload = insightPayload({ key: "signups", name: "Signups", query }, "hash");
-    expect(payload.query).toEqual({ kind: "InsightVizNode", source: query });
-  });
-
-  it("wraps a FunnelsQuery in an InsightVizNode", () => {
-    const query = funnels("signed up", "activated");
-    const payload = insightPayload({ key: "activation", name: "Activation", query }, "hash");
+  it.each([
+    ["TrendsQuery", trends("user signed up")],
+    ["FunnelsQuery", funnels("signed up", "activated")],
+    ["RetentionQuery", rawQuery("RetentionQuery")],
+    ["PathsQuery", rawQuery("PathsQuery")],
+    ["StickinessQuery", rawQuery("StickinessQuery")],
+    ["LifecycleQuery", rawQuery("LifecycleQuery")],
+  ])("wraps a %s in an InsightVizNode", (_kind, query) => {
+    const payload = insightPayload({ key: "viz", name: "Viz", query }, "hash");
     expect(payload.query).toEqual({ kind: "InsightVizNode", source: query });
   });
 
