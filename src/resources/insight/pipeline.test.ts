@@ -1,12 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { diff } from "../../apply/diff.js";
 import type { DesiredState } from "../types.js";
-import { type Insight, type TrendsQuery } from "./sdk.js";
+import {
+  type FunnelsQuery,
+  type HogQLQuery,
+  type Insight,
+  type Query,
+  type TrendsQuery,
+} from "./sdk.js";
 import { type ServerInsight } from "./client.js";
-import { insightHash } from "./pipeline.js";
+import { insightHash, insightPayload } from "./pipeline.js";
 
 function trends(event: string): TrendsQuery {
   return { kind: "TrendsQuery", series: [{ event }] };
+}
+
+function funnels(...events: string[]): FunnelsQuery {
+  return { kind: "FunnelsQuery", series: events.map((event) => ({ event })) };
+}
+
+/** A query kind the SDK has no type for; pull writes these as a raw literal cast to Query. */
+function rawQuery(kind: string): Query {
+  return { kind, series: [{ kind: "EventsNode", event: "user signed up" }] } as unknown as Query;
 }
 
 function spec(key: string, name = key): Insight {
@@ -89,5 +104,25 @@ describe("insight pipeline", () => {
     const slice = result.get("insights")!;
     expect(slice.ops.length).toBe(0);
     expect(slice.orphans.length).toBe(0);
+  });
+});
+
+describe("insightPayload query wrapping", () => {
+  it.each([
+    ["TrendsQuery", trends("user signed up")],
+    ["FunnelsQuery", funnels("signed up", "activated")],
+    ["RetentionQuery", rawQuery("RetentionQuery")],
+    ["PathsQuery", rawQuery("PathsQuery")],
+    ["StickinessQuery", rawQuery("StickinessQuery")],
+    ["LifecycleQuery", rawQuery("LifecycleQuery")],
+  ])("wraps a %s in an InsightVizNode", (_kind, query) => {
+    const payload = insightPayload({ key: "viz", name: "Viz", query }, "hash");
+    expect(payload.query).toEqual({ kind: "InsightVizNode", source: query });
+  });
+
+  it("wraps a HogQLQuery in a DataTableNode", () => {
+    const query: HogQLQuery = { kind: "HogQLQuery", query: "select 1" };
+    const payload = insightPayload({ key: "raw", name: "Raw", query }, "hash");
+    expect(payload.query).toEqual({ kind: "DataTableNode", source: query });
   });
 });
