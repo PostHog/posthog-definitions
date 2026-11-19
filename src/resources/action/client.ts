@@ -57,7 +57,12 @@ export type ActionUpdate = Partial<ActionCreate> & { deleted?: boolean };
 
 type ActionBody = components["schemas"]["Action"];
 type PatchedActionBody = components["schemas"]["PatchedAction"];
-type GeneratedPaginatedActionList = components["schemas"]["PaginatedActionList"];
+// `ActionListResponse` documents only `count`/`results`; keep reading the
+// cursors defensively in case the server still returns them.
+type GeneratedPaginatedActionList = components["schemas"]["ActionListResponse"] & {
+  next?: string | null;
+  previous?: string | null;
+};
 
 function paginatedFrom(raw: GeneratedPaginatedActionList): Paginated<unknown> {
   return {
@@ -73,11 +78,10 @@ export async function listManagedActions(
   options: { verbose?: boolean } = {},
 ): Promise<ServerAction[]> {
   const api = createApiClient(config, { verbose: options.verbose });
+  // No `limit`: the server returns every matching action in one response,
+  // so tagged rows past the first page can't be missed if cursors are absent.
   const { data } = await api.GET("/api/projects/{project_id}/actions/", {
-    params: {
-      path: { project_id: config.projectId },
-      query: { limit: 100 },
-    },
+    params: { path: { project_id: config.projectId } },
   });
   const firstPage = paginatedFrom(data!);
   const allRaw = await followPagination<unknown>(config, firstPage, {
