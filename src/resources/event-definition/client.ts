@@ -31,7 +31,7 @@ export type EventDefinitionCreate = {
 
 export type EventDefinitionUpdate = Partial<EventDefinitionCreate>;
 
-type EnterpriseEventDefinitionBody = components["schemas"]["EnterpriseEventDefinition"];
+type EnterpriseEventDefinitionBody = components["schemas"]["EnterpriseEventDefinitionRequest"];
 type PatchedEnterpriseEventDefinitionBody =
   components["schemas"]["PatchedEnterpriseEventDefinition"];
 type GeneratedPaginatedEventDefinitionList =
